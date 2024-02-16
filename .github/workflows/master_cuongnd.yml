@@ -56,5 +56,3 @@ jobs:
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_9DDF8FA622AB47FE8FA762CE00B15E5C }}
           package: .
 
-      - name: 'Start the deployed app'
-        run: npm run start
