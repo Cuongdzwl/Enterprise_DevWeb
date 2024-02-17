@@ -23,16 +23,15 @@ jobs:
 
       - name: npm install, build, and test
         run: |
-          cd ./backend/webAPI
           npm install
-          npm run compile --if-present
           npm run build --if-present
+          npm run test --if-present
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v3
         with:
           name: node-app
-          path: ./backend/webAPI
+          path: .
 
   deploy:
     runs-on: ubuntu-latest
@@ -53,6 +52,5 @@ jobs:
         with:
           app-name: 'cuongnd'
           slot-name: 'Production'
-          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_9DDF8FA622AB47FE8FA762CE00B15E5C }}
-          package: ./backend/webAPI
-
+          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_4BE3364EC04941718CC138F6EE5D1BE2 }}
+          package: .
