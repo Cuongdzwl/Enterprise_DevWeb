@@ -34,7 +34,9 @@ jobs:
 
 
       - name: Zip artifact for deployment
-        run: zip release.zip ./backend/webAPI/* -r
+        run:  |
+          cd ./backend/webAPI
+          zip -r ../../release.zip ./*
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v3
@@ -60,7 +62,7 @@ jobs:
 
       - name: 'Deploy to Azure Web App'
         id: deploy-to-webapp
-        uses: azure/webapps-deploy@v2
+        uses: azure/webapps-deploy@v3
         with:
           app-name: 'cuongnd'
           slot-name: 'Production'
