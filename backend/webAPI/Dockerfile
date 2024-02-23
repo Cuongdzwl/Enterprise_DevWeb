@@ -1,4 +1,4 @@
-FROM node:14-alpine
+FROM node:18-alpine
 LABEL Author CUONGDZ
 
 RUN mkdir -p /usr/src/app
