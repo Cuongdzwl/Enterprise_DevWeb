@@ -14,9 +14,13 @@
     "test:debug": "mocha -r ts-node/register --inspect-brk test/**/*.ts --exit"
   },
   "dependencies": {
+    "@prisma/client": "^5.10.2",
+    "@types/adm-zip": "^0.5.5",
+    "@types/multer": "^1.4.11",
     "adm-zip": "^0.5.10",
     "body-parser": "^1.19.2",
     "cookie-parser": "^1.4.6",
+    "cors": "^2.8.5",
     "dotenv": "^16.0.0",
     "express": "^4.17.3",
     "express-openapi-validator": "^4.13.8",
@@ -28,6 +32,7 @@
   "devDependencies": {
     "@types/chai": "^4.3.0",
     "@types/cookie-parser": "^1.4.2",
+    "@types/cors": "^2.8.17",
     "@types/express": "^4.17.13",
     "@types/mocha": "^9.1.0",
     "@types/node": "^17.0.21",

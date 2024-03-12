@@ -1,12 +1,69 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "mysql"
   url      = env("DATABASE_URL")
 }
 
+
+model users {
+  ID        Int       @id @default(autoincrement())
+  Name      String
+  Password  String
+  Salt      String
+  Email     String   @unique
+  Phone     String?
+  Address   String?
+  CreatedAt DateTime @default(now())
+  UpdatedAt DateTime @updatedAt
+  RoleID    Int
+  FacultyID Int
+
+  Role     roles?    @relation(fields: [RoleID], references: [ID])
+  Faculty  faculties? @relation(fields: [FacultyID], references: [ID])
+}
+
+model roles {
+    ID        Int       @id @default(autoincrement())
+
+}
+
+model faculties {
+  ID        Int         @id @default(autoincrement())
+
+}
+
+model events {
+  ID        Int         @id  @default(autoincrement())
+}
+
+model comments {
+  ID        Int         @id  @default(autoincrement())
+}
+
+model notifications{
+  ID        Int         @id  @default(autoincrement())
+
+}
+
+model files{
+  ID        Int         @id  @default(autoincrement())
+}
+
+model contributions{
+  ID        Int       @id @default(autoincrement())
+  Name      String
+  Content   String
+  isPublic  Boolean
+  isApproved Boolean
+  CreatedAt DateTime  @default(now())
+  UpdatedAt DateTime  @updatedAt
+  EventID   Int
+  UserID    Int
+  StatusID  Int
+
+  User      users?     @relation(fields: [UserID], references: [ID])
+  Event     events?    @relation(fields: [EventID], references: [ID])
+}
