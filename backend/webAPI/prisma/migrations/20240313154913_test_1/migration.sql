@@ -1,0 +1,77 @@
+-- CreateTable
+CREATE TABLE `users` (
+    `ID` INTEGER NOT NULL AUTO_INCREMENT,
+    `Name` VARCHAR(191) NOT NULL,
+    `Password` VARCHAR(191) NOT NULL,
+    `Salt` VARCHAR(191) NOT NULL,
+    `Email` VARCHAR(191) NOT NULL,
+    `Phone` VARCHAR(191) NULL,
+    `Address` VARCHAR(191) NULL,
+    `CreatedAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `UpdatedAt` DATETIME(3) NOT NULL,
+    `RoleID` INTEGER NOT NULL,
+    `FacultyID` INTEGER NOT NULL,
+
+    UNIQUE INDEX `users_Email_key`(`Email`),
+    PRIMARY KEY (`ID`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `roles` (
+    `ID` INTEGER NOT NULL AUTO_INCREMENT,
+    `Name` VARCHAR(191) NOT NULL,
+    `Description` VARCHAR(191) NOT NULL,
+
+    PRIMARY KEY (`ID`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `faculties` (
+    `ID` INTEGER NOT NULL AUTO_INCREMENT,
+
+    PRIMARY KEY (`ID`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `events` (
+    `ID` INTEGER NOT NULL AUTO_INCREMENT,
+
+    PRIMARY KEY (`ID`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `comments` (
+    `ID` INTEGER NOT NULL AUTO_INCREMENT,
+
+    PRIMARY KEY (`ID`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `notifications` (
+    `ID` INTEGER NOT NULL AUTO_INCREMENT,
+
+    PRIMARY KEY (`ID`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `files` (
+    `ID` INTEGER NOT NULL AUTO_INCREMENT,
+
+    PRIMARY KEY (`ID`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `contributions` (
+    `ID` INTEGER NOT NULL AUTO_INCREMENT,
+    `Name` VARCHAR(191) NOT NULL,
+    `Content` VARCHAR(191) NOT NULL,
+    `isPublic` BOOLEAN NOT NULL,
+    `isApproved` BOOLEAN NOT NULL,
+    `CreatedAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `UpdatedAt` DATETIME(3) NOT NULL,
+    `EventID` INTEGER NOT NULL,
+    `UserID` INTEGER NOT NULL,
+    `StatusID` INTEGER NOT NULL,
+
+    PRIMARY KEY (`ID`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;

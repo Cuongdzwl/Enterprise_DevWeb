@@ -4,7 +4,7 @@ generator client {
 
 datasource db {
   provider = "mysql"
-  url      = env("DATABASE_URL")
+  url      = "mysql://root:CuongDepTrai@123@172.17.0.1:3306/comp164"
 }
 
 
@@ -20,19 +20,17 @@ model users {
   UpdatedAt DateTime @updatedAt
   RoleID    Int
   FacultyID Int
-
-  Role     roles?    @relation(fields: [RoleID], references: [ID])
-  Faculty  faculties? @relation(fields: [FacultyID], references: [ID])
 }
 
 model roles {
-    ID        Int       @id @default(autoincrement())
+  ID        Int       @id @default(autoincrement())
+  Name      String
+  Description String
 
 }
 
 model faculties {
   ID        Int         @id @default(autoincrement())
-
 }
 
 model events {
@@ -64,6 +62,5 @@ model contributions{
   UserID    Int
   StatusID  Int
 
-  User      users?     @relation(fields: [UserID], references: [ID])
-  Event     events?    @relation(fields: [EventID], references: [ID])
+
 }

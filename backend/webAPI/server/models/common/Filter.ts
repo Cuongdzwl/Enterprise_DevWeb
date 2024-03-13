@@ -4,9 +4,9 @@ export enum Filter{
     byEmail = 'Email',
     byPhone = 'Phone',
     byAddress = 'Address',
-    byStatusId = 'StatusId',
     byCreatedAt = 'CreatedAt',
     byUpdatedAt = 'UpdatedAt',
     byIsEnabledGuest = 'IsEnabledGuest',
+    byStatusId = 'StatusId',
     byIsPublic = 'isPublic',
 }

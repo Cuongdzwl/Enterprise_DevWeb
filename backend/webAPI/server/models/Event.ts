@@ -1,7 +1,7 @@
 import { Faculty } from "./Faculty";
 
 export class Event {
-    ID: number;
+    ID?: number;
     Name: string;
     Description: string;
     ClosureDate: Date;

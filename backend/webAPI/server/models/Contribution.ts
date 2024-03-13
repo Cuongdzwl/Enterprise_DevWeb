@@ -3,7 +3,7 @@ import { Event } from "./Event";
 
 
 export class Contribution {
-    ID: number;
+    ID?: number;
     Name: string;
     Content: string;
     isPublic: boolean;
