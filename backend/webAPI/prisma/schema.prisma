@@ -3,8 +3,8 @@ generator client {
 }
 
 datasource db {
-  provider = "mysql"
-  url      = "mysql://root:CuongDepTrai@123@172.17.0.1:3306/comp164"
+  provider = "sqlserver"
+  url      = env("DATABASE_URL")
 }
 
 
