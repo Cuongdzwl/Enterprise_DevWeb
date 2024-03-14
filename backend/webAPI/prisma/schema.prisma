@@ -7,63 +7,114 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Role {
+  ID          Int    @id @default(autoincrement())
+  Name        String
+  Description String?
+  Users       User[]
+}
 
-model users {
-  ID        Int       @id @default(autoincrement())
+model Faculty {
+  ID            Int        @id @default(autoincrement())
+  Name          String
+  Description   String
+  IsEnabledGuest Boolean
+  CreatedAt     DateTime   @default(now())
+  UpdatedAt     DateTime   @updatedAt
+  Events        Event[]
+  User          User[]
+}
+
+model User {
+  ID        Int         @id @default(autoincrement())
   Name      String
   Password  String
   Salt      String
-  Email     String   @unique
+  Email     String      @unique
   Phone     String?
   Address   String?
-  CreatedAt DateTime @default(now())
-  UpdatedAt DateTime @updatedAt
+  CreatedAt DateTime    @default(now())
+  UpdatedAt DateTime    @updatedAt
+  Role      Role        @relation(fields: [RoleID], references: [ID])
   RoleID    Int
-  FacultyID Int
-
-  Role     roles?    @relation(fields: [RoleID], references: [ID])
-  Faculty  faculties? @relation(fields: [FacultyID], references: [ID])
+  Faculty   Faculty?    @relation(fields: [FacultyID], references: [ID])
+  FacultyID Int?
+  Comments  Comment[]
+  Contributions Contribution[]
 }
 
-model roles {
-    ID        Int       @id @default(autoincrement())
 
+model Event {
+  ID          Int        @id @default(autoincrement())
+  Name        String
+  Description String
+  ClosureDate DateTime
+  FinalDate   DateTime
+  CreatedAt   DateTime   @default(now())
+  UpdatedAt   DateTime   @updatedAt
+  Faculty     Faculty    @relation(fields: [FacultyID], references: [ID])
+  FacultyID   Int
+  Contributions Contribution[]
 }
 
-model faculties {
-  ID        Int         @id @default(autoincrement())
-
+model Comment {
+  ID             Int     @id @default(autoincrement())
+  Content        String
+  CreatedAt      DateTime @default(now())
+  UpdatedAt      DateTime @updatedAt
+  Contribution   Contribution @relation(fields: [ContributionID], references: [ID])
+  ContributionID Int
+  User           User @relation(fields: [UserID], references: [ID]) 
+  UserID         Int
 }
 
-model events {
-  ID        Int         @id  @default(autoincrement())
+model File {
+  ID             Int       @id @default(autoincrement())
+  Url            String
+  CreatedAt      DateTime  @default(now())
+  UpdatedAt      DateTime  @updatedAt
+  IsPublic       Boolean
+  Contribution   Contribution? @relation(fields: [ContributionID], references: [ID])
+  ContributionID Int?
 }
 
-model comments {
-  ID        Int         @id  @default(autoincrement())
+model Contribution {
+  ID           Int       @id @default(autoincrement())
+  Name         String
+  Content      String
+  IsPublic     Boolean
+  IsApproved   Boolean
+  CreatedAt    DateTime  @default(now())
+  UpdatedAt    DateTime  @updatedAt
+  Event        Event     @relation(fields: [EventID], references: [ID])
+  EventID      Int
+  User         User      @relation(fields: [UserID], references: [ID]) 
+  UserID       Int
+  StatusID     Int
+  Files        File[]
+  Status       ContributionStatus @relation(fields: [StatusID], references: [ID])
+  Comments  Comment[]
 }
 
-model notifications{
-  ID        Int         @id  @default(autoincrement())
-
-}
-
-model files{
-  ID        Int         @id  @default(autoincrement())
-}
-
-model contributions{
-  ID        Int       @id @default(autoincrement())
+model ContributionStatus {
+  ID        Int    @id @default(autoincrement())
   Name      String
-  Content   String
-  isPublic  Boolean
-  isApproved Boolean
-  CreatedAt DateTime  @default(now())
-  UpdatedAt DateTime  @updatedAt
-  EventID   Int
-  UserID    Int
-  StatusID  Int
+  Contributions Contribution[]
+}
 
-  User      users?     @relation(fields: [UserID], references: [ID])
-  Event     events?    @relation(fields: [EventID], references: [ID])
+enum NotificationSentType {
+  Unknown 
+  Decline 
+  Accept 
+  Comment 
+  ExternalBroadcast 
+  InternalBroadcast 
+}
+
+model Notification {
+  ID                   Int     @id @default(autoincrement())
+  Content              String
+  NotificationSentType NotificationSentType
+  SentAt               DateTime @default(now())
+  SentTo               Int
 }
