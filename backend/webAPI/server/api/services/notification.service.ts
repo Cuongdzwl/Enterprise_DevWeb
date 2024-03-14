@@ -8,14 +8,14 @@ const model = 'notification';
 
 export class NotificationService {
     all(): Promise<any> {
-        const notifications = prisma.notification.findMany();
+        const notifications = prisma.notifications.findMany();
         L.info(notifications, `fetch all ${model}(s)`);
         return Promise.resolve(notifications);
     }
 
     byId(id: number): Promise<any> {
         L.info(`fetch ${model} with id ${id}`);
-        const notification = prisma.notification.findUnique({
+        const notification = prisma.notifications.findUnique({
             where: { ID: id },
         });
         return Promise.resolve(notification);
@@ -23,7 +23,7 @@ export class NotificationService {
 
     filter(filter: Filter): Promise<any> {
         L.info(`fetch ${model}(s) with filter`, filter);
-        const notifications = prisma.notification.findMany({
+        const notifications = prisma.notifications.findMany({
             where: {
                 // TODO: Apply filter conditions
             },
@@ -33,16 +33,16 @@ export class NotificationService {
 
     create(notification: Notification): Promise<any> {
         L.info(`create ${model} with id ${notification.ID}`);
-        const createdNotification = prisma.notification.create({
+        const createdNotification = prisma.notifications.create({
             // TODO: FIX THIS
-            data: Notification,
+            data: notification,
         });
         return Promise.resolve(createdNotification);
     }
 
     delete(id: number): Promise<any> {
         L.info(`delete ${model} with id ${id}`);
-        const deletedNotification = prisma.notification.delete({
+        const deletedNotification = prisma.notifications.delete({
             where: { ID: id },
         });
         return Promise.resolve(deletedNotification);
@@ -50,9 +50,9 @@ export class NotificationService {
 
     update(notification: Notification): Promise<any> {
         L.info(`update ${model} with id ${notification.ID}`);
-        const updatedNotification = prisma.notification.update({
+        const updatedNotification = prisma.notifications.update({
             where: { ID: notification.ID },
-            data: Notification,
+            data: notification,
         });
         return Promise.resolve(updatedNotification);
     }

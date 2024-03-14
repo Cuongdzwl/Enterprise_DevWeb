@@ -8,7 +8,7 @@ const model = 'faculties';
 
 export class FacultiesService{
   all(): Promise<any> {
-    const faculties = prisma.faculty.findMany()
+    const faculties = prisma.faculties.findMany()
     L.info(faculties, `fetch all ${model}(s)`);
     return Promise.resolve(faculties);
   }

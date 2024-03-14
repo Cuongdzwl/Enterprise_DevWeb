@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "mysql"
+  provider = "sqlserver"
   url      = env("DATABASE_URL")
 }
 
@@ -111,10 +111,12 @@ enum notificationSentTypes {
   InternalBroadcast 
 }
 
+
 model notifications {
   ID                   Int     @id @default(autoincrement())
   Content              String
   NotificationSentType notificationSentTypes
   SentAt               DateTime @default(now())
   SentTo               Int
+
 }

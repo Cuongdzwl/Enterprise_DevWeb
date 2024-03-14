@@ -6,7 +6,7 @@ import os from 'os';
 import cookieParser from 'cookie-parser';
 import l from './logger';
 import cors from 'cors';
-
+import passport from 'passport';
 
 import errorHandler from '../api/middlewares/error.handler';
 import * as OpenApiValidator from 'express-openapi-validator';
@@ -20,7 +20,7 @@ export default class ExpressServer {
     const root = path.normalize(__dirname + '/../..');
 
     // Enable Cross-Origin Resource Sharing
-    app.use(cors());
+    app.use(cors({ origin: '*' }));
 
     // Use body-parser middleware to parse incoming JSON requests
     app.use(bodyParser.json({ limit: process.env.REQUEST_LIMIT || '100kb' }));
@@ -63,6 +63,8 @@ export default class ExpressServer {
       })
     );
   }
+
+  // Passport
 
   router(routes: (app: Application) => void): ExpressServer {
     routes(app);
