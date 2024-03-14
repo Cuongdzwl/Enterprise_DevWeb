@@ -15,36 +15,57 @@ export class UsersService {
   // Filter
   byId(id: number): Promise<any> {
     L.info(`fetch ${model} with id ${id}`);
-    return this.all().then((r) => r[id]);
+    const user = prisma.users.findUnique({
+      where: { ID: id },
+    });
+    return Promise.resolve(user);
   }
 
-  // filter(filter: Filter): Promise<any> {
-  //   //TODO: filter
-  //   // return
-  // }
-  
+  filter(filter: Filter, key: string): Promise<any> {
+    const users = prisma.users.findMany({
+      where: {
+        [filter]: key,
+      },
+    });
+    L.info(users, `fetch all ${model}(s)`);
+    return Promise.resolve(users);
+  }
+
   // Create
   create(user: User): Promise<any> {
-    L.info(`create ${model} with id ${user.ID}`);
     
-    return Promise.resolve();
+    L.info(`create ${model} with id ${user.ID}`);
+    const createdUser = prisma.users.create({
+      data: {
+        Name: user.Name,
+        Password: user.Password,
+        Salt: user.Salt,
+        Email: user.Email,
+        Phone: user.Phone,
+        Address: user.Address,
+        RoleID: user.RoleID,
+        FacultyID: user.FacultyID
+      },
+    });
+    return Promise.resolve(createdUser);
   }
   // Delete
-  delete(id: number): void {
-    L.info(`delele ${model} with id ${id}`);
-    return;
+  delete(id: number): Promise<any> {
+    L.info(`delete ${model} with id ${id}`);
+    const deletedUser = prisma.users.delete({
+      where: { ID: id },
+    });
+    return Promise.resolve(deletedUser);
   }
   // Update
-  // update(user: User): Promise<any> {
-  //   L.info(`update ${model} with id ${user.ID}`);
-  //   // TODO: Update the user in the database
-  //   // return prisma.users.update({
-  //   //   // where: { ID: user.ID },
-  //   //   data: user,
-  //   // });
-  // }
-
-  
+  update(user: User): Promise<any> {
+    L.info(`update ${model} with id ${user.ID}`);
+    const updatedUser = prisma.users.update({
+      where: { ID: user.ID },
+      data: user,
+    });
+    return Promise.resolve(updatedUser);
+  }
 
 }
 

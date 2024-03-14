@@ -2,7 +2,7 @@ import { Contribution } from "./Contribution";
 import { User } from "./User";
 
 export class File {
-    ID: number;
+    ID?: number;
     Url: string;
     CreatedAt: Date;
     UpdatedAt: Date;

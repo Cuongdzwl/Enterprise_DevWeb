@@ -2,7 +2,7 @@ import { Contribution } from "./Contribution";
 import { User } from "./User";
 
 export class Comment {
-    ID: number;
+    ID?: number;
     Content: string;
     CreatedAt?: Date;
     UpdatedAt?: Date ;
@@ -18,4 +18,5 @@ export class Comment {
         this.ContributionID = ContributionID;
         this.UserID = UserID;
     }
+
 }

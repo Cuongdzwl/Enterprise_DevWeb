@@ -1,15 +1,12 @@
 import { User } from "./User";
 
 export class Faculty {
-    ID: number;
+    ID?: number;
     Name: string;
     Description: string;
     IsEnabledGuest: boolean;
     CreatedAt: Date;
     UpdatedAt: Date;
-    ManagerID: number;
-
-    Manager?: User;
 
     constructor(ID: number, Name: string, Description: string, IsEnabledGuest: boolean, CreatedAt: Date, UpdatedAt: Date, ManagerID: number) {
         this.ID = ID;
@@ -18,6 +15,6 @@ export class Faculty {
         this.IsEnabledGuest = IsEnabledGuest;
         this.CreatedAt = CreatedAt;
         this.UpdatedAt = UpdatedAt;
-        this.ManagerID = ManagerID;
+
     }
 }
