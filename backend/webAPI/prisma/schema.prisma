@@ -5,6 +5,7 @@ generator client {
 datasource db {
   provider = "sqlserver"
   url      = env("DATABASE_URL")
+  
 }
 
 model roles {
@@ -35,10 +36,10 @@ model users {
   Address   String?
   CreatedAt DateTime    @default(now())
   UpdatedAt DateTime    @updatedAt
-  Role      roles       @relation(fields: [RoleID], references: [ID])
+  Role      roles       @relation(fields: [RoleID], references: [ID], onDelete: Cascade, onUpdate : NoAction)
   RoleID    Int
-  Faculty   faculties?    @relation(fields: [FacultyID], references: [ID])
-  FacultyID Int?
+  Faculty   faculties    @relation(fields: [FacultyID], references: [ID], onDelete: NoAction, onUpdate : NoAction)
+  FacultyID Int
   Comments  comments[]
   Contributions contributions[]
 }
@@ -52,7 +53,7 @@ model events {
   FinalDate   DateTime
   CreatedAt   DateTime   @default(now())
   UpdatedAt   DateTime   @updatedAt
-  Faculty     faculties    @relation(fields: [FacultyID], references: [ID])
+  Faculty     faculties    @relation(fields: [FacultyID], references: [ID], onDelete: Cascade, onUpdate : NoAction)
   FacultyID   Int
   Contributions contributions[]
 }
@@ -62,9 +63,9 @@ model comments {
   Content        String
   CreatedAt      DateTime @default(now())
   UpdatedAt      DateTime @updatedAt
-  Contribution   contributions @relation(fields: [ContributionID], references: [ID])
+  Contribution   contributions @relation(fields: [ContributionID], references: [ID], onDelete: Cascade, onUpdate : NoAction)
   ContributionID Int
-  User           users @relation(fields: [UserID], references: [ID]) 
+  User           users @relation(fields: [UserID], references: [ID],onDelete: NoAction, onUpdate : NoAction) 
   UserID         Int
 }
 
@@ -86,13 +87,13 @@ model contributions {
   IsApproved   Boolean
   CreatedAt    DateTime  @default(now())
   UpdatedAt    DateTime  @updatedAt
-  Event        events     @relation(fields: [EventID], references: [ID])
+  Event        events     @relation(fields: [EventID], references: [ID], onDelete: Cascade, onUpdate : NoAction)
   EventID      Int
-  User         users      @relation(fields: [UserID], references: [ID]) 
+  User         users      @relation(fields: [UserID], references: [ID], onDelete: Cascade, onUpdate : NoAction) 
   UserID       Int
   StatusID     Int
   Files        files[]
-  Status       contributionStatuses @relation(fields: [StatusID], references: [ID])
+  Status       contributionStatuses @relation(fields: [StatusID], references: [ID], onDelete: Cascade, onUpdate : NoAction)
   Comments     comments[]
 }
 
@@ -102,21 +103,19 @@ model contributionStatuses {
   Contributions contributions[]
 }
 
-enum notificationSentTypes {
-  Unknown 
-  Decline 
-  Accept 
-  Comment 
-  ExternalBroadcast 
-  InternalBroadcast 
+model notificationSentTypes {
+  ID        Int    @id @default(autoincrement())
+  Name      String
+  Notification notifications[] 
 }
 
 
 model notifications {
-  ID                   Int     @id @default(autoincrement())
-  Content              String
-  NotificationSentType notificationSentTypes
-  SentAt               DateTime @default(now())
-  SentTo               Int
+  ID                      Int     @id @default(autoincrement())
+  Content                 String
+  NotificationSentType    notificationSentTypes  @relation(fields: [NotificationSentTypeID], references: [ID], onDelete: Cascade, onUpdate : NoAction)
+  NotificationSentTypeID  Int
+  SentAt                  DateTime @default(now())
+  SentTo                  Int
 
 }
