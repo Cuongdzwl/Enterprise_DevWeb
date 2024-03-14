@@ -95,6 +95,15 @@ paths:
         404:
           description: Example not found
           content: {}
+
+  /event:
+    get:
+      tag:
+      - Event
+      response:
+        200:
+          description: Return all Event
+          content: {}
   /spec:
     get:
       tags:
@@ -103,14 +112,26 @@ paths:
         200:
           description: Return the API specification
           content: {}
+
+          
 components:
   schemas:
-    ExampleBody:
-      title: example
+    Event:
+      title: Event
       required:
       - name
+      - description
+      - ClosureDate
       type: object
       properties:
         name:
           type: string
-          example: no_stress
+          example: School Marketing
+        description:
+          type: string
+          example: An event of School Marketing
+        ClosureDate:
+          type: Date
+          example: 2000/22/0
+
+      

@@ -7,25 +7,25 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Role {
+model roles {
   ID          Int    @id @default(autoincrement())
   Name        String
   Description String?
-  Users       User[]
+  Users       users[]
 }
 
-model Faculty {
+model faculties {
   ID            Int        @id @default(autoincrement())
   Name          String
   Description   String
   IsEnabledGuest Boolean
   CreatedAt     DateTime   @default(now())
   UpdatedAt     DateTime   @updatedAt
-  Events        Event[]
-  User          User[]
+  Events        events[]
+  User          users[]
 }
 
-model User {
+model users {
   ID        Int         @id @default(autoincrement())
   Name      String
   Password  String
@@ -35,16 +35,16 @@ model User {
   Address   String?
   CreatedAt DateTime    @default(now())
   UpdatedAt DateTime    @updatedAt
-  Role      Role        @relation(fields: [RoleID], references: [ID])
+  Role      roles       @relation(fields: [RoleID], references: [ID])
   RoleID    Int
-  Faculty   Faculty?    @relation(fields: [FacultyID], references: [ID])
+  Faculty   faculties?    @relation(fields: [FacultyID], references: [ID])
   FacultyID Int?
-  Comments  Comment[]
-  Contributions Contribution[]
+  Comments  comments[]
+  Contributions contributions[]
 }
 
 
-model Event {
+model events {
   ID          Int        @id @default(autoincrement())
   Name        String
   Description String
@@ -52,33 +52,33 @@ model Event {
   FinalDate   DateTime
   CreatedAt   DateTime   @default(now())
   UpdatedAt   DateTime   @updatedAt
-  Faculty     Faculty    @relation(fields: [FacultyID], references: [ID])
+  Faculty     faculties    @relation(fields: [FacultyID], references: [ID])
   FacultyID   Int
-  Contributions Contribution[]
+  Contributions contributions[]
 }
 
-model Comment {
+model comments {
   ID             Int     @id @default(autoincrement())
   Content        String
   CreatedAt      DateTime @default(now())
   UpdatedAt      DateTime @updatedAt
-  Contribution   Contribution @relation(fields: [ContributionID], references: [ID])
+  Contribution   contributions @relation(fields: [ContributionID], references: [ID])
   ContributionID Int
-  User           User @relation(fields: [UserID], references: [ID]) 
+  User           users @relation(fields: [UserID], references: [ID]) 
   UserID         Int
 }
 
-model File {
+model files {
   ID             Int       @id @default(autoincrement())
   Url            String
   CreatedAt      DateTime  @default(now())
   UpdatedAt      DateTime  @updatedAt
   IsPublic       Boolean
-  Contribution   Contribution? @relation(fields: [ContributionID], references: [ID])
+  Contribution   contributions? @relation(fields: [ContributionID], references: [ID])
   ContributionID Int?
 }
 
-model Contribution {
+model contributions {
   ID           Int       @id @default(autoincrement())
   Name         String
   Content      String
@@ -86,23 +86,23 @@ model Contribution {
   IsApproved   Boolean
   CreatedAt    DateTime  @default(now())
   UpdatedAt    DateTime  @updatedAt
-  Event        Event     @relation(fields: [EventID], references: [ID])
+  Event        events     @relation(fields: [EventID], references: [ID])
   EventID      Int
-  User         User      @relation(fields: [UserID], references: [ID]) 
+  User         users      @relation(fields: [UserID], references: [ID]) 
   UserID       Int
   StatusID     Int
-  Files        File[]
-  Status       ContributionStatus @relation(fields: [StatusID], references: [ID])
-  Comments  Comment[]
+  Files        files[]
+  Status       contributionStatuses @relation(fields: [StatusID], references: [ID])
+  Comments     comments[]
 }
 
-model ContributionStatus {
+model contributionStatuses {
   ID        Int    @id @default(autoincrement())
   Name      String
-  Contributions Contribution[]
+  Contributions contributions[]
 }
 
-enum NotificationSentType {
+enum notificationSentTypes {
   Unknown 
   Decline 
   Accept 
@@ -111,10 +111,10 @@ enum NotificationSentType {
   InternalBroadcast 
 }
 
-model Notification {
+model notifications {
   ID                   Int     @id @default(autoincrement())
   Content              String
-  NotificationSentType NotificationSentType
+  NotificationSentType notificationSentTypes
   SentAt               DateTime @default(now())
   SentTo               Int
 }
