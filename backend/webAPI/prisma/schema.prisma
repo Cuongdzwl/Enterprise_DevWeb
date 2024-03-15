@@ -38,7 +38,7 @@ model users {
   UpdatedAt DateTime    @updatedAt
   Role      roles       @relation(fields: [RoleID], references: [ID], onDelete: Cascade, onUpdate : NoAction)
   RoleID    Int
-  Faculty   faculties    @relation(fields: [FacultyID], references: [ID], onDelete: NoAction, onUpdate : NoAction)
+  Faculty   faculties?    @relation(fields: [FacultyID], references: [ID], onDelete: NoAction, onUpdate : NoAction)
   FacultyID Int
   Comments  comments[]
   Contributions contributions[]

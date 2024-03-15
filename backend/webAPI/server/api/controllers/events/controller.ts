@@ -13,7 +13,7 @@ export class EventController {
     }
   }
 
-  async all(req: Request, res: Response): Promise<void> {
+  async all(_: Request, res: Response): Promise<void> {
     try {
       const events = await EventService.getAllEvents();
       res.json(events);

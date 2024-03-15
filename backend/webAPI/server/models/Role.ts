@@ -1,9 +1,9 @@
 export class Role {
     ID?: number;
-    Name: string;
-    Description?: string;
+    Name: String;
+    Description: String;
 
-    constructor(ID: number, Name: string, Description?: string) {
+    constructor(ID: number, Name: String, Description: String) {
         this.ID = ID;
         this.Name = Name;
         this.Description = Description;
