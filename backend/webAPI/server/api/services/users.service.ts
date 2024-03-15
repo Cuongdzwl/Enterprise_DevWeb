@@ -58,11 +58,13 @@ export class UsersService {
     return Promise.resolve(deletedUser);
   }
   // Update
-  update(user: User): Promise<any> {
-    L.info(`update ${model} with id ${user.ID}`);
+  update(users: User): Promise<any> {
+    L.info(`update ${model} with id ${users.ID}`);
     const updatedUser = prisma.users.update({
-      where: { ID: user.ID },
-      data: user,
+      where: { ID: users.ID },
+      data: {
+        
+      },
     });
     return Promise.resolve(updatedUser);
   }

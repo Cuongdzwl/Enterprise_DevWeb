@@ -37,6 +37,28 @@ export class EventController {
       res.status(500).json({ error: 'Failed to get event' });
     }
   }
+  async update(req:Request, res:Response) {
+    try {
+      const { name, description, closureDate, finalDate, facultyId } = req.body;
+      const eventId = Number(req.params.id);
+      const event = await EventService.updateEvent(eventId, name, description, closureDate, finalDate, facultyId);
+      res.json(event);
+    } catch (error) {
+      console.error('Error updating event:', error);
+      res.status(500).json({ error: 'Failed to update event' });
+    }
+  }
+
+  async delete(req:Request, res:Response) {
+    try {
+      const eventId = Number(req.params.id);
+      await EventService.deleteEvent(eventId);
+      res.status(204).send();
+    } catch (error) {
+      console.error('Error deleting event:', error);
+      res.status(500).json({ error: 'Failed to delete event' });
+    }
+  }
 }
 
 export default new EventController();
