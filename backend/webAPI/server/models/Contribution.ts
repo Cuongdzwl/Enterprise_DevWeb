@@ -6,8 +6,8 @@ import { Comment } from "./Comment";
 
 export class Contribution {
     ID?: number;
-    Name: String;
-    Content: String;
+    Name: string;
+    Content: string;
     isPublic: boolean;
     isApproved: boolean;
     CreatedAt: Date;
@@ -23,7 +23,7 @@ export class Contribution {
     Files?: File[];
 
 
-    constructor(ID: number, Name: String, Content: String, isPublic: boolean, isApproved: boolean, CreatedAt: Date, UpdatedAt: Date, EventID: number, UserID: number, StatusID: number) {
+    constructor(ID: number, Name: string, Content: string, isPublic: boolean, isApproved: boolean, CreatedAt: Date, UpdatedAt: Date, EventID: number, UserID: number, StatusID: number) {
         this.ID = ID;
         this.Name = Name;
         this.Content = Content;

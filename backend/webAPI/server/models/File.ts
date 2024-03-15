@@ -3,7 +3,7 @@ import { User } from "./User";
 
 export class File {
     ID?: number;
-    Url: String;
+    Url: string;
     CreatedAt: Date;
     UpdatedAt: Date;
     isPublic: boolean;
@@ -11,7 +11,7 @@ export class File {
 
     Contribution?:Contribution;
 
-    constructor(ID: number, Url: String, CreatedAt: Date, UpdatedAt: Date, isPublic: boolean, ContributionID: number) {
+    constructor(ID: number, Url: string, CreatedAt: Date, UpdatedAt: Date, isPublic: boolean, ContributionID: number) {
         this.ID = ID;
         this.Url = Url;
         this.CreatedAt = CreatedAt;

@@ -3,8 +3,8 @@ import { Contribution } from "./Contribution";
 
 export class Event {
     ID?: number;
-    Name: String;
-    Description: String;
+    Name: string;
+    Description: string;
     ClosureDate: Date;
     FinalDate: Date;
     CreatedAt : Date;
@@ -15,7 +15,7 @@ export class Event {
     Contributions?: Contribution[];
 
 
-    constructor(ID: number, Name: String, Description: String, ClosureDate: Date, FinalDate: Date, CreatedAt: Date, UpdatedAt: Date, FacultyID: number) {
+    constructor(ID: number, Name: string, Description: string, ClosureDate: Date, FinalDate: Date, CreatedAt: Date, UpdatedAt: Date, FacultyID: number) {
         this.ID = ID;
         this.Name = Name;
         this.Description = Description;

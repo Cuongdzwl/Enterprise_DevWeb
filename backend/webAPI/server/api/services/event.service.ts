@@ -1,9 +1,9 @@
 import prisma from '../../common/prisma';
-import { Event } from '@prisma/client';
+import { events } from '@prisma/client';
 
 export class EventService {
-  async createEvent(Name: string, Description: string, ClosureDate: Date, FinalDate: Date, FacultyID: number): Promise<Event> {
-    return prisma.event.create({
+  async createEvent(Name: string, Description: string, ClosureDate: Date, FinalDate: Date, FacultyID: number): Promise<events> {
+    return prisma.events.create({
       data: {
         Name,
         Description,
@@ -14,12 +14,12 @@ export class EventService {
     });
   }
 
-  async getAllEvents(): Promise<Event[]> {
-    return prisma.event.findMany();
+  async getAllEvents(): Promise<events[]> {
+    return prisma.events.findMany();
   }
 
-  async getEventById(ID: number): Promise<Event | null> {
-    return prisma.event.findUnique({
+  async getEventById(ID: number): Promise<events | null> {
+    return prisma.events.findUnique({
       where: { ID },
     });
   }

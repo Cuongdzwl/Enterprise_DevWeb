@@ -117,5 +117,7 @@ model notifications {
   NotificationSentTypeID  Int
   SentAt                  DateTime @default(now())
   SentTo                  Int
-
+  FromID                  Int
+  FromTable               String
+  IsCancelled             Boolean
 }
