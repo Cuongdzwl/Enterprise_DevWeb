@@ -34,17 +34,20 @@ export class FacultiesService{
   // Create
   create(faculty: Faculty): Promise<any> {
     
-    L.info(`create ${model} with id ${faculty.ID}`);
-    const createdUser = prisma.users.create({
-      // TODO: FIX THIS!!!
-      data: faculty,
+    L.info(`create ${model}`);
+    const createdUser = prisma.faculties.create({
+      data: {
+        Name: faculty.Name,
+        Description: faculty.Description,
+        IsEnabledGuest: faculty.IsEnabledGuest
+      },
     });
     return Promise.resolve(createdUser);
   }
   // Delete
   delete(id: number): Promise<any> {
     L.info(`delete ${model} with id ${id}`);
-    const deletedUser = prisma.users.delete({
+    const deletedUser = prisma.faculties.delete({
       where: { ID: id },
     });
     return Promise.resolve(deletedUser);
@@ -54,7 +57,11 @@ export class FacultiesService{
     L.info(`update ${model} with id ${faculty.ID}`);
     const updatedFaculty = prisma.faculties.update({
       where: { ID: faculty.ID },
-      data: faculty,
+      data: {
+        Name: faculty.Name,
+        Description: faculty.Description,
+        IsEnabledGuest: faculty.IsEnabledGuest
+      },
     });
     return Promise.resolve(updatedFaculty);
   }

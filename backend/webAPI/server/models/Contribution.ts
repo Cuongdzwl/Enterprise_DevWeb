@@ -6,24 +6,24 @@ export class Contribution {
     ID?: number;
     Name: string;
     Content: string;
-    isPublic: boolean;
-    isApproved: boolean;
+    IsPublic: boolean;
+    IsApproved: boolean;
     CreatedAt: Date;
     UpdatedAt: Date;
     EventID: number;
     UserID: number;
     StatusID: number;
     
-    User?: User | null;
-    Event?: Event | null;
+    User?: User;
+    Event?: Event ;
 
 
     constructor(ID: number, Name: string, Content: string, isPublic: boolean, isApproved: boolean, CreatedAt: Date, UpdatedAt: Date, EventID: number, UserID: number, StatusID: number) {
         this.ID = ID;
         this.Name = Name;
         this.Content = Content;
-        this.isPublic = isPublic;
-        this.isApproved = isApproved;
+        this.IsPublic = isPublic;
+        this.IsApproved = isApproved;
         this.CreatedAt = CreatedAt;
         this.UpdatedAt = UpdatedAt;
         this.EventID = EventID;

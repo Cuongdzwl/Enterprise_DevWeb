@@ -34,8 +34,11 @@ filter(filter: Filter): Promise<any> {
 create(comment: Comment): Promise<any> {
     L.info(`create ${model} with id ${comment.ID}`);
     const createdComment = prisma.comments.create({
-        // TODO: FIX THIS
-        data: comment,
+        data: {
+            Content: comment.Content,
+            ContributionID: comment.ContributionID,
+            UserID: comment.UserID,
+        },
     });
     return Promise.resolve(createdComment);
 }
@@ -52,7 +55,11 @@ update(comment: Comment): Promise<any> {
     L.info(`update ${model} with id ${comment.ID}`);
     const updatedComment = prisma.comments.update({
         where: { ID: comment.ID },
-        data: comment,
+        data: {
+            Content: comment.Content,
+            ContributionID: comment.ContributionID,
+            UserID: comment.UserID,
+        },
     });
     return Promise.resolve(updatedComment);
 }

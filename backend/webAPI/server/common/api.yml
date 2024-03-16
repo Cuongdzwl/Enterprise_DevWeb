@@ -5,96 +5,174 @@ info:
   version: 1.0.0
 servers:
 - url: /api/v1
-tags:
-- name: Examples
-  description: Simple example endpoints
-- name: Specification
-  description: The swagger API specification
 paths:
-  /examples:
-    get:
-      tags:
-      - Examples
-      description: Fetch all examples
-      responses:
-        200:
-          description: Returns all examples
-          content: {}
-    post:
-      tags:
-      - Examples
-      description: Create a new example
-      requestBody:
-        description: an example
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ExampleBody'
-        required: true
-      responses:
-        200:
-          description: Returns all examples
-          content: {}
-  /examples/{id}:
-    get:
-      tags:
-      - Examples
-      parameters:
-      - name: id
-        in: path
-        description: The id of the example to retrieve
-        required: true
-        schema:
-          type: integer
-      responses:
-        200:
-          description: Return the example with the specified id
-          content: {}
-        404:
-          description: Example not found
-          content: {}
   /users:
     get:
       tags:
-      - Users
-      description: Fetch all examples
+        - Users
+      summary: Get all users
       responses:
-        200:
-          description: Returns all examples
-          content: {}
+        '200':
+          description: A list of users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
     post:
       tags:
-      - Users
-      description: Create a new example
+        - Users
+      summary: Create a new user
       requestBody:
-        description: an example
+        required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ExampleBody'
-        required: true
+              $ref: '#/components/schemas/User'
       responses:
-        200:
-          description: Returns all examples
-          content: {}
+        '201':
+          description: The created user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
   /users/{id}:
-    get:
-      tags:
-      - Users
-      parameters:
-      - name: id
-        in: path
-        description: The id of the example to retrieve
-        required: true
+    parameters:
+      - in: path
+        name: id
         schema:
           type: integer
+        required: true
+        description: User ID
+    get:
+      tags:
+        - Users
+      summary: Get a user by ID
       responses:
-        200:
-          description: Return the example with the specified id
-          content: {}
-        404:
-          description: Example not found
-          content: {}
+        '200':
+          description: A user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '404':
+          description: User not found
+    delete:
+      tags:
+        - Users
+      summary: Delete a user
+      responses:
+        '200':
+          description: The deleted user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '404':
+          description: User not found
+    put:
+      tags:
+        - Users
+      summary: Update a user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        '200':
+          description: The updated user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '404':
+          description: User not found
+  /events:
+    get:
+      tags:
+        - Events
+      summary: List all events
+      responses:
+        '200':
+          description: A list of events
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Event'
+    post:
+      tags:
+        - Events
+      summary: Create a new event
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Event'
+      responses:
+        '201':
+          description: New event created
+  /events/{id}:
+    get:
+      tags:
+        - Events
+      summary: Get an event by ID
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: An event object
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+        '404':
+          description: Event not found
+    put:
+      tags:
+        - Events
+      summary: Update an event
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Event'
+      responses:
+        '200':
+          description: Event updated
+        '404':
+          description: Event not found
+    delete:
+      tags:
+        - Events
+      summary: Delete an event
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Event deleted
+        '404':
+          description: Event not found
   /spec:
     get:
       tags:
@@ -105,12 +183,78 @@ paths:
           content: {}
 components:
   schemas:
-    ExampleBody:
-      title: example
+    Event:
+      type: object
       required:
-      - name
+        - Name
+        - Description
+        - ClosureDate
+        - FinalDate
+        - FacultyID
+      properties:
+        ID:
+          type: integer
+          format: int64
+          readOnly: true
+        Name:
+          type: string
+        Description:
+          type: string
+        ClosureDate:
+          type: string
+          format: date-time
+        FinalDate:
+          type: string
+          format: date-time
+        CreatedAt:
+          type: string
+          format: date-time
+          readOnly: true
+        UpdatedAt:
+          type: string
+          format: date-time
+          readOnly: true
+        FacultyID:
+          type: integer
+          format: int64
+    User:
       type: object
       properties:
-        name:
+        ID:
+          type: integer
+          format: int64
+        Name:
           type: string
-          example: no_stress
+        Password:
+          type: string
+        Salt:
+          type: string
+        Email:
+          type: string
+          format: email
+        Phone:
+          type: string
+          nullable: true
+        Address:
+          type: string
+          nullable: true
+        CreatedAt:
+          type: string
+          format: date-time
+        UpdatedAt:
+          type: string
+          format: date-time
+        RoleID:
+          type: integer
+          format: int64
+        FacultyID:
+          type: integer
+          format: int64
+      required:
+        - Name
+        - Password
+        - Email
+        - UpdatedAt
+        - RoleID
+        - FacultyID
+      title: User

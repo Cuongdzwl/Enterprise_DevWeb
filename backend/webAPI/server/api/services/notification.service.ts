@@ -31,14 +31,20 @@ export class NotificationService {
         return Promise.resolve(notifications);
     }
 
-    create(notification: Notification): Promise<any> {
-        L.info(`create ${model} with id ${notification.ID}`);
-        const createdNotification = prisma.notifications.create({
-            // TODO: FIX THIS
-            data: notification,
-        });
-        return Promise.resolve(createdNotification);
-    }
+    // create(notification: Notification): Promise<any> {
+    //     L.info(`create ${model} with id ${notification.ID}`);
+    //     const createdNotification = prisma.notifications.create({
+    //         // TODO: FIX THIS
+    //         data: {
+    //             ID: notification.ID,
+    //             Content: notification.Content,
+    //             NotificationSentType: 1,
+    //             SentAt: notification.SentAt,
+    //             SentTo: notification.SentTo,
+    //         },
+    //     });
+    //     return Promise.resolve(createdNotification);
+    // }
 
     delete(id: number): Promise<any> {
         L.info(`delete ${model} with id ${id}`);
@@ -48,14 +54,14 @@ export class NotificationService {
         return Promise.resolve(deletedNotification);
     }
 
-    update(notification: Notification): Promise<any> {
-        L.info(`update ${model} with id ${notification.ID}`);
-        const updatedNotification = prisma.notifications.update({
-            where: { ID: notification.ID },
-            data: notification,
-        });
-        return Promise.resolve(updatedNotification);
-    }
+    // update(notification: Notification): Promise<any> {
+    //     L.info(`update ${model} with id ${notification.ID}`);
+    //     const updatedNotification = prisma.notifications.update({
+    //         where: { ID: notification.ID },
+    //         data: notification,
+    //     });
+    //     return Promise.resolve(updatedNotification);
+    // }
 }
 
 export default new NotificationService();
