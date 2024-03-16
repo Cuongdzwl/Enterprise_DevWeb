@@ -3,64 +3,119 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlserver"
-  url      = env("DATABASE_URL")
-}
-
-
-model users {
-  ID        Int       @id @default(autoincrement())
-  Name      String
-  Password  String
-  Salt      String
-  Email     String   @unique
-  Phone     String?
-  Address   String?
-  CreatedAt DateTime @default(now())
-  UpdatedAt DateTime @updatedAt
-  RoleID    Int
-  FacultyID Int
+  provider          = "sqlserver"
+  url               = env("SHADOW_DATABASE_URL")
+  // shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
 }
 
 model roles {
-  ID        Int       @id @default(autoincrement())
-  Name      String
-  Description String
-
+  ID          Int     @id @default(autoincrement())
+  Name        String
+  Description String?
+  Users       users[]
 }
 
 model faculties {
-  ID        Int         @id @default(autoincrement())
+  ID             Int      @id @default(autoincrement())
+  Name           String
+  Description    String
+  IsEnabledGuest Boolean
+  CreatedAt      DateTime @default(now())
+  UpdatedAt      DateTime @updatedAt
+  Events         events[]
+  User           users[]
+}
+
+model users {
+  ID            Int             @id @default(autoincrement())
+  Name          String
+  Password      String
+  Salt          String
+  Email         String          @unique
+  Phone         String?
+  Address       String?
+  CreatedAt     DateTime        @default(now())
+  UpdatedAt     DateTime        @updatedAt
+  Role          roles           @relation(fields: [RoleID], references: [ID], onDelete: Cascade, onUpdate: NoAction)
+  RoleID        Int
+  Faculty       faculties?      @relation(fields: [FacultyID], references: [ID], onDelete: NoAction, onUpdate: NoAction)
+  FacultyID     Int
+  Comments      comments[]
+  Contributions contributions[]
 }
 
 model events {
-  ID        Int         @id  @default(autoincrement())
+  ID            Int             @id @default(autoincrement())
+  Name          String
+  Description   String
+  ClosureDate   DateTime
+  FinalDate     DateTime
+  CreatedAt     DateTime        @default(now())
+  UpdatedAt     DateTime        @updatedAt
+  Faculty       faculties       @relation(fields: [FacultyID], references: [ID], onDelete: Cascade, onUpdate: NoAction)
+  FacultyID     Int
+  Contributions contributions[]
 }
 
 model comments {
-  ID        Int         @id  @default(autoincrement())
+  ID             Int           @id @default(autoincrement())
+  Content        String
+  CreatedAt      DateTime      @default(now())
+  UpdatedAt      DateTime      @updatedAt
+  Contribution   contributions @relation(fields: [ContributionID], references: [ID], onDelete: Cascade, onUpdate: NoAction)
+  ContributionID Int
+  User           users         @relation(fields: [UserID], references: [ID], onDelete: NoAction, onUpdate: NoAction)
+  UserID         Int
 }
 
-model notifications{
-  ID        Int         @id  @default(autoincrement())
-
+model files {
+  ID             Int            @id @default(autoincrement())
+  Url            String
+  CreatedAt      DateTime       @default(now())
+  UpdatedAt      DateTime       @updatedAt
+  IsPublic       Boolean
+  Contribution   contributions? @relation(fields: [ContributionID], references: [ID])
+  ContributionID Int?
 }
 
-model files{
-  ID        Int         @id  @default(autoincrement())
+model contributions {
+  ID         Int                  @id @default(autoincrement())
+  Name       String
+  Content    String
+  IsPublic   Boolean
+  IsApproved Boolean
+  CreatedAt  DateTime             @default(now())
+  UpdatedAt  DateTime             @updatedAt
+  Event      events               @relation(fields: [EventID], references: [ID], onDelete: Cascade, onUpdate: NoAction)
+  EventID    Int
+  User       users                @relation(fields: [UserID], references: [ID], onDelete: Cascade, onUpdate: NoAction)
+  UserID     Int
+  StatusID   Int
+  Files      files[]
+  Status     contributionStatuses @relation(fields: [StatusID], references: [ID], onDelete: Cascade, onUpdate: NoAction)
+  Comments   comments[]
 }
 
-model contributions{
-  ID        Int       @id @default(autoincrement())
-  Name      String
-  Content   String
-  isPublic  Boolean
-  isApproved Boolean
-  CreatedAt DateTime  @default(now())
-  UpdatedAt DateTime  @updatedAt
-  EventID   Int
-  UserID    Int
-  StatusID  Int
+model contributionStatuses {
+  ID            Int             @id @default(autoincrement())
+  Name          String
+  Contributions contributions[]
+}
 
+model notificationSentTypes {
+  ID           Int             @id @default(autoincrement())
+  Name         String
+  Notification notifications[]
+}
 
+model notifications {
+  ID                     Int                   @id @default(autoincrement())
+  Content                String
+  NotificationSentType   notificationSentTypes @relation(fields: [NotificationSentTypeID], references: [ID], onDelete: Cascade, onUpdate: NoAction)
+  NotificationSentTypeID Int
+  SentAt                 DateTime              @default(now())
+  SentTo                 Int
+  FromID                 Int
+  FromTable              String
+  IsCancelled            Boolean
 }

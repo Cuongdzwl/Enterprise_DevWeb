@@ -18,5 +18,4 @@ export class Comment {
         this.ContributionID = ContributionID;
         this.UserID = UserID;
     }
-
 }

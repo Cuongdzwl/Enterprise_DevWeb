@@ -35,7 +35,15 @@ export class ContributionsService{
     L.info(`create ${model} with id ${contribution.ID}`);
     const createdContribution = prisma.contributions.create({
       // TODO: FIX THIS
-      data: contribution,
+      data: {
+        Name: contribution.Name,
+        Content: contribution.Content,
+        IsPublic: contribution.IsPublic,
+        IsApproved: contribution.IsApproved,
+        EventID: contribution.EventID,
+        UserID: contribution.UserID,
+        StatusID: contribution.StatusID,
+      },
     });
     return Promise.resolve(createdContribution);
   }
@@ -52,7 +60,15 @@ export class ContributionsService{
     L.info(`update ${model} with id ${contribution.ID}`);
     const updatedContribution = prisma.contributions.update({
       where: { ID: contribution.ID },
-      data: contribution,
+      data: {
+        Name: contribution.Name,
+        Content: contribution.Content,
+        IsPublic: contribution.IsPublic,
+        IsApproved: contribution.IsApproved,
+        EventID: contribution.EventID,
+        UserID: contribution.UserID,
+        StatusID: contribution.StatusID,
+      },
     });
     return Promise.resolve(updatedContribution);
   }

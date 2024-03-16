@@ -8,13 +8,12 @@ export class Faculty {
     CreatedAt: Date;
     UpdatedAt: Date;
 
-    constructor(ID: number, Name: string, Description: string, IsEnabledGuest: boolean, CreatedAt: Date, UpdatedAt: Date, ManagerID: number) {
+    constructor(ID: number, Name: string, Description: string, IsEnabledGuest: boolean, CreatedAt: Date, UpdatedAt: Date) {
         this.ID = ID;
         this.Name = Name;
         this.Description = Description;
         this.IsEnabledGuest = IsEnabledGuest;
         this.CreatedAt = CreatedAt;
         this.UpdatedAt = UpdatedAt;
-
     }
 }
