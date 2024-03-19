@@ -1,8 +1,8 @@
 import UserService from '../../services/users.service';
 import { Request, Response } from 'express';
-import { ISuper } from '../../interfaces/ISuper.interface';
+import { ISuperController } from '../../interfaces/ISuperController.interface';
 
-export class UsersController {
+export class UsersController implements ISuperController {
   async all(_: Request, res: Response): Promise<void> {
     const result = await UserService.all();
     res.json(result);

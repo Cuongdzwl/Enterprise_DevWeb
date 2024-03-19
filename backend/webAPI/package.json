@@ -14,6 +14,7 @@
     "test:debug": "mocha -r ts-node/register --inspect-brk test/**/*.ts --exit"
   },
   "dependencies": {
+    "@azure/storage-blob": "^12.17.0",
     "@prisma/client": "^5.10.2",
     "@types/adm-zip": "^0.5.5",
     "@types/multer": "^1.4.11",

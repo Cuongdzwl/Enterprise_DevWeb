@@ -1,12 +1,14 @@
 import L from '../../common/logger';
 import { PrismaClient } from '@prisma/client';
 import { User } from '../../models/User';
-import { Filter } from 'server/models/common/Filter';
+import { Filter } from '../common/filter';
+import { UserExceptionMessage } from '../common/exception';
+import { ISuperService } from '../interfaces/ISuperService.interface';
 
 const prisma = new PrismaClient();
 const model = 'user';
 
-export class UsersService {
+export class UsersService implements ISuperService<User> {
   all(): Promise<any> {
     const users = prisma.users.findMany();
     L.info(users, `fetch all ${model}(s)`);
@@ -34,6 +36,14 @@ export class UsersService {
   // Create
   create(user: User): Promise<any> {
     // TODO: VALIDATE CONSTRAINTss
+    if (!this.validateConstraints(user)) {
+      L.error(`create ${model} failed: invalid constraints`);
+      return Promise.resolve({
+        error: UserExceptionMessage.INVALID,
+        message: UserExceptionMessage.BAD_REQUEST,
+      });
+    }
+    //
     try {
       L.info(`create ${model} with id ${user.ID}`);
       const salt =
@@ -53,21 +63,39 @@ export class UsersService {
       });
       return Promise.resolve(createdUser);
     } catch (error) {
-      throw new Error(`create ${model} failed: ${error}`);
+      L.error(`create ${model} failed: ${error}`);
+      return Promise.resolve({
+        error: UserExceptionMessage.INVALID,
+        message: UserExceptionMessage.BAD_REQUEST,
+      });
     }
   }
   // Delete
   delete(id: number): Promise<any> {
-    L.info(`delete ${model} with id ${id}`);
-    const deletedUser = prisma.users.delete({
-      where: { ID: id },
-    });
-    return Promise.resolve(deletedUser);
+    try {
+      L.info(`delete ${model} with id ${id}`);
+      const deletedUser = prisma.users.delete({
+        where: { ID: id },
+      });
+      return Promise.resolve(deletedUser);
+    } catch (error) {
+      L.error(`delete ${model} failed: ${error}`);
+
+      return Promise.resolve({
+        error: UserExceptionMessage.INVALID,
+        message: UserExceptionMessage.BAD_REQUEST,
+      });
+    }
   }
   // Update
   update(id: number, user: User): Promise<any> {
-    // TODO: VALIDATE CONSTRAINTs
-
+    // Validate
+    if (!this.validateConstraints(user)) {
+      return Promise.resolve({
+        error: UserExceptionMessage.INVALID,
+        message: UserExceptionMessage.BAD_REQUEST,
+      });
+    }
     try {
       L.info(`update ${model} with id ${user.ID}`);
       const updatedUser = prisma.users.update({
@@ -84,8 +112,30 @@ export class UsersService {
       });
       return Promise.resolve(updatedUser);
     } catch (error) {
-      throw new Error(`create ${model} failed: ${error}`);
+      L.error(`update ${model} failed: ${error}`);
+      return Promise.resolve({
+        error: error.message,
+        message: UserExceptionMessage.BAD_REQUEST,
+      });
     }
+  }
+  private async validateConstraints(user: User): Promise<boolean> {
+    // TODO: VALIDATE CONSTRAINTss
+    L.info(`r ${model} failed: ${user.RoleID}`);
+    L.info(`f ${model} failed: ${user.FacultyID}`);
+    L.info(`R ${model} failed: ${prisma.roles.findUnique({ where: { ID: user.RoleID } })}`);
+    L.info(`F ${model} failed: ${prisma.faculties.findUnique({ where: { ID: user.FacultyID } })}`);
+    if (await prisma.roles.findUnique({ where: { ID: user.RoleID } }) === undefined) {
+      L.info(user.RoleID)
+      return false;
+    }
+    if (
+      await prisma.faculties.findUnique({ where: { ID: user.FacultyID } }) ===
+      undefined
+    ) {
+      return false;
+    }
+    return true;
   }
 }
 

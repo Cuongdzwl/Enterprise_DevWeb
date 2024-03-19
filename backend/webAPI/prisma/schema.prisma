@@ -3,8 +3,8 @@ generator client {
 }
 
 datasource db {
-  provider          = "sqlserver"
-  url               = env("SHADOW_DATABASE_URL")
+  provider = "sqlserver"
+  url      = env("SHADOW_DATABASE_URL")
   // shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
 }
 
@@ -19,9 +19,9 @@ model faculties {
   ID             Int      @id @default(autoincrement())
   Name           String
   Description    String
-  IsEnabledGuest Boolean
+  IsEnabledGuest Boolean  @default(false)
   CreatedAt      DateTime @default(now())
-  UpdatedAt      DateTime @updatedAt
+  UpdatedAt      DateTime @default(now()) @updatedAt
   Events         events[]
   User           users[]
 }
@@ -35,7 +35,7 @@ model users {
   Phone         String?
   Address       String?
   CreatedAt     DateTime        @default(now())
-  UpdatedAt     DateTime        @updatedAt
+  UpdatedAt     DateTime        @default(now()) @updatedAt
   Role          roles           @relation(fields: [RoleID], references: [ID], onDelete: Cascade, onUpdate: NoAction)
   RoleID        Int
   Faculty       faculties?      @relation(fields: [FacultyID], references: [ID], onDelete: NoAction, onUpdate: NoAction)
@@ -51,7 +51,7 @@ model events {
   ClosureDate   DateTime
   FinalDate     DateTime
   CreatedAt     DateTime        @default(now())
-  UpdatedAt     DateTime        @updatedAt
+  UpdatedAt     DateTime        @default(now()) @updatedAt
   Faculty       faculties       @relation(fields: [FacultyID], references: [ID], onDelete: Cascade, onUpdate: NoAction)
   FacultyID     Int
   Contributions contributions[]
@@ -61,7 +61,7 @@ model comments {
   ID             Int           @id @default(autoincrement())
   Content        String
   CreatedAt      DateTime      @default(now())
-  UpdatedAt      DateTime      @updatedAt
+  UpdatedAt      DateTime      @default(now()) @updatedAt
   Contribution   contributions @relation(fields: [ContributionID], references: [ID], onDelete: Cascade, onUpdate: NoAction)
   ContributionID Int
   User           users         @relation(fields: [UserID], references: [ID], onDelete: NoAction, onUpdate: NoAction)
@@ -71,21 +71,20 @@ model comments {
 model files {
   ID             Int            @id @default(autoincrement())
   Url            String
-  CreatedAt      DateTime       @default(now())
-  UpdatedAt      DateTime       @updatedAt
-  IsPublic       Boolean
-  Contribution   contributions? @relation(fields: [ContributionID], references: [ID])
-  ContributionID Int?
+  CreatedAt      DateTime?       @default(now())
+  UpdatedAt      DateTime?       @default(now()) @updatedAt
+  Contribution   contributions? @relation(fields: [ContributionID], references: [ID], onDelete: NoAction, onUpdate: NoAction)
+  ContributionID Int
 }
 
 model contributions {
   ID         Int                  @id @default(autoincrement())
   Name       String
   Content    String
-  IsPublic   Boolean
-  IsApproved Boolean
+  IsPublic   Boolean              @default(false)
+  IsApproved Boolean              @default(false)
   CreatedAt  DateTime             @default(now())
-  UpdatedAt  DateTime             @updatedAt
+  UpdatedAt  DateTime             @default(now()) @updatedAt
   Event      events               @relation(fields: [EventID], references: [ID], onDelete: Cascade, onUpdate: NoAction)
   EventID    Int
   User       users                @relation(fields: [UserID], references: [ID], onDelete: Cascade, onUpdate: NoAction)

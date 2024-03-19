@@ -6,6 +6,7 @@ export class Notification {
     NotificationSentType: number;
     SentAt: Date;
     SentTo: number;
+    
 
     constructor(ID: number, Content: string, NotificationSentType: NotificationSentType, SentAt: Date, SentTo: number) {
         this.ID = ID;

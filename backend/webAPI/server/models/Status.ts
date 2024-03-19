@@ -1,5 +1,5 @@
 export enum Status{
-    Pending = 0,
-    Decline = 1,
-    Accept = 2,
+    PENDING = 0,
+    DECLINED = 1,
+    ACCEPTED = 2,
 }

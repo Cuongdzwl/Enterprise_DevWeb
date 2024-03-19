@@ -1,50 +1,51 @@
-import { Event } from 'server/models/Event';
-import { PrismaClient } from '@prisma/client';
-import { events } from '@prisma/client';
+// import { Event } from 'server/models/Event';
+// import { PrismaClient } from '@prisma/client';
+// import { events } from '@prisma/client';
+// import { ISuperService } from '../interfaces/ISuperService.interface';
 
-const prisma = new PrismaClient();
-const model = 'event';
-export class EventsService {
+// const prisma = new PrismaClient();
+// const model = 'event';
+// export class EventsService implements ISuperService<Event>{
 
-  async create(Name: string, Description: string, ClosureDate: Date, FinalDate: Date, FacultyID: number): Promise<events> {
-    return prisma.events.create({
-      data: {
-        Name: Name,
-        Description : Description,
-        ClosureDate : ClosureDate,
-        FinalDate : FinalDate,
-        FacultyID : FacultyID,
-      },
-    });
-  }
+//   async create(Name: string, Description: string, ClosureDate: Date, FinalDate: Date, FacultyID: number): Promise<events> {
+//     return prisma.events.create({
+//       data: {
+//         Name: Name,
+//         Description : Description,
+//         ClosureDate : ClosureDate,
+//         FinalDate : FinalDate,
+//         FacultyID : FacultyID,
+//       },
+//     });
+//   }
 
-  async all(): Promise<events[]> {
-    return prisma.events.findMany();
-  }
+//   async all(): Promise<events[]> {
+//     return prisma.events.findMany();
+//   }
 
-  async byId(ID: number): Promise<events | null> {
-    return prisma.events.findUnique({
-      where: { ID },
-    });
-  }
-  async update(ID: number ,Name: string, Description: string, ClosureDate: Date, FinalDate: Date, FacultyID: number): Promise<events> {
-    return prisma.events.update({
-      where: { ID: ID },
-      data: {
-        Name: Name,
-        Description : Description,
-        ClosureDate : ClosureDate,
-        FinalDate : FinalDate,
-        FacultyID : FacultyID,
-      },
-    });
-  }
+//   async byId(ID: number): Promise<events | null> {
+//     return prisma.events.findUnique({
+//       where: { ID },
+//     });
+//   }
+//   async update(ID: number ,Name: string, Description: string, ClosureDate: Date, FinalDate: Date, FacultyID: number): Promise<events> {
+//     return prisma.events.update({
+//       where: { ID: ID },
+//       data: {
+//         Name: Name,
+//         Description : Description,
+//         ClosureDate : ClosureDate,
+//         FinalDate : FinalDate,
+//         FacultyID : FacultyID,
+//       },
+//     });
+//   }
 
-  async delete(ID : number) {
-    return prisma.events.delete({
-      where: { ID: ID },
-    });
-  }
-}
+//   async delete(ID : number) {
+//     return prisma.events.delete({
+//       where: { ID: ID },
+//     });
+//   }
+// }
 
-export default new EventsService();
+// export default new EventsService();
