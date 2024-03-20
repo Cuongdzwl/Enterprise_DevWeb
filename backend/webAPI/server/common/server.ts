@@ -7,7 +7,7 @@ import cookieParser from 'cookie-parser';
 import l from './logger';
 import cors from 'cors';
 import passportJWT from 'passport-jwt';
-import passport from 'passport';
+import passport from 'passport'
 import jwt from 'jsonwebtoken';
 
 import errorHandler from '../api/middlewares/error.handler';

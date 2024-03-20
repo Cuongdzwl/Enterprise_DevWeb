@@ -9,9 +9,16 @@ import L from '../../../common/logger';
 const prisma = new PrismaClient();
 export class UsersController implements ISuperController {
   async all(req: Request, res: Response): Promise<void> {
-    const depth = Number.parseInt(req.query.depth?.toString() ?? '');
-    const users = await UsersService.all(depth);
-    res.status(200).json(users);
+    if (req.query.search as string) {
+      const users = await UsersService.search(
+        req.query.search as string,
+        req.query.keyword as string
+      );
+      res.status(200).json(users);
+      return;
+    }
+    const result = await UsersService.all();
+    res.json(result);
   }
 
   async byId(req: Request, res: Response): Promise<void> {
@@ -27,7 +34,7 @@ export class UsersController implements ISuperController {
           res.status(404).end();
         }
       });
-    } catch (error) {
+    } catch (error) { 
       res.status(400).json({ error: error.message }).end();
     }
   }
@@ -88,7 +95,7 @@ export class UsersController implements ISuperController {
   profile(_: Request, res: Response): void {
     res.status(201).json(res.locals.user.user.userID).end();
   }
-  async updateProfile(req: Request, res: Response): void {
+  async updateProfile(req: Request, res: Response): Promise <void> {
     const id = Number.parseInt(res.locals.user.user.userID);
     try {
       await UsersService.update(id, req.body).then((r) => {
