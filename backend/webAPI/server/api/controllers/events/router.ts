@@ -4,7 +4,7 @@
 //   .Router()
 //   .post('/', controller.create)
 //   .get('/', controller.all)
-//   .get('/:id', controller.byId)
+//   .get('/:id', controller.byId)A
 //   .delete('/:id', controller.delete)
 //   .put('/:id', controller.update);
 

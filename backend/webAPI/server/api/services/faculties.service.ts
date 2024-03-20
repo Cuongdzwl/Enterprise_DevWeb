@@ -3,7 +3,7 @@ import L from '../../common/logger';
 import { PrismaClient } from '@prisma/client';
 import { ISuperService } from '../interfaces/ISuperService.interface';
 import { Filter } from '../common/filter';
-import { ExceptionMessage } from '../common/exception';
+import { ExceptionMessage, FacultyExceptionMessage } from '../common/exception';
 import l from '../../common/logger';
 
 const prisma = new PrismaClient();
@@ -95,12 +95,26 @@ export class FacultiesService implements ISuperService<Faculty> {
       });
     }
   }
-  private validateConstraints(faculty: Faculty): boolean {
-    if (!faculty.Name) {
-      return false;
+  private async validateConstraints(faculty: Faculty): Promise<{isValid: boolean, error?: string, message?: string}> {
+    // Validate Name
+    if (!faculty.Name || !/^[A-Za-z\s]{1,15}$/.test(faculty.Name)) {
+        return { isValid: false, error: FacultyExceptionMessage.INVALID, message: "Faculty name is invalid, cannot contain numbers or special characters, and must have a maximum of 15 characters." };
     }
-    return true;
-  }
+
+    // Validate Description
+    if (!faculty.Description || faculty.Description.length > 3000) {
+        return { isValid: false, error: FacultyExceptionMessage.INVALID, message: "Faculty description is invalid or too long, with a maximum of 3000 characters." };
+    }
+
+    // Validate IsEnabledGuest
+    if (typeof faculty.IsEnabledGuest !== 'boolean') {
+        return { isValid: false, error: FacultyExceptionMessage.INVALID, message: "IsEnabledGuest must be a boolean value." };
+    }
+
+    // If all validations pass
+    return { isValid: true };
+}
+
 }
 
 export default new FacultiesService();

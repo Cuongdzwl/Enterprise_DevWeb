@@ -15,9 +15,9 @@ CREATE TABLE [dbo].[faculties] (
     [ID] INT NOT NULL IDENTITY(1,1),
     [Name] NVARCHAR(1000) NOT NULL,
     [Description] NVARCHAR(1000) NOT NULL,
-    [IsEnabledGuest] BIT NOT NULL,
+    [IsEnabledGuest] BIT NOT NULL CONSTRAINT [faculties_IsEnabledGuest_df] DEFAULT 0,
     [CreatedAt] DATETIME2 NOT NULL CONSTRAINT [faculties_CreatedAt_df] DEFAULT CURRENT_TIMESTAMP,
-    [UpdatedAt] DATETIME2 NOT NULL,
+    [UpdatedAt] DATETIME2 NOT NULL CONSTRAINT [faculties_UpdatedAt_df] DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT [faculties_pkey] PRIMARY KEY CLUSTERED ([ID])
 );
 
@@ -31,7 +31,7 @@ CREATE TABLE [dbo].[users] (
     [Phone] NVARCHAR(1000),
     [Address] NVARCHAR(1000),
     [CreatedAt] DATETIME2 NOT NULL CONSTRAINT [users_CreatedAt_df] DEFAULT CURRENT_TIMESTAMP,
-    [UpdatedAt] DATETIME2 NOT NULL,
+    [UpdatedAt] DATETIME2 NOT NULL CONSTRAINT [users_UpdatedAt_df] DEFAULT CURRENT_TIMESTAMP,
     [RoleID] INT NOT NULL,
     [FacultyID] INT NOT NULL,
     CONSTRAINT [users_pkey] PRIMARY KEY CLUSTERED ([ID]),
@@ -46,7 +46,7 @@ CREATE TABLE [dbo].[events] (
     [ClosureDate] DATETIME2 NOT NULL,
     [FinalDate] DATETIME2 NOT NULL,
     [CreatedAt] DATETIME2 NOT NULL CONSTRAINT [events_CreatedAt_df] DEFAULT CURRENT_TIMESTAMP,
-    [UpdatedAt] DATETIME2 NOT NULL,
+    [UpdatedAt] DATETIME2 NOT NULL CONSTRAINT [events_UpdatedAt_df] DEFAULT CURRENT_TIMESTAMP,
     [FacultyID] INT NOT NULL,
     CONSTRAINT [events_pkey] PRIMARY KEY CLUSTERED ([ID])
 );
@@ -56,7 +56,7 @@ CREATE TABLE [dbo].[comments] (
     [ID] INT NOT NULL IDENTITY(1,1),
     [Content] NVARCHAR(1000) NOT NULL,
     [CreatedAt] DATETIME2 NOT NULL CONSTRAINT [comments_CreatedAt_df] DEFAULT CURRENT_TIMESTAMP,
-    [UpdatedAt] DATETIME2 NOT NULL,
+    [UpdatedAt] DATETIME2 NOT NULL CONSTRAINT [comments_UpdatedAt_df] DEFAULT CURRENT_TIMESTAMP,
     [ContributionID] INT NOT NULL,
     [UserID] INT NOT NULL,
     CONSTRAINT [comments_pkey] PRIMARY KEY CLUSTERED ([ID])
@@ -66,10 +66,9 @@ CREATE TABLE [dbo].[comments] (
 CREATE TABLE [dbo].[files] (
     [ID] INT NOT NULL IDENTITY(1,1),
     [Url] NVARCHAR(1000) NOT NULL,
-    [CreatedAt] DATETIME2 NOT NULL CONSTRAINT [files_CreatedAt_df] DEFAULT CURRENT_TIMESTAMP,
-    [UpdatedAt] DATETIME2 NOT NULL,
-    [IsPublic] BIT NOT NULL,
-    [ContributionID] INT,
+    [CreatedAt] DATETIME2 CONSTRAINT [files_CreatedAt_df] DEFAULT CURRENT_TIMESTAMP,
+    [UpdatedAt] DATETIME2 CONSTRAINT [files_UpdatedAt_df] DEFAULT CURRENT_TIMESTAMP,
+    [ContributionID] INT NOT NULL,
     CONSTRAINT [files_pkey] PRIMARY KEY CLUSTERED ([ID])
 );
 
@@ -78,10 +77,10 @@ CREATE TABLE [dbo].[contributions] (
     [ID] INT NOT NULL IDENTITY(1,1),
     [Name] NVARCHAR(1000) NOT NULL,
     [Content] NVARCHAR(1000) NOT NULL,
-    [IsPublic] BIT NOT NULL,
-    [IsApproved] BIT NOT NULL,
+    [IsPublic] BIT NOT NULL CONSTRAINT [contributions_IsPublic_df] DEFAULT 0,
+    [IsApproved] BIT NOT NULL CONSTRAINT [contributions_IsApproved_df] DEFAULT 0,
     [CreatedAt] DATETIME2 NOT NULL CONSTRAINT [contributions_CreatedAt_df] DEFAULT CURRENT_TIMESTAMP,
-    [UpdatedAt] DATETIME2 NOT NULL,
+    [UpdatedAt] DATETIME2 NOT NULL CONSTRAINT [contributions_UpdatedAt_df] DEFAULT CURRENT_TIMESTAMP,
     [EventID] INT NOT NULL,
     [UserID] INT NOT NULL,
     [StatusID] INT NOT NULL,
@@ -131,7 +130,7 @@ ALTER TABLE [dbo].[comments] ADD CONSTRAINT [comments_ContributionID_fkey] FOREI
 ALTER TABLE [dbo].[comments] ADD CONSTRAINT [comments_UserID_fkey] FOREIGN KEY ([UserID]) REFERENCES [dbo].[users]([ID]) ON DELETE NO ACTION ON UPDATE NO ACTION;
 
 -- AddForeignKey
-ALTER TABLE [dbo].[files] ADD CONSTRAINT [files_ContributionID_fkey] FOREIGN KEY ([ContributionID]) REFERENCES [dbo].[contributions]([ID]) ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE [dbo].[files] ADD CONSTRAINT [files_ContributionID_fkey] FOREIGN KEY ([ContributionID]) REFERENCES [dbo].[contributions]([ID]) ON DELETE NO ACTION ON UPDATE NO ACTION;
 
 -- AddForeignKey
 ALTER TABLE [dbo].[contributions] ADD CONSTRAINT [contributions_EventID_fkey] FOREIGN KEY ([EventID]) REFERENCES [dbo].[events]([ID]) ON DELETE CASCADE ON UPDATE NO ACTION;

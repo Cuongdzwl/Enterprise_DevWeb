@@ -119,6 +119,10 @@ paths:
       responses:
         '201':
           description: New event created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
   /events/{id}:
     get:
       tags:

@@ -12,3 +12,11 @@ export class UserExceptionMessage extends ExceptionMessage{
 export class FacultyExceptionMessage extends ExceptionMessage{
     public static readonly INCORRECT_PASSWORD: string = "Password incorrect";
 }
+export class EventExceptionMessage extends ExceptionMessage{
+    public static readonly INVALID_FACULTYID: string = "Invalid Faculty ID";
+}
+
+export class FileExceptionMessage extends ExceptionMessage{
+    public static readonly INVALID_CONTRIBUTIONID: string = "Invalid Role ID";
+}
+

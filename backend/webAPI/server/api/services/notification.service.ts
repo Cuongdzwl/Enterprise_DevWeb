@@ -48,7 +48,13 @@ export class NotificationService implements ISuperService<Notification> {
       L.info(`create ${model} with id ${notification.ID}`);
       const createdNotification = prisma.notifications.create({
         data: {
-            
+            Content: notification.Content,
+            SentAt: notification.SentAt,
+            SentTo: notification.SentTo,
+            IsCancelled: notification.IsCancelled,
+            NotificationSentTypeID: notification.NotificationSentType,
+            FromID: notification.FromID,
+            FromTable: notification.FromTable
         },
       });
       return Promise.resolve(createdNotification);
@@ -89,7 +95,15 @@ export class NotificationService implements ISuperService<Notification> {
       L.info(`update ${model} with id ${notification.ID}`);
       const updatedNotification = prisma.notifications.update({
         where: { ID: id },
-        data: {},
+        data: {
+          Content: notification.Content,
+            SentAt: notification.SentAt,
+            SentTo: notification.SentTo,
+            IsCancelled: notification.IsCancelled,
+            NotificationSentTypeID: notification.NotificationSentType,
+            FromID: notification.FromID,
+            FromTable: notification.FromTable
+        },
       });
       return Promise.resolve(updatedNotification);
     } catch (error) {
