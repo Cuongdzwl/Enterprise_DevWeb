@@ -1,9 +1,8 @@
-import { Event } from 'server/models/Event';
+import { Event } from '../models/Event';
 import L from '../../common/logger';
 import { EventExceptionMessage} from '../common/exception';
 import { PrismaClient } from '@prisma/client';
 import { ISuperService } from '../interfaces/ISuperService.interface';
-import { Filter } from '../common/filter';
 import { error } from 'console';
 
 const prisma = new PrismaClient();
@@ -24,7 +23,7 @@ export class EventsService implements ISuperService<Event>{
     L.info(`fetch ${model} with id ${id}`)
     return Promise.resolve(event);;
   }
-  filter(filter: Filter, key: string): Promise<any>  {
+  filter(filter: string, key: string): Promise<any>  {
     const events = prisma.events.findMany({
         where: {
           [filter]: key,

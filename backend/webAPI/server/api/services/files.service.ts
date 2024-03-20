@@ -1,7 +1,6 @@
 import L from '../../common/logger';
 import { PrismaClient } from '@prisma/client';
-import { File } from '../../models/File';
-import { Filter } from '../common/filter';
+import { File } from '../models/File';
 import { EventExceptionMessage, ExceptionMessage, FileExceptionMessage } from '../common/exception';
 import { ISuperService } from '../interfaces/ISuperService.interface';
 
@@ -111,11 +110,6 @@ export class FilesService implements ISuperService<File> {
     // Validate URL
     if (!file.Url || file.Url.length > 3000) {
         return { isValid: false, error: FileExceptionMessage.INVALID, message: "File URL is invalid or too long, with a maximum of 3000 characters." };
-    }
-
-    // Validate IsPublic
-    if (typeof file.isPublic !== 'boolean') {
-        return { isValid: false, error: FileExceptionMessage.INVALID, message: "IsPublic must be a boolean value." };
     }
 
     // Validate ContributionID

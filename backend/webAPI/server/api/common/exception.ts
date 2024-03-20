@@ -17,6 +17,10 @@ export class EventExceptionMessage extends ExceptionMessage{
 }
 
 export class FileExceptionMessage extends ExceptionMessage{
-    public static readonly INVALID_CONTRIBUTIONID: string = "Invalid Role ID";
+    public static readonly INVALID_CONTRIBUTIONID: string = "Invalid File ID";
+}
+
+export class NotificationExceptionMessage extends ExceptionMessage{
+    public static readonly INVALID_NOTIFICATIONID: string = "Invalid Notification ID";
 }
 
