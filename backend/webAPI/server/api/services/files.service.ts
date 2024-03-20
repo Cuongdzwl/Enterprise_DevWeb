@@ -1,7 +1,7 @@
 import L from '../../common/logger';
 import { PrismaClient } from '@prisma/client';
 import { File } from '../models/File';
-import { ExceptionMessage } from '../common/exception';
+import { EventExceptionMessage, ExceptionMessage, FileExceptionMessage } from '../common/exception';
 import { ISuperService } from '../interfaces/ISuperService.interface';
 
 const prisma = new PrismaClient();
@@ -33,15 +33,16 @@ export class FilesService implements ISuperService<File> {
   }
 
   // Create
-  create(file: File): Promise<any> {
+  async create(file: File): Promise<any> {
     // TODO: VALIDATE CONSTRAINTss
-    if (!this.validateConstraints(file)) {
-      return Promise.resolve({
-        error: ExceptionMessage.INVALID,
-        message: ExceptionMessage.BAD_REQUEST,
-      });
+    const validations = await this.validateConstraints(file)
+    if(!validations.isValid){
+      L.error(`create ${model} failed: invalid constraints`);
+    return Promise.resolve({
+      error: validations.error,
+      message: validations.message,
+    });
     }
-    //
     try {
       // Validate Constraint
       L.info(`create ${model} with id ${file.ID}`);
@@ -77,13 +78,15 @@ export class FilesService implements ISuperService<File> {
     }
   }
   // Update
-  update(id: number, file: File): Promise<any> {
+  async update(id: number, file: File): Promise<any> {
     // Validate
-    if (!this.validateConstraints(file)) {
-      return Promise.resolve({
-        error: ExceptionMessage.INVALID,
-        message: ExceptionMessage.BAD_REQUEST,
-      });
+    const validations = await this.validateConstraints(file)
+    if(!validations.isValid){
+      L.error(`update ${model} failed: invalid constraints`);
+    return Promise.resolve({
+      error: validations.error,
+      message: validations.message,
+    });
     }
     try {
       L.info(`update ${model} with id ${file.ID}`);
@@ -103,10 +106,21 @@ export class FilesService implements ISuperService<File> {
       });
     }
   }
-  private validateConstraints(_: File): boolean {
-    // TODO: VALIDATE CONSTRAINTss
-    return true;
-  }
+  private async validateConstraints(file: File): Promise<{isValid: boolean, error?: string, message?: string}> {
+    // Validate URL
+    if (!file.Url || file.Url.length > 3000) {
+        return { isValid: false, error: FileExceptionMessage.INVALID, message: "File URL is invalid or too long, with a maximum of 3000 characters." };
+    }
+
+    // Validate ContributionID
+    if (!/^\d{1,20}$/.test(file.ContributionID.toString())) {
+        return { isValid: false, error: FileExceptionMessage.INVALID_CONTRIBUTIONID, message: "Invalid Contribution ID format." };
+    }
+
+    // If all validations pass
+    return { isValid: true };
+}
+
 }
 
 export default new FilesService();
