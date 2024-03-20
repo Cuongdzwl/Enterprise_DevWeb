@@ -1,64 +1,58 @@
+import EventsService from '../../services/events.service';
 import { Request, Response } from 'express';
-import EventService from '../../services/events.service';
-import { ISuperController } from 'server/api/interfaces/ISuperController.interface';
+import { ISuperController } from '../../interfaces/ISuperController.interface';
 
 export class EventsController implements ISuperController {
-   create(req: Request, res: Response): void {
-    try {
-      const event =  EventService.create(req.body);
-      res.status(201).json(event);
-    } catch (error) {
-      console.error('Error creating event:', error);
-      res.status(500).json({ error: 'Failed to create event' });
+    async all(_: Request, res: Response): Promise<void> {
+        const result = await EventsService.all();
+        res.json(result);
     }
-  }
 
-  async all(_: Request, res: Response): Promise<void> {
-    try {
-      const events = await EventService.all();
-      res.json(events);
-    } catch (error) {
-      console.error('Error getting events:', error);
-      res.status(500).json({ error: 'Failed to get events' });
+    byId(req: Request, res: Response): void {
+        const id = Number.parseInt(req.params['id']);
+        try {
+            EventsService.byId(id).then((r) => {
+                if (r) res.json(r);
+                else res.status(404).end();
+            });
+        } catch (error) {
+            res.status(400).json({ error: error.message }).end();
+        }
     }
-  }
 
-  async byId(req: Request, res: Response): Promise<void> {
-    try {
-      const eventId = Number(req.params.id);
-      const event = await EventService.byId(eventId);
-      if (event) {
-        res.json(event);
-      } else {
-        res.status(404).json({ error: 'Event not found' });
-      }
-    } catch (error) {
-      console.error('Error getting event by ID:', error);
-      res.status(500).json({ error: 'Failed to get event' });
+    create(req: Request, res: Response): void {
+        try {
+            EventsService.create(req.body).then((r) =>
+                res.status(201).location(`/api/v1/events/${r.id}`).json(r)
+            );
+        } catch (error) {
+            res.status(400).json({ error: error.message }).end();
+        }
     }
-  }
-  async update(req:Request, res:Response) {
-    try {
-   
-      const eventId = Number(req.params.id);
-      const event = await EventService.update(eventId ,req.body);
-      res.json(event);
-    } catch (error) {
-      console.error('Error updating event:', error);
-      res.status(500).json({ error: 'Failed to update event' });
-    }
-  }
 
-  async delete(req:Request, res:Response) {
-    try {
-      const eventId = Number(req.params.id);
-      await EventService.delete(eventId);
-      res.status(204).send();
-    } catch (error) {
-      console.error('Error deleting event:', error);
-      res.status(500).json({ error: 'Failed to delete event' });
+    delete(req: Request, res: Response): void {
+        const id = Number.parseInt(req.params['id']);
+        try {
+            EventsService.delete(id).then((r) => {
+                if (r) res.json(r);
+                else res.status(404).end();
+            });
+        } catch (error) {
+            res.status(400).json({ error: error.message }).end();
+        }
     }
-  }
+
+    update(req: Request, res: Response): void {
+        const id = Number.parseInt(req.params['id']);
+        try {
+            EventsService.update(id, req.body).then((r) => {
+                if (r) res.json(r);
+                else res.status(404).end();
+            });
+        } catch (error) {
+            res.status(400).json({ error: error.message }).end();
+        }
+    }
 }
 
 export default new EventsController();

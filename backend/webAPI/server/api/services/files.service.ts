@@ -23,7 +23,7 @@ export class FilesService implements ISuperService<File> {
     return Promise.resolve(file);
   }
 
-  filter(filter: Filter, key: string): Promise<any> {
+  filter(filter: string, key: string): Promise<any> {
     const files = prisma.files.findMany({
       where: {
         [filter]: key,

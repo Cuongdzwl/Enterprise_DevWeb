@@ -1,5 +1,5 @@
-import { Status } from './../../models/Status';
-import { Contribution } from './../../models/Contribution';
+import { Status } from '../models/Status';
+import { Contribution } from '../models/Contribution';
 import L from '../../common/logger';
 import { PrismaClient } from '@prisma/client';
 import { ExceptionMessage } from '../common/exception';

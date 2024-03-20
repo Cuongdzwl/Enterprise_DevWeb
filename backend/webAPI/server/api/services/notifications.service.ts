@@ -1,12 +1,11 @@
-import { Notification } from 'server/models/Notification';
+import { Notification } from 'server/api/models/Notification';
 import L from '../../common/logger';
 import { PrismaClient } from '@prisma/client';
-import { ExceptionMessage } from '../common/exception';
-import { Filter } from '../common/filter';
+import { ExceptionMessage, NotificationExceptionMessage } from '../common/exception';
 import { ISuperService } from '../interfaces/ISuperService.interface';
 
 const prisma = new PrismaClient();
-const model = 'notification';
+const model = 'notifications';
 
 export class NotificationService implements ISuperService<Notification> {
   all(): Promise<any> {
@@ -23,10 +22,21 @@ export class NotificationService implements ISuperService<Notification> {
     return Promise.resolve(notification);
   }
 
-  filter(filter: Filter, key: string): Promise<any> {
+  search(field: string, key: string): Promise<any> {
     const notifications = prisma.notifications.findMany({
       where: {
-        [filter]: key,
+        [field]: {
+          contains: key,
+        },
+      },
+    });
+    L.info(notifications, `fetch all ${model}(s)`);
+    return Promise.resolve(notifications);
+  }
+  filter(field: string, key: string): Promise<any> {
+    const notifications = prisma.notifications.findMany({
+      where: {
+        [field]: key,
       },
     });
     L.info(notifications, `fetch all ${model}(s)`);
@@ -48,13 +58,12 @@ export class NotificationService implements ISuperService<Notification> {
       L.info(`create ${model} with id ${notification.ID}`);
       const createdNotification = prisma.notifications.create({
         data: {
-            Content: notification.Content,
-            SentAt: notification.SentAt,
-            SentTo: notification.SentTo,
-            IsCancelled: notification.IsCancelled,
-            NotificationSentTypeID: notification.NotificationSentType,
-            FromID: notification.FromID,
-            FromTable: notification.FromTable
+          Content: notification.Content,
+          SentTo: notification.SentTo,
+          FromID: 0,
+          FromTable: 'default',
+          IsCancelled: false,
+          NotificationSentTypeID: notification.NotificationSentType as number,
         },
       });
       return Promise.resolve(createdNotification);
@@ -95,15 +104,7 @@ export class NotificationService implements ISuperService<Notification> {
       L.info(`update ${model} with id ${notification.ID}`);
       const updatedNotification = prisma.notifications.update({
         where: { ID: id },
-        data: {
-          Content: notification.Content,
-            SentAt: notification.SentAt,
-            SentTo: notification.SentTo,
-            IsCancelled: notification.IsCancelled,
-            NotificationSentTypeID: notification.NotificationSentType,
-            FromID: notification.FromID,
-            FromTable: notification.FromTable
-        },
+        data: {},
       });
       return Promise.resolve(updatedNotification);
     } catch (error) {
@@ -114,8 +115,27 @@ export class NotificationService implements ISuperService<Notification> {
       });
     }
   }
-  private validateConstraints(notification: Notification): boolean {
-    return true;
+  private async validateConstraints(notification: Notification): Promise<{isValid: boolean, error?: string, message?: string}> {
+     // Validate Content
+     if (!notification.Content || notification.Content.length > 1000) {
+      return { isValid: false, error: NotificationExceptionMessage.INVALID, message: "Notification content is invalid or too long, with a maximum of 1000 characters." };
+  }
+
+  // Validate SendAt
+  if (!notification.SentAt || new Date(notification.SentAt) < new Date()) {
+      return { isValid: false, error: NotificationExceptionMessage.INVALID, message: "SendAt must be set to a time in the future." };
+  }
+
+  // Validate SendTo
+  if (!notification.SentTo) {
+      return { isValid: false, error: NotificationExceptionMessage.INVALID_NOTIFICATIONID, message: "SendTo cannot be empty." };
+  }
+  if (!notification.FromTable || !/^[A-Za-z\s]{1,30}$/.test(notification.FromTable)) {
+    return { isValid: false, error: NotificationExceptionMessage.INVALID_NOTIFICATIONID, message: "FromTable is invalid, must not contain special characters, and have a maximum of 30 characters." };
+}
+
+// If all validations pass
+return { isValid: true };
   }
 }
 

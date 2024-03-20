@@ -1,8 +1,7 @@
-import { Faculty } from './../../models/Faculty';
+import { Faculty } from '../models/Faculty';
 import L from '../../common/logger';
 import { PrismaClient } from '@prisma/client';
 import { ISuperService } from '../interfaces/ISuperService.interface';
-import { Filter } from '../common/filter';
 import { ExceptionMessage, FacultyExceptionMessage } from '../common/exception';
 import l from '../../common/logger';
 
@@ -24,7 +23,7 @@ export class FacultiesService implements ISuperService<Faculty> {
     return Promise.resolve(faculty);
   }
 
-  filter(filter: Filter, key: string): Promise<any> {
+  filter(filter: string, key: string): Promise<any> {
     const faculties = prisma.faculties.findMany({
       where: {
         [filter]: key,

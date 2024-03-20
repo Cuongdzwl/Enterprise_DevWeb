@@ -6,5 +6,4 @@ export default express
   .get('/', controller.all)
   .get('/:id', controller.byId)
   .delete('/:id', controller.delete)
-  .put('/:id', controller.update);
-
+  .put('/:id', controller.update)

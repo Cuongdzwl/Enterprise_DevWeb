@@ -10,7 +10,8 @@ export class Comment {
     UserID: number;
 
     User?: User;
-    Contribution: Contribution;
+    Contribution?: Contribution;
+    
 
     constructor(ID: number, Content: string, ContributionID: number, UserID: number) {
         this.ID = ID;

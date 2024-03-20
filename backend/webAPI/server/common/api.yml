@@ -8,11 +8,68 @@ servers:
 # security:
 #   - bearerAuth: []
 paths:
+  /auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: Login
+      responses:
+        '200':
+          description: Login successful
+  /auth/logout:
+    post:
+      tags:
+        - Authentication
+      summary: Logout
+      responses:
+        '501':
+          description: Method not implemented
+  /auth/user:
+    get:
+      tags:
+        - Authentication
+      summary: Get user info
+      responses:
+        '501':
+          description: Method not implemented
+  /auth/forgotPassword:
+    post:
+      tags:
+        - Authentication
+      summary: Forgot password
+      responses:
+        '200':
+          description: A list of users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+  /auth/verifyOTP:
+    post:
+      tags:
+        - Authentication
+      summary: Verify OTP
+      responses:
+        '501':
+          description: Method not implemented
   /users:
     get:
       tags:
         - Users
       summary: Get all users
+      parameters:
+        - in: query
+          name: search
+          schema:
+            type: string
+          description: Search parameter
+        - in: query
+          name: keyword
+          schema:
+            type: string
+          description: Keyword parameter
       responses:
         '200':
           description: A list of users
@@ -92,6 +149,91 @@ paths:
                 $ref: '#/components/schemas/User'
         '404':
           description: User not found
+  /faculties:
+    get:
+      tags:
+        - Faculties
+      summary: Get all faculties
+      responses:
+        '200':
+          description: A list of faculties
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Faculty'
+    post:
+      tags:
+        - Faculties
+      summary: Create a new faculty
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Faculty'
+      responses:
+        '201':
+          description: Faculty created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Faculty'
+  /faculties/{id}:
+    get:
+      tags:
+        - Faculties
+      summary: Get a faculty by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: A faculty
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Faculty'
+    put:
+      tags:
+        - Faculties
+      summary: Update a faculty
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Faculty'
+      responses:
+        '200':
+          description: Faculty updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Faculty'
+    delete:
+      tags:
+        - Faculties
+      summary: Delete a faculty
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Faculty deleted
   /events:
     get:
       tags:
@@ -179,12 +321,187 @@ paths:
           description: Event deleted
         '404':
           description: Event not found
+  /contributions:
+    get:
+      tags:
+        - Contributions
+      summary: Get all contributions
+      responses:
+        '200':
+          description: A list of contributions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Contribution'
+    post:
+      tags:
+        - Contributions
+      summary: Create a new contribution
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Contribution'
+      responses:
+        '201':
+          description: Contribution created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Contribution'
+  /contributions/{id}:
+    get:
+      tags:
+        - Contributions
+      summary: Get a contribution by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: A contribution
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Contribution'
+    put:
+      tags:
+        - Contributions
+      summary: Update a contribution
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Contribution'
+      responses:
+        '200':
+          description: Contribution updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Contribution'
+    delete:
+      tags:
+        - Contributions
+      summary: Delete a contribution
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Contribution deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Contribution'
+  /comments:
+    get:
+      tags:
+        - Comments
+      summary: Get all comments
+      responses:
+        '200':
+          description: A list of comments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Comment'
+    post:
+      tags:
+        - Comments
+      summary: Create a new comment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Comment'
+      responses:
+        '201':
+          description: Comment created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Comment'
+  /comments/{id}:
+    get:
+      tags:
+        - Comments
+      summary: Get a comment by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: A comment
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Comment'
+    put:
+      tags:
+        - Comments
+      summary: Update a comment
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Comment'
+      responses:
+        '200':
+          description: Comment updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Comment'
+    delete:
+      tags:
+        - Comments
+      summary: Delete a comment
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Comment deleted
   /spec:
     get:
       tags:
         - Specification
+      summary: Get the API specification
       responses:
-        200:
+        '200':
           description: Return the API specification
           content: {}
 components:
@@ -201,6 +518,7 @@ components:
         ID:
           type: integer
           format: int64
+          nullable: true
           readOnly: true
         Name:
           type: string
@@ -229,6 +547,7 @@ components:
         ID:
           type: integer
           format: int64
+          nullable: true
         Name:
           type: string
         Password:
@@ -247,9 +566,11 @@ components:
         CreatedAt:
           type: string
           format: date-time
+          readOnly: true
         UpdatedAt:
           type: string
           format: date-time
+          readOnly: true
         RoleID:
           type: integer
           format: int64
@@ -264,6 +585,99 @@ components:
         - RoleID
         - FacultyID
       title: User
+    Faculty:
+      type: object
+      properties:
+        ID:
+          type: integer
+          nullable: true
+        Name:
+          type: string
+        Description:
+          type: string
+        IsEnabledGuest:
+          type: boolean
+        CreatedAt:
+          type: string
+          format: date-time
+          readOnly: true
+        UpdatedAt:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+        - Name
+        - Description
+        - IsEnabledGuest
+    Comment:
+      type: object
+      properties:
+        ID:
+          type: integer
+          nullable: true
+        Content:
+          type: string
+        CreatedAt:
+          type: string
+          format: date-time
+          nullable: true
+        UpdatedAt:
+          type: string
+          format: date-time
+          nullable: true
+        ContributionID:
+          type: integer
+        UserID:
+          type: integer
+      required:
+        - Content
+        - ContributionID
+        - UserID
+    Contribution:
+      type: object
+      properties:
+        ID:
+          type: integer
+          nullable: true
+        Name:
+          type: string
+        Content:
+          type: string
+        IsPublic:
+          type: boolean
+        IsApproved:
+          type: boolean
+        CreatedAt:
+          type: string
+          format: date-time
+        UpdatedAt:
+          type: string
+          format: date-time
+        EventID:
+          type: integer
+        UserID:
+          type: integer
+        StatusID:
+          type: integer
+      required:
+        - Name
+        - Content
+        - IsPublic
+        - IsApproved
+        - EventID
+        - UserID
+        - StatusID
+    Authentication:
+      type: object
+      properties:
+        Email:
+          type: string
+          format: email
+        Password:
+          type: string
+      required:
+        - Email
+        - string
   securitySchemes:
     bearerAuth: # arbitrary name for the security scheme
       type: http

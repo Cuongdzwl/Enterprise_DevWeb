@@ -1,4 +1,4 @@
-import { Comment } from './../../models/Comment';
+import { Comment } from '../models/Comment';
 import L from '../../common/logger';
 import { PrismaClient } from '@prisma/client';
 import { ISuperService } from '../interfaces/ISuperService.interface';

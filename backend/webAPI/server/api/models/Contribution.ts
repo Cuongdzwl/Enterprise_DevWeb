@@ -1,5 +1,7 @@
 import { User } from "./User";
 import { Event } from "./Event";
+import { Comment } from "./Comment";
+import { File } from "./File";
 
 
 export class Contribution {
@@ -16,6 +18,8 @@ export class Contribution {
     
     User?: User;
     Event?: Event ;
+    File? : File[];
+    Comment?: Comment[]
 
 
     constructor(ID: number, Name: string, Content: string, isPublic: boolean, isApproved: boolean, CreatedAt: Date, UpdatedAt: Date, EventID: number, UserID: number, StatusID: number) {
