@@ -91,18 +91,20 @@ export class CommentsService implements ISuperService<Comment> {
       });
     }
   }
-  private validateConstraints(comment: Comment): boolean {
-    if (!comment.Content) {
-      throw new Error('Content is required');
+  async validateConstraints(comment: Comment): Promise<{isValid: boolean, error?: string, message?: string}> {
+    // Validate Content
+    if (!comment.Content || comment.Content.length > 1000) {
+        return { isValid: false, error: ExceptionMessage.INVALID, message: "Comment content is invalid or too long, with a maximum of 1000 characters." };
     }
-    if (!comment.ContributionID) {
-      throw new Error('ContributionID is required');
+
+    // Validate ContributionID and UserID
+    if (!/^\d{1,20}$/.test(comment.ContributionID.toString()) || !/^\d{1,20}$/.test(comment.UserID.toString())) {
+        return { isValid: false, error: ExceptionMessage.INVALID, message: "ContributionID and UserID must be numbers and not exceed 20 digits." };
     }
-    if (!comment.UserID) {
-      throw new Error('UserID is required');
-    }
-    return true;
-  }
+
+    // If all validations pass
+    return { isValid: true };
+}
 }
 
 export default new CommentsService();

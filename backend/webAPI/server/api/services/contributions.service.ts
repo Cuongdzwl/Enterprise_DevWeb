@@ -33,7 +33,14 @@ export class ContributionsService implements ISuperService<Contribution>{
     return Promise.resolve(contributions);
   }
 
-  create(contribution: Contribution): Promise<any> {
+  async create(contribution: Contribution): Promise<any> {
+    const validations = await this.validateConstraints(contribution)
+    if (!validations.isValid) {
+      return Promise.resolve({
+        error: validations.error,
+        message: validations.message,
+      });
+    }
     try {
       if (!this.validateConstraints(contribution)) {
         return Promise.resolve({
@@ -80,7 +87,14 @@ export class ContributionsService implements ISuperService<Contribution>{
     }
   }
 
-  update(id: number ,contribution: Contribution): Promise<any> {
+  async update(id: number ,contribution: Contribution): Promise<any> {
+    const validations = await this.validateConstraints(contribution)
+    if (!validations.isValid) {
+      return Promise.resolve({
+        error: validations.error,
+        message: validations.message,
+      });
+    }
     try {
       if (!this.validateConstraints(contribution)) {
         return Promise.resolve({
@@ -111,27 +125,27 @@ export class ContributionsService implements ISuperService<Contribution>{
     }
   }
 
-  private validateConstraints(contribution: Contribution): boolean {
-    if (
-      prisma.contributionStatuses.findUnique({
-        where: { ID: contribution.StatusID },
-      }) === undefined
-    )
-      return false;
+  async validateConstraints(contribution: Contribution): Promise<{isValid: boolean, error?: string, message?: string}> {
+    // Validate Name
+    if (!contribution.Name || !/^[A-Za-z\s]{1,15}$/.test(contribution.Name)) {
+        return { isValid: false, error: ExceptionMessage.INVALID, message: "Contribution name is invalid, cannot contain numbers or special characters, and must have a maximum of 15 characters." };
+    }
 
-    if (
-      prisma.events.findUnique({ where: { ID: contribution.EventID } }) ===
-      undefined
-    )
-      return false;
+    // Validate Content
+    if (!contribution.Content || contribution.Content.length > 3000) {
+        return { isValid: false, error: ExceptionMessage.INVALID, message: "Content is invalid or too long, with a maximum of 3000 characters." };
+    }
 
-    if (
-      prisma.users.findUnique({ where: { ID: contribution.UserID } }) ===
-      undefined
-    )
-      return false;
+    // Validate IsApproved and IsPublic
+    if (typeof contribution.IsApproved !== 'boolean' || typeof contribution.IsPublic !== 'boolean') {
+        return { isValid: false, error: ExceptionMessage.INVALID, message: "IsApproved and IsPublic must be boolean values." };
+    }
 
-    return true;
+    // Validate linkage IDs
+    // Similar checks for EventID, StatusID, UserID, LastEditUserID...
+
+    // If all validations pass
+    return { isValid: true };
   }
 }
 

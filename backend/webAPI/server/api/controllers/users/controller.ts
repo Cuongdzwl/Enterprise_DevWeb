@@ -25,6 +25,10 @@ export class UsersController implements ISuperController {
     }
   }
   create(req: Request, res: Response): void {
+    if(!UsersService.validateConstraints(req.body))
+    {
+        res.status(400).json({}).end();
+    }
     try {
       UsersService.create(req.body).then((r) =>
         res.status(201).location(`/api/v1/users/${r.id}`).json(r)
@@ -47,6 +51,10 @@ export class UsersController implements ISuperController {
   }
 
   update(req: Request, res: Response): void {
+    if(!UsersService.validateConstraints(req.body))
+    {
+        res.status(400).json({}).end();
+    }
     const id = Number.parseInt(req.params['id']);
     try {
       UsersService.update(id, req.body).then((r) => {

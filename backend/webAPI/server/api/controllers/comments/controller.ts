@@ -22,6 +22,10 @@ export class CommentsController implements ISuperController {
     }
 
     create(req: Request, res: Response): void {
+        if(!CommentsService.validateConstraints(req.body))
+        {
+            res.status(400).json({}).end();
+        }
         try {
             CommentsService.create(req.body).then((r) =>
                 res.status(201).location(`/api/v1/comments/${r.id}`).json(r)
@@ -44,6 +48,10 @@ export class CommentsController implements ISuperController {
     }
 
     update(req: Request, res: Response): void {
+        if(!CommentsService.validateConstraints(req.body))
+        {
+            res.status(400).json({}).end();
+        }
         const id = Number.parseInt(req.params['id']);
         try {
             CommentsService.update(id, req.body).then((r) => {

@@ -34,11 +34,12 @@ export class FacultiesService implements ISuperService<Faculty> {
   }
 
   // Create
-  create(faculty: Faculty): Promise<any> {
-    if (!this.validateConstraints(faculty)) {
+  async create(faculty: Faculty): Promise<any> {
+    const validations = await this.validateConstraints(faculty)
+    if (!validations.isValid) {
       return Promise.resolve({
-        error: ExceptionMessage.INVALID,
-        message: ExceptionMessage.BAD_REQUEST,
+        error: validations.error,
+        message: validations.message,
       });
     }
     L.info(`create ${model}`);
@@ -94,7 +95,7 @@ export class FacultiesService implements ISuperService<Faculty> {
       });
     }
   }
-  private async validateConstraints(faculty: Faculty): Promise<{isValid: boolean, error?: string, message?: string}> {
+  async validateConstraints(faculty: Faculty): Promise<{isValid: boolean, error?: string, message?: string}> {
     // Validate Name
     if (!faculty.Name || !/^[A-Za-z\s]{1,15}$/.test(faculty.Name)) {
         return { isValid: false, error: FacultyExceptionMessage.INVALID, message: "Faculty name is invalid, cannot contain numbers or special characters, and must have a maximum of 15 characters." };
