@@ -3,11 +3,11 @@ import UserService from '../../services/users.service';
 import { Request, Response } from 'express';
 
 export class AuthController implements IAuthController {
-  logout(req: Request, res: Response): void {
-    throw new Error('Method not implemented.');
+  logout(_: Request, res: Response): void {
+    res.json().end();
   }
-  user(req:Request, res: Response): void {
-    throw new Error('Method not implemented.');
+  user(_:Request, res: Response): void {
+    res.json().end();
   }
   async login(req: Request, res: Response): Promise<void> {
     res.json().end();
