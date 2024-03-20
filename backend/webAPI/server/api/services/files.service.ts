@@ -106,7 +106,7 @@ export class FilesService implements ISuperService<File> {
       });
     }
   }
-  private async validateConstraints(file: File): Promise<{isValid: boolean, error?: string, message?: string}> {
+    async validateConstraints(file: File): Promise<{isValid: boolean, error?: string, message?: string}> {
     // Validate URL
     if (!file.Url || file.Url.length > 3000) {
         return { isValid: false, error: FileExceptionMessage.INVALID, message: "File URL is invalid or too long, with a maximum of 3000 characters." };
