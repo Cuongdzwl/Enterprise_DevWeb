@@ -1,11 +1,15 @@
 import UsersService from '../../services/users.service';
+import FacultiesService from '../../services/faculties.service';
 import { Request, Response } from 'express';
 import { ISuperController } from '../../interfaces/ISuperController.interface';
 
 export class UsersController implements ISuperController {
   async all(req: Request, res: Response): Promise<void> {
-    if(req.query.search as string){
-      const users = await UsersService.search(req.query.search as string, req.query.keyword as string);
+    if (req.query.search as string) {
+      const users = await UsersService.search(
+        req.query.search as string,
+        req.query.keyword as string
+      );
       res.status(200).json(users);
       return;
     }
@@ -20,7 +24,7 @@ export class UsersController implements ISuperController {
         if (r) res.json(r);
         else res.status(404).end();
       });
-    } catch (error) { 
+    } catch (error) {
       res.status(400).json({ error: error.message }).end();
     }
   }

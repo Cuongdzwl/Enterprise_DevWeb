@@ -3,9 +3,11 @@ import L from '../../common/logger';
 import { PrismaClient } from '@prisma/client';
 import { ExceptionMessage, NotificationExceptionMessage } from '../common/exception';
 import { ISuperService } from '../interfaces/ISuperService.interface';
+import UserDTO from '../models/DTO/User.DTO';
 
 const prisma = new PrismaClient();
 const model = 'notifications';
+
 
 export class NotificationService implements ISuperService<Notification> {
   all(): Promise<any> {
