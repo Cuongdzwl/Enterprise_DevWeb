@@ -1,7 +1,6 @@
 import L from '../../common/logger';
 import { PrismaClient } from '@prisma/client';
-import { User } from '../../models/User';
-import { Filter } from '../common/filter';
+import { User } from '../models/User';
 import { UserExceptionMessage } from '../common/exception';
 import { ISuperService } from '../interfaces/ISuperService.interface';
 
@@ -22,8 +21,18 @@ export class UsersService implements ISuperService<User> {
     });
     return Promise.resolve(user);
   }
-
-  filter(filter: Filter, key: string): Promise<any> {
+  search(field: string, key: string): Promise<any> {
+    const users = prisma.users.findMany({
+      where: {
+        [field]: {
+          contains: key,
+        },
+      },
+    });
+    L.info(users, `fetch all ${model}(s)`);
+    return Promise.resolve(users);
+  }
+  filter(filter: string, key: string): Promise<any> {
     const users = prisma.users.findMany({
       where: {
         [filter]: key,
@@ -64,7 +73,7 @@ export class UsersService implements ISuperService<User> {
       return Promise.resolve(createdUser);
     } catch (error) {
       L.error(`create ${model} failed: ${error}`);
-      return Promise.resolve({
+      return Promise.reject({
         error: UserExceptionMessage.INVALID,
         message: UserExceptionMessage.BAD_REQUEST,
       });
@@ -91,7 +100,7 @@ export class UsersService implements ISuperService<User> {
   update(id: number, user: User): Promise<any> {
     // Validate
     if (!this.validateConstraints(user)) {
-      return Promise.resolve({
+      return Promise.reject({
         error: UserExceptionMessage.INVALID,
         message: UserExceptionMessage.BAD_REQUEST,
       });
@@ -114,7 +123,7 @@ export class UsersService implements ISuperService<User> {
     } catch (error) {
       L.error(`update ${model} failed: ${error}`);
       return Promise.resolve({
-        error: error.message,
+        error: UserExceptionMessage.INVALID,
         message: UserExceptionMessage.BAD_REQUEST,
       });
     }
@@ -123,14 +132,25 @@ export class UsersService implements ISuperService<User> {
     // TODO: VALIDATE CONSTRAINTss
     L.info(`r ${model} failed: ${user.RoleID}`);
     L.info(`f ${model} failed: ${user.FacultyID}`);
-    L.info(`R ${model} failed: ${prisma.roles.findUnique({ where: { ID: user.RoleID } })}`);
-    L.info(`F ${model} failed: ${prisma.faculties.findUnique({ where: { ID: user.FacultyID } })}`);
-    if (await prisma.roles.findUnique({ where: { ID: user.RoleID } }) === undefined) {
-      L.info(user.RoleID)
+    L.info(
+      `R ${model} failed: ${prisma.roles.findUnique({
+        where: { ID: user.RoleID },
+      })}`
+    );
+    L.info(
+      `F ${model} failed: ${prisma.faculties.findUnique({
+        where: { ID: user.FacultyID },
+      })}`
+    );
+    if (
+      (await prisma.roles.findUnique({ where: { ID: user.RoleID } })) ===
+      undefined
+    ) {
+      L.info(user.RoleID);
       return false;
     }
     if (
-      await prisma.faculties.findUnique({ where: { ID: user.FacultyID } }) ===
+      (await prisma.faculties.findUnique({ where: { ID: user.FacultyID } })) ===
       undefined
     ) {
       return false;

@@ -1,12 +1,11 @@
-import { Notification } from 'server/models/Notification';
+import { Notification } from 'server/api/models/Notification';
 import L from '../../common/logger';
 import { PrismaClient } from '@prisma/client';
 import { ExceptionMessage } from '../common/exception';
-import { Filter } from '../common/filter';
 import { ISuperService } from '../interfaces/ISuperService.interface';
 
 const prisma = new PrismaClient();
-const model = 'notification';
+const model = 'notifications';
 
 export class NotificationService implements ISuperService<Notification> {
   all(): Promise<any> {
@@ -23,10 +22,21 @@ export class NotificationService implements ISuperService<Notification> {
     return Promise.resolve(notification);
   }
 
-  filter(filter: Filter, key: string): Promise<any> {
+  search(field: string, key: string): Promise<any> {
     const notifications = prisma.notifications.findMany({
       where: {
-        [filter]: key,
+        [field]: {
+          contains: key,
+        },
+      },
+    });
+    L.info(notifications, `fetch all ${model}(s)`);
+    return Promise.resolve(notifications);
+  }
+  filter(field: string, key: string): Promise<any> {
+    const notifications = prisma.notifications.findMany({
+      where: {
+        [field]: key,
       },
     });
     L.info(notifications, `fetch all ${model}(s)`);
@@ -48,7 +58,12 @@ export class NotificationService implements ISuperService<Notification> {
       L.info(`create ${model} with id ${notification.ID}`);
       const createdNotification = prisma.notifications.create({
         data: {
-            
+          Content: notification.Content,
+          SentTo: notification.SentTo,
+          FromID: 0,
+          FromTable: 'default',
+          IsCancelled: false,
+          NotificationSentTypeID: notification.NotificationSentType as number,
         },
       });
       return Promise.resolve(createdNotification);
@@ -100,7 +115,7 @@ export class NotificationService implements ISuperService<Notification> {
       });
     }
   }
-  private validateConstraints(notification: Notification): boolean {
+  private validateConstraints(_: Notification): boolean {
     return true;
   }
 }

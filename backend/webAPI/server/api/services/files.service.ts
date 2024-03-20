@@ -1,7 +1,6 @@
 import L from '../../common/logger';
 import { PrismaClient } from '@prisma/client';
-import { File } from '../../models/File';
-import { Filter } from '../common/filter';
+import { File } from '../models/File';
 import { ExceptionMessage } from '../common/exception';
 import { ISuperService } from '../interfaces/ISuperService.interface';
 
@@ -23,7 +22,7 @@ export class FilesService implements ISuperService<File> {
     return Promise.resolve(file);
   }
 
-  filter(filter: Filter, key: string): Promise<any> {
+  filter(filter: string, key: string): Promise<any> {
     const files = prisma.files.findMany({
       where: {
         [filter]: key,
@@ -104,18 +103,8 @@ export class FilesService implements ISuperService<File> {
       });
     }
   }
-  private validateConstraints(file: File): boolean {
+  private validateConstraints(_: File): boolean {
     // TODO: VALIDATE CONSTRAINTss
-    if (prisma.users.findUnique({ where: { ID: file.UserID } }) === undefined) {
-      return false;
-    }
-    if (
-      prisma.contributions.findUnique({
-        where: { ID: file.ContributionID },
-      }) === undefined
-    ) {
-      return false;
-    }
     return true;
   }
 }

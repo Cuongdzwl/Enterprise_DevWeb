@@ -22,9 +22,9 @@ export class FacultiesController implements ISuperController {
 
   create(req: Request, res: Response): void {
     try {
-      FacultyService.create(req.body).then((r) =>
-        res.status(201).location(`/api/v1/faculties/${r.id}`).json(r)
-      );
+      FacultyService.create(req.body).then((r) => {
+        res.status(201).location(`/api/v1/faculties/${r.id}`).json(r);
+      });
     } catch (error) {
       res.status(400).json({ error: error.message }).end();
     }
