@@ -21,6 +21,10 @@ export class ContributionsController implements ISuperController {
     }
 
     create(req: Request, res: Response): void {
+        if(!ContributionsService.validateConstraints(req.body))
+    {
+        res.status(400).json({}).end();
+    }
         try {
             ContributionsService.create(req.body).then((r) =>
                 res.status(201).location(`/api/v1/contributions/${r.id}`).json(r)
@@ -43,6 +47,10 @@ export class ContributionsController implements ISuperController {
     }
 
     update(req: Request, res: Response): void {
+     if(!ContributionsService.validateConstraints(req.body))
+    {
+        res.status(400).json({}).end();
+    }
         const id = Number.parseInt(req.params['id']);
         try {
             ContributionsService.update(id, req.body).then((r) => {

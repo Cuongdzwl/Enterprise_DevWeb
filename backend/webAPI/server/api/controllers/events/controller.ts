@@ -21,6 +21,11 @@ export class EventsController implements ISuperController {
     }
 
     create(req: Request, res: Response): void {
+        if(!EventsService.validateConstraints(req.body))
+        {
+            res.status(400).json({}).end();
+        }
+        
         try {
             EventsService.create(req.body).then((r) =>
                 res.status(201).location(`/api/v1/events/${r.id}`).json(r)
@@ -43,6 +48,10 @@ export class EventsController implements ISuperController {
     }
 
     update(req: Request, res: Response): void {
+        if(!EventsService.validateConstraints(req.body))
+        {
+            res.status(400).json({}).end();
+        }
         const id = Number.parseInt(req.params['id']);
         try {
             EventsService.update(id, req.body).then((r) => {

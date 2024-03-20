@@ -117,7 +117,7 @@ export class NotificationService implements ISuperService<Notification> {
       });
     }
   }
-  private async validateConstraints(notification: Notification): Promise<{isValid: boolean, error?: string, message?: string}> {
+  async validateConstraints(notification: Notification): Promise<{isValid: boolean, error?: string, message?: string}> {
      // Validate Content
      if (!notification.Content || notification.Content.length > 1000) {
       return { isValid: false, error: NotificationExceptionMessage.INVALID, message: "Notification content is invalid or too long, with a maximum of 1000 characters." };

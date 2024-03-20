@@ -111,7 +111,7 @@ export class EventsService implements ISuperService<Event>{
     }
      
 }
-  private async validateConstraints(event : Event): Promise<{isValid: boolean, error?: string, message?: string}> {
+  async validateConstraints(event : Event): Promise<{isValid: boolean, error?: string, message?: string}> {
 
      // Validate Name
      if (!event.Name || !/^[A-Za-z\s]{1,15}$/.test(event.Name)) {

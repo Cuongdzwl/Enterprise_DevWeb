@@ -21,6 +21,10 @@ export class FacultiesController implements ISuperController {
   }
 
   create(req: Request, res: Response): void {
+    if(!FacultyService.validateConstraints(req.body))
+    {
+        res.status(400).json({}).end();
+    }
     try {
       FacultyService.create(req.body).then((r) => {
         res.status(201).location(`/api/v1/faculties/${r.id}`).json(r);
@@ -43,6 +47,10 @@ export class FacultiesController implements ISuperController {
   }
 
   update(req: Request, res: Response): void {
+    if(!FacultyService.validateConstraints(req.body))
+    {
+        res.status(400).json({}).end();
+    }
     const id = Number.parseInt(req.params['id']);
     try {
       FacultyService.update(id, req.body).then((r) => {
