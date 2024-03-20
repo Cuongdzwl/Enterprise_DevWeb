@@ -1,7 +1,7 @@
 import { Notification } from 'server/api/models/Notification';
 import L from '../../common/logger';
 import { PrismaClient } from '@prisma/client';
-import { ExceptionMessage } from '../common/exception';
+import { ExceptionMessage, NotificationExceptionMessage } from '../common/exception';
 import { ISuperService } from '../interfaces/ISuperService.interface';
 
 const prisma = new PrismaClient();
@@ -115,8 +115,27 @@ export class NotificationService implements ISuperService<Notification> {
       });
     }
   }
-  private validateConstraints(_: Notification): boolean {
-    return true;
+  private async validateConstraints(notification: Notification): Promise<{isValid: boolean, error?: string, message?: string}> {
+     // Validate Content
+     if (!notification.Content || notification.Content.length > 1000) {
+      return { isValid: false, error: NotificationExceptionMessage.INVALID, message: "Notification content is invalid or too long, with a maximum of 1000 characters." };
+  }
+
+  // Validate SendAt
+  if (!notification.SentAt || new Date(notification.SentAt) < new Date()) {
+      return { isValid: false, error: NotificationExceptionMessage.INVALID, message: "SendAt must be set to a time in the future." };
+  }
+
+  // Validate SendTo
+  if (!notification.SentTo) {
+      return { isValid: false, error: NotificationExceptionMessage.INVALID_NOTIFICATIONID, message: "SendTo cannot be empty." };
+  }
+  if (!notification.FromTable || !/^[A-Za-z\s]{1,30}$/.test(notification.FromTable)) {
+    return { isValid: false, error: NotificationExceptionMessage.INVALID_NOTIFICATIONID, message: "FromTable is invalid, must not contain special characters, and have a maximum of 30 characters." };
+}
+
+// If all validations pass
+return { isValid: true };
   }
 }
 
