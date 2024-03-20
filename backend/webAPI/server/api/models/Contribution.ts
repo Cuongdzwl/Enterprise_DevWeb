@@ -15,6 +15,7 @@ export class Contribution {
     EventID: number;
     UserID: number;
     StatusID: number;
+    LastEditByID: number;
     
     User?: User;
     Event?: Event ;
@@ -22,7 +23,7 @@ export class Contribution {
     Comment?: Comment[]
 
 
-    constructor(ID: number, Name: string, Content: string, isPublic: boolean, isApproved: boolean, CreatedAt: Date, UpdatedAt: Date, EventID: number, UserID: number, StatusID: number) {
+    constructor(ID: number, Name: string, Content: string, isPublic: boolean, isApproved: boolean, CreatedAt: Date, UpdatedAt: Date, EventID: number, UserID: number, StatusID: number, LastEditByID: number) {
         this.ID = ID;
         this.Name = Name;
         this.Content = Content;
@@ -33,5 +34,6 @@ export class Contribution {
         this.EventID = EventID;
         this.UserID = UserID;
         this.StatusID = StatusID;
+        this.LastEditByID = LastEditByID;
     }
 }

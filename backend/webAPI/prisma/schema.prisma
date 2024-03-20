@@ -39,7 +39,7 @@ model users {
   Role          roles           @relation(fields: [RoleID], references: [ID], onDelete: Cascade, onUpdate: NoAction)
   RoleID        Int
   Faculty       faculties?      @relation(fields: [FacultyID], references: [ID], onDelete: NoAction, onUpdate: NoAction)
-  FacultyID     Int             
+  FacultyID     Int?             
   Comments      comments[]
   Contributions contributions[]
 }
@@ -90,6 +90,7 @@ model contributions {
   User       users                @relation(fields: [UserID], references: [ID], onDelete: Cascade, onUpdate: NoAction)
   UserID     Int
   StatusID   Int
+  LastEditByID Int?
   Files      files[]
   Status     contributionStatuses @relation(fields: [StatusID], references: [ID], onDelete: Cascade, onUpdate: NoAction)
   Comments   comments[]

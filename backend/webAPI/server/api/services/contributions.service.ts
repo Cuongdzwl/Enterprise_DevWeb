@@ -2,7 +2,7 @@ import { Status } from '../models/Status';
 import { Contribution } from '../models/Contribution';
 import L from '../../common/logger';
 import { PrismaClient } from '@prisma/client';
-import { ExceptionMessage } from '../common/exception';
+import { ContributionExceptionMessage } from '../common/exception';
 import { ISuperService } from '../interfaces/ISuperService.interface';
 
 const prisma = new PrismaClient();
@@ -44,8 +44,8 @@ export class ContributionsService implements ISuperService<Contribution>{
     try {
       if (!this.validateConstraints(contribution)) {
         return Promise.resolve({
-          error: ExceptionMessage.INVALID,
-          message: ExceptionMessage.BAD_REQUEST,
+          error: ContributionExceptionMessage.INVALID,
+          message: ContributionExceptionMessage.BAD_REQUEST,
         });
       }
       L.info(`create ${model} with id ${contribution.ID}`);
@@ -65,8 +65,8 @@ export class ContributionsService implements ISuperService<Contribution>{
       L.error(`create ${model} failed: ${error}`)
 
       return Promise.resolve({
-        error: ExceptionMessage.INVALID,
-        message: ExceptionMessage.BAD_REQUEST,
+        error: ContributionExceptionMessage.INVALID,
+        message: ContributionExceptionMessage.BAD_REQUEST,
       });
     }
   }
@@ -81,8 +81,8 @@ export class ContributionsService implements ISuperService<Contribution>{
     }catch(error){
       L.error(`delete ${model} failed: ${error}`);
       return Promise.resolve({
-        error: ExceptionMessage.INVALID,
-        message: ExceptionMessage.BAD_REQUEST,
+        error: ContributionExceptionMessage.INVALID,
+        message: ContributionExceptionMessage.BAD_REQUEST,
       });
     }
   }
@@ -98,8 +98,8 @@ export class ContributionsService implements ISuperService<Contribution>{
     try {
       if (!this.validateConstraints(contribution)) {
         return Promise.resolve({
-          error: ExceptionMessage.INVALID,
-          message: ExceptionMessage.BAD_REQUEST,
+          error: ContributionExceptionMessage.INVALID,
+          message: ContributionExceptionMessage.BAD_REQUEST,
         });
       }
       L.info(`update ${model} with id ${contribution.ID}`);
@@ -119,8 +119,8 @@ export class ContributionsService implements ISuperService<Contribution>{
     } catch (error) {
       L.error(`update ${model} failed: ${error}`)
       return Promise.resolve({
-        error: ExceptionMessage.INVALID,
-        message: ExceptionMessage.BAD_REQUEST,
+        error: ContributionExceptionMessage.INVALID,
+        message: ContributionExceptionMessage.BAD_REQUEST,
       });
     }
   }
@@ -128,22 +128,37 @@ export class ContributionsService implements ISuperService<Contribution>{
   async validateConstraints(contribution: Contribution): Promise<{isValid: boolean, error?: string, message?: string}> {
     // Validate Name
     if (!contribution.Name || !/^[A-Za-z\s]{1,15}$/.test(contribution.Name)) {
-        return { isValid: false, error: ExceptionMessage.INVALID, message: "Contribution name is invalid, cannot contain numbers or special characters, and must have a maximum of 15 characters." };
+        return { isValid: false, error: ContributionExceptionMessage.INVALID, message: "Contribution name is invalid, cannot contain numbers or special characters, and must have a maximum of 15 characters." };
     }
 
     // Validate Content
     if (!contribution.Content || contribution.Content.length > 3000) {
-        return { isValid: false, error: ExceptionMessage.INVALID, message: "Content is invalid or too long, with a maximum of 3000 characters." };
+        return { isValid: false, error: ContributionExceptionMessage.INVALID, message: "Content is invalid or too long, with a maximum of 3000 characters." };
     }
 
     // Validate IsApproved and IsPublic
     if (typeof contribution.IsApproved !== 'boolean' || typeof contribution.IsPublic !== 'boolean') {
-        return { isValid: false, error: ExceptionMessage.INVALID, message: "IsApproved and IsPublic must be boolean values." };
+        return { isValid: false, error: ContributionExceptionMessage.INVALID, message: "IsApproved and IsPublic must be boolean values." };
     }
 
     // Validate linkage IDs
     // Similar checks for EventID, StatusID, UserID, LastEditUserID...
-
+    const eventExists = await prisma.faculties.findUnique({ where: { ID: contribution.EventID } });
+    if (!eventExists) {
+        return { isValid: false, error: ContributionExceptionMessage.INVALID_EVENTID, message: "Referenced event does not exist." };
+    }
+    const userExists = await prisma.faculties.findUnique({ where: { ID: contribution.UserID } });
+    if (!userExists) {
+        return { isValid: false, error: ContributionExceptionMessage.INVALID_USERID, message: "Referenced user does not exist." };
+    }
+    const lastEditByIdExists = await prisma.faculties.findUnique({ where: { ID: contribution.LastEditByID } });
+    if (!lastEditByIdExists) {
+        return { isValid: false, error: ContributionExceptionMessage.INVALID_EVENTID, message: "Referenced user does not exist." };
+    }
+    const statusExists = await prisma.faculties.findUnique({ where: { ID: contribution.StatusID } });
+    if (!statusExists) {
+        return { isValid: false, error: ContributionExceptionMessage.INVALID_EVENTID, message: "Referenced status does not exist." };
+    }
     // If all validations pass
     return { isValid: true };
   }
