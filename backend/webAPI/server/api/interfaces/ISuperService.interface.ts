@@ -6,4 +6,5 @@ export interface ISuperService<T> {
     update(id: number, data: T): any;
     delete(id: number): any;
     byId(id: number): any;
+    validateConstraints(req : Request,res : Response):any;
 }
