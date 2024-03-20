@@ -13,6 +13,7 @@ const novu = new Novu(process.env.NOVU_API_KEY as string);
 const prisma = new PrismaClient();
 const model = 'notifications';
 
+
 export class NotificationService implements ISuperService<Notification> {
   private checkAPIKEY(): boolean {
     return process.env.NOVU_API_KEY ? true : false;

@@ -8,7 +8,6 @@ import l from './logger';
 import cors from 'cors';
 import passportJWT from 'passport-jwt';
 import passport from 'passport';
-import jwt from 'jsonwebtoken';
 
 import errorHandler from '../api/middlewares/error.handler';
 import * as OpenApiValidator from 'express-openapi-validator';
@@ -57,16 +56,16 @@ export default class ExpressServer {
     app.use(process.env.OPENAPI_SPEC || '/spec', express.static(apiSpec));
 
     // Use OpenAPI Validator middleware to validate incoming requests and outgoing responses against the OpenAPI specification
-    // Passport
-    var ExtractJwt = passportJWT.ExtractJwt;
-    var JwtStrategy = passportJWT.Strategy;
-    var jwtOptions: {} = {
-      jwtFromRequest : ExtractJwt.fromAuthHeaderAsBearerToken(),
-      secretOrKey : process.env.JWT_KEY
-    };
-
-    // use the strategy
+    app.use(
+      OpenApiValidator.middleware({
+        apiSpec,
+        validateResponses,
+        ignorePaths: /.*\/spec(\/|$)/,
+      })
+    );
   }
+
+  // Passport
 
   router(routes: (app: Application) => void): ExpressServer {
     routes(app);

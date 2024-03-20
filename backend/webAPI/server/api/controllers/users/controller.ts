@@ -9,9 +9,16 @@ import L from '../../../common/logger';
 const prisma = new PrismaClient();
 export class UsersController implements ISuperController {
   async all(req: Request, res: Response): Promise<void> {
-    const depth = Number.parseInt(req.query.depth?.toString() ?? '');
-    const users = await UsersService.all(depth);
-    res.status(200).json(users);
+    if (req.query.search as string) {
+      const users = await UsersService.search(
+        req.query.search as string,
+        req.query.keyword as string
+      );
+      res.status(200).json(users);
+      return;
+    }
+    const result = await UsersService.all();
+    res.json(result);
   }
 
   async byId(req: Request, res: Response): Promise<void> {
