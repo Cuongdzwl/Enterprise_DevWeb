@@ -11,23 +11,26 @@ const prisma = new PrismaClient();
 const model = 'user';
 
 export class UsersService implements ISuperService<User> {
-  all(): Promise<any> {
+  all(depth?: number): Promise<any> {
+    var select: any = {
+      ID: true,
+      Name: true,
+      Email: true,
+      Phone: true,
+      Address: true,
+      CreatedAt: true,
+      UpdatedAt: true,
+      RoleID: true,
+      FacultyID: true,
+    };
+    if (depth == 1) {
+      select.Faculty = { select: { ID: true, Name: true } };
+      select.Role = { select: { ID: true, Name: true } };
+    }
     const users = prisma.users.findMany({
-      select: {
-        ID: true,
-        Name: true,
-        Email: true,
-        Phone: true,
-        Address: true,
-        CreatedAt: true,
-        UpdatedAt: true,
-        RoleID: true,
-        FacultyID: true,
-        Role: {select: {ID: true, Name: true}},
-        Faculty: {select: {ID: true, Name: true}},
-      },
+      select,
     });
-    L.info(users, `fetch all ${model}(s)`);
+    L.info(`fetch all ${model}(s)`);
     return Promise.resolve(users);
   }
   // Filter
@@ -49,6 +52,7 @@ export class UsersService implements ISuperService<User> {
     L.info(users, `fetch all ${model}(s)`);
     return Promise.resolve(users);
   }
+
   filter(filter: string, key: string): Promise<any> {
     const users = prisma.users.findMany({
       where: {
@@ -110,30 +114,43 @@ export class UsersService implements ISuperService<User> {
   }
   // Update
   async update(id: number, user: User): Promise<any> {
-    try {
-      L.info(`update ${model} with id ${user.ID}`);
-      const updatedUser = prisma.users.update({
-        where: { ID: id },
-        data: {
+    L.info(`update ${model} with id ${id}`);
+    this.byId(id)
+      .then((result: User) => {
+        if (user.Password) {
+          var hashedPassword: string = utils.hashedPassword(
+            user.Password,
+            result.Salt
+          );
+        } else {
+          hashedPassword = result.Password;
+        }
+        var data: any = {
           Name: user.Name,
-          Password: user.Password,
+          Password: hashedPassword,
           Email: user.Email,
           Phone: user.Phone,
           Address: user.Address,
-          RoleID: user.RoleID,
-          FacultyID: user.FacultyID,
-        },
-      });
-      return Promise.resolve(updatedUser);
-    } catch (error) {
-      L.error(`update ${model} failed: ${error}`);
-      return Promise.resolve({
-        error: UserExceptionMessage.INVALID,
-        message: UserExceptionMessage.BAD_REQUEST,
+
+        }
+        if(result.RoleID == 1){
+            data.RoleID = result.RoleID;
+            data.FacultyID = result.FacultyID;
+        }
+        const updatedUser = prisma.users.update({
+          where: { ID: id },
+          data,
+        });
+        return Promise.resolve(updatedUser);
+      })
+      .catch(() => {
+        return Promise.resolve({
+          error: UserExceptionMessage.INVALID,
+          message: UserExceptionMessage.BAD_REQUEST,
+        });
       });
     }
-  }
-
+    
   async validateConstraints(
     user: User
   ): Promise<{ isValid: boolean; error?: string; message?: string }> {

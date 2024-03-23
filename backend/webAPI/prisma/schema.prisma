@@ -3,9 +3,9 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlserver"
-  url      = "sqlserver://ducdd.database.windows.net:1433;database=ducdd;user=ducdd@ducdd;password=quainhangw12a2@;encrypt=true;trustServerCertificate=false;hostNameInCertificate=*.database.windows.net;loginTimeout=30;"
-  shadowDatabaseUrl = "sqlserver://ducdd.database.windows.net:1433;database=model2;user=ducdd@ducdd;password=quainhangw12a2@;encrypt=true;trustServerCertificate=false;hostNameInCertificate=*.database.windows.net;loginTimeout=30;"
+  provider          = "sqlserver"
+  url               = env("DATABASE_URL")
+  // shadowDatabaseUrl = env("DATABASE_URL")
 }
 
 model roles {
@@ -27,21 +27,25 @@ model faculties {
 }
 
 model users {
-  ID            Int             @id @default(autoincrement())
-  Name          String
-  Password      String
-  Salt          String
-  Email         String          @unique
-  Phone         String?
-  Address       String?
-  CreatedAt     DateTime        @default(now())
-  UpdatedAt     DateTime        @default(now()) @updatedAt
-  Role          roles           @relation(fields: [RoleID], references: [ID], onDelete: Cascade, onUpdate: NoAction)
-  RoleID        Int
-  Faculty       faculties?      @relation(fields: [FacultyID], references: [ID], onDelete: NoAction, onUpdate: NoAction)
-  FacultyID     Int?             
-  Comments      comments[]
-  Contributions contributions[]
+  ID               Int             @id @default(autoincrement())
+  Name             String
+  Password         String
+  Salt             String
+  Email            String          @unique
+  Phone            String?
+  Address          String?
+  CreatedAt        DateTime        @default(now())
+  UpdatedAt        DateTime        @default(now()) @updatedAt
+  Role             roles           @relation(fields: [RoleID], references: [ID], onDelete: Cascade, onUpdate: NoAction)
+  RoleID           Int
+  Faculty          faculties?      @relation(fields: [FacultyID], references: [ID], onDelete: NoAction, onUpdate: NoAction)
+  FacultyID        Int?
+  Comments         comments[]
+  Contributions    contributions[]
+  OTP              String?         @db.VarChar(64)
+  OTPUsed          Boolean?        @default(false) 
+  OTPRequestedTime DateTime?
+  OTPExpriedTime   DateTime?
 }
 
 model events {
@@ -71,29 +75,29 @@ model comments {
 model files {
   ID             Int            @id @default(autoincrement())
   Url            String
-  CreatedAt      DateTime?       @default(now())
-  UpdatedAt      DateTime?       @default(now()) @updatedAt
+  CreatedAt      DateTime?      @default(now())
+  UpdatedAt      DateTime?      @default(now()) @updatedAt
   Contribution   contributions? @relation(fields: [ContributionID], references: [ID], onDelete: NoAction, onUpdate: NoAction)
   ContributionID Int
 }
 
 model contributions {
-  ID         Int                  @id @default(autoincrement())
-  Name       String
-  Content    String
-  IsPublic   Boolean              @default(false)
-  IsApproved Boolean              @default(false)
-  CreatedAt  DateTime             @default(now())
-  UpdatedAt  DateTime             @default(now()) @updatedAt
-  Event      events               @relation(fields: [EventID], references: [ID], onDelete: Cascade, onUpdate: NoAction)
-  EventID    Int
-  User       users                @relation(fields: [UserID], references: [ID], onDelete: Cascade, onUpdate: NoAction)
-  UserID     Int
-  StatusID   Int
+  ID           Int                  @id @default(autoincrement())
+  Name         String
+  Content      String
+  IsPublic     Boolean              @default(false)
+  IsApproved   Boolean              @default(false)
+  CreatedAt    DateTime             @default(now())
+  UpdatedAt    DateTime             @default(now()) @updatedAt
+  Event        events               @relation(fields: [EventID], references: [ID], onDelete: Cascade, onUpdate: NoAction)
+  EventID      Int
+  User         users                @relation(fields: [UserID], references: [ID], onDelete: Cascade, onUpdate: NoAction)
+  UserID       Int
+  StatusID     Int
   LastEditByID Int?
-  Files      files[]
-  Status     contributionStatuses @relation(fields: [StatusID], references: [ID], onDelete: Cascade, onUpdate: NoAction)
-  Comments   comments[]
+  Files        files[]
+  Status       contributionStatuses @relation(fields: [StatusID], references: [ID], onDelete: Cascade, onUpdate: NoAction)
+  Comments     comments[]
 }
 
 model contributionStatuses {

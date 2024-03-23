@@ -22,7 +22,7 @@ export default class ExpressServer {
     const root = path.normalize(__dirname + '/../..');
 
     // Enable Cross-Origin Resource Sharing
-    app.use(cors({ origin: '*' }));
+    app.use(cors());
 
     // Use body-parser middleware to parse incoming JSON requests
     app.use(bodyParser.json({ limit: process.env.REQUEST_LIMIT || '100kb' }));

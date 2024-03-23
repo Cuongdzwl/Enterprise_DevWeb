@@ -1,5 +1,6 @@
 import express from 'express';
 import controller from './controller';
+import { authenticateToken } from '../../middlewares/authentication.handler';
 export default express
   .Router()
   .post('/', controller.create)

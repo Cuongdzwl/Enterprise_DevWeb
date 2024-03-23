@@ -30,7 +30,7 @@ paths:
         '401':
           description: Unauthorized
   /auth/logout:
-    post:
+    get:
       tags:
         - Authentication
       summary: Logout
@@ -49,6 +49,17 @@ paths:
           description: User Authenticated
         '401':
           description: Unauthorized
+    put:
+      tags:
+        - Authentication
+      summary: Update user info
+      requestBody:
+       required: true
+       content:
+         application/json:
+           schema:
+             $ref: '#/components/schemas/User'
+             type: object
   /auth/forgotPassword:
     post:
       tags:
@@ -83,10 +94,20 @@ paths:
             type: string
           description: Search parameter
         - in: query
+          name: filter
+          schema:
+            type: string
+          description: Filter by field parameter
+        - in: query
           name: keyword
           schema:
             type: string
           description: Keyword parameter
+        - in: query
+          name: depth
+          schema:
+            type: string
+          description: JSON response depth parameter
       responses:
         '200':
           description: A list of users
@@ -165,7 +186,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/User'
         '404':
-          description: User not found
+          description: User not found           
   /faculties:
     get:
       tags:
@@ -596,7 +617,6 @@ components:
         - Email
         - UpdatedAt
         - RoleID
-        - FacultyID
       title: User
     Faculty:
       type: object

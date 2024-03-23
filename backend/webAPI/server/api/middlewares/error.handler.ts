@@ -6,6 +6,6 @@ export default function errorHandler(
   res: Response,
   _next: NextFunction
 ): void {
-  const errors = err.errors || [{ message: err.message }];
+  const errors = err.errors || [{ message: err }];
   res.status(err.status || 500).json({ errors });
 }
