@@ -1,0 +1,25 @@
+BEGIN TRY
+
+BEGIN TRAN;
+
+-- AlterTable
+ALTER TABLE [dbo].[contributions] ADD [LastEditByID] INT;
+
+-- AlterTable
+ALTER TABLE [dbo].[users] ALTER COLUMN [FacultyID] INT NULL;
+ALTER TABLE [dbo].[users] ADD [OTP] VARCHAR(64),
+[OTPExpriedTime] DATETIME2,
+[OTPRequestedTime] DATETIME2;
+
+COMMIT TRAN;
+
+END TRY
+BEGIN CATCH
+
+IF @@TRANCOUNT > 0
+BEGIN
+    ROLLBACK TRAN;
+END;
+THROW
+
+END CATCH
