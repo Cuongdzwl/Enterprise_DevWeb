@@ -3,7 +3,7 @@ import L from '../../common/logger';
 import { PrismaClient } from '@prisma/client';
 import { User } from '../models/User';
 import { UserExceptionMessage } from '../common/exception';
-import  NotificationService  from './notifications.service';
+import NotificationService from './notifications.service';
 import { ISuperService } from '../interfaces/ISuperService.interface';
 import bcrypt from 'bcrypt';
 import utils from '../common/utils';
@@ -92,17 +92,11 @@ export class UsersService implements ISuperService<User> {
     }
     try {
       L.info(`create ${model} with id ${user.ID}`);
-      const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-      let password = '';
-      for (let i = 0; i < 8; i++) {
-        const randomIndex = Math.floor(Math.random() * characters.length);
-        password += characters[randomIndex];
-      }
-      // Send email
-      //
-      const saltRounds = 10;
-      const salt = bcrypt.genSaltSync(saltRounds);
-      const hashedPassword = bcrypt.hashSync(password, salt);
+
+      var password: string = utils.generatePassword();
+      L.info(`create ${model} with password ${password}`);
+      var salt: string = utils.generateSalt();
+      var hashedPassword: string = utils.hashedPassword(password, salt);
 
       // Continue with the rest of the code
       const createdUser = prisma.users.create({

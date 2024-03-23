@@ -7,6 +7,7 @@ import { ISuperController } from '../../interfaces/ISuperController.interface';
 import { UserDTO } from '../../models/DTO/User.DTO';
 import L from '../../../common/logger';
 const prisma = new PrismaClient();
+
 export class UsersController implements ISuperController {
   async all(req: Request, res: Response): Promise<void> {
     if (req.query.search as string) {
@@ -17,8 +18,8 @@ export class UsersController implements ISuperController {
       res.status(200).json(users);
       return;
     }
-    const result = await UsersService.all();
-    res.json(result);
+    const users = await UsersService.all();
+    res.status(200).json(users);
   }
 
   async byId(req: Request, res: Response): Promise<void> {
