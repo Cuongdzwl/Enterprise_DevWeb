@@ -10,15 +10,25 @@ const prisma = new PrismaClient();
 
 export class UsersController implements ISuperController {
   async all(req: Request, res: Response): Promise<void> {
-    if (req.query.search as string) {
-      const users = await UsersService.search(
-        req.query.search as string,
-        req.query.keyword as string
-      );
+    var search: string = req.query.search as string;
+    var keyword: string = req.query.keyword as string;
+  
+
+    if (req.query.search) {
+      const users = await UsersService.search(search, keyword);
       res.status(200).json(users);
       return;
     }
-    const users = await UsersService.all();
+
+    if (req.query.filter) {
+      const users = await UsersService.search(search, keyword);
+      res.status(200).json(users);
+      return;
+    }
+    const depth = Number.parseInt(req.query.depth?.toString() ?? '');
+
+    const users = await UsersService.all(depth);
+    
     res.status(200).json(users);
   }
 
