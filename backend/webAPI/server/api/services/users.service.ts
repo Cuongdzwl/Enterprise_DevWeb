@@ -139,7 +139,7 @@ export class UsersService implements ISuperService<User> {
   // Update
   async update(id: number, user: User): Promise<any> {
     L.info(`update ${model} with id ${id}`);
-    this.byId(id) // Lambda function
+    this.byId(id)
       .then((result: User) => {
         if (user.Password) {
           var hashedPassword: string = utils.hashedPassword(
@@ -155,10 +155,11 @@ export class UsersService implements ISuperService<User> {
           Email: user.Email,
           Phone: user.Phone,
           Address: user.Address,
-        };
-        if (result.RoleID == 1) {
-          data.RoleID = result.RoleID;
-          data.FacultyID = result.FacultyID;
+
+        }
+        if(result.RoleID == 1){
+            data.RoleID = result.RoleID;
+            data.FacultyID = result.FacultyID;
         }
         const updatedUser = prisma.users.update({
           where: { ID: id },
@@ -172,8 +173,8 @@ export class UsersService implements ISuperService<User> {
           message: UserExceptionMessage.BAD_REQUEST,
         });
       });
-  }
-
+    }
+    
   async validateConstraints(
     user: User
   ): Promise<{ isValid: boolean; error?: string; message?: string }> {

@@ -3,19 +3,29 @@ import UsersService from '../../services/users.service';
 import FacultiesService from '../../services/faculties.service';
 import { Request, Response } from 'express';
 import { ISuperController } from '../../interfaces/ISuperController.interface';
-import {UserDTO} from '../../models/DTO/User.DTO'
-
+import { UserDTO } from '../../models/DTO/User.DTO';
+import L from '../../../common/logger';
 export class UsersController implements ISuperController {
   async all(req: Request, res: Response): Promise<void> {
-    if (req.query.search as string) {
-      const users = await UsersService.search(
-        req.query.search as string,
-        req.query.keyword as string
-      );
+    var search: string = req.query.search as string;
+    var keyword: string = req.query.keyword as string;
+  
+
+    if (req.query.search) {
+      const users = await UsersService.search(search, keyword);
       res.status(200).json(users);
       return;
     }
-    const users = await UsersService.all();
+
+    if (req.query.filter) {
+      const users = await UsersService.search(search, keyword);
+      res.status(200).json(users);
+      return;
+    }
+    const depth = Number.parseInt(req.query.depth?.toString() ?? '');
+
+    const users = await UsersService.all(depth);
+    
     res.status(200).json(users);
   }
 
@@ -24,23 +34,21 @@ export class UsersController implements ISuperController {
     const depth = Number.parseInt(req.query.depth?.toString() ?? '');
 
     try {
-      UsersService.byId(id).then((r) => {
-      if (r) {
-          const result : UserDTO = new UserDTO().map(r)
-        res.json(result);
-      } else {
-        res.status(404).end();
-      }
+      await UsersService.byId(id).then((r) => {
+        if (r) {
+          const result: UserDTO = new UserDTO().map(r);
+          res.json(result);
+        } else {
+          res.status(404).end();
+        }
       });
     } catch (error) {
       res.status(400).json({ error: error.message }).end();
     }
   }
-  async create(req: Request, res: Response): Promise<void> {
-    const validations = await UsersService.validateConstraints(req.body);
-    if(!validations.isValid){
-      res.status(400).json({error: validations.error, message : validations.message}).end();
-      return;
+  create(req: Request, res: Response): void {
+    if (!UsersService.validateConstraints(req.body)) {
+      res.status(400).json({}).end();
     }
     try {
       UsersService.create(req.body).then((r) =>
@@ -64,22 +72,10 @@ export class UsersController implements ISuperController {
   }
 
   async update(req: Request, res: Response): Promise<void> {
-    const validations = await UsersService.validateConstraints(req.body);
-    if(!validations.isValid){
-      res.status(400).json({error: validations.error, message : validations.message}).end();
-      return;
+    if (!UsersService.validateConstraints(req.body)) {
+      res.status(400).json({}).end();
     }
     const id = Number.parseInt(req.params['id']);
-    if (!/^\d{1,20}$/.test(id.toString())) {
-      res.status(400).json({error: "Invalid User ID", message : "User ID must be a number with a maximum of 20 digits."}).end();
-      return;
-    }
-    const userExist = await prisma.users.findUnique({where : {ID : id}})
-    if(!userExist)
-    {
-      res.status(400).json({error: "Invalid User ID", message : "Referenced User does not exist."}).end();
-      return;
-    }
     try {
       await UsersService.update(id, req.body).then((r) => {
         // TODO: FIX THIS!! WRONG RESPONSE CODE

@@ -471,6 +471,95 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Contribution'
+  /roles:
+    get:
+      tags:
+        - Roles
+      summary: Get all roles
+      responses:
+        '200':
+          description: A list of roles
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Role'
+    post:
+      tags:
+        - Roles
+      summary: Create a new role
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Role'
+      responses:
+        '201':
+          description: Role created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Role'
+  /roles/{id}:
+    get:
+      tags:
+        - Roles
+      summary: Get a role by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: A role
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Role'
+    put:
+      tags:
+        - Roles
+      summary: Update a role
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Role'
+      responses:
+        '200':
+          description: Role updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Role'
+    delete:
+      tags:
+        - Roles
+      summary: Delete a role
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Role deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Role'
   /comments:
     get:
       tags:
@@ -745,6 +834,22 @@ components:
       required:
         - Email
         - string
+    Role:
+      type: object
+      required:
+        - name
+        - description
+      properties:
+        ID:
+          type: integer
+          format: int64
+          description: The unique identifier for the role
+        name:
+          type: string
+          description: The name of the role
+        description:
+          type: string
+          description: A description of the role
   securitySchemes:
     bearerAuth: # arbitrary name for the security scheme
       type: http
