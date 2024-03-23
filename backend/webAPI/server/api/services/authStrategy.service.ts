@@ -5,8 +5,6 @@ import usersService from './users.service';
 import passport from 'passport';
 
 import bcrypt from 'bcrypt';
-import { UserDTO } from '../models/DTO/User.DTO';
-import { User } from '../models/User';
 
 // Config
 const jwtOptions: any = {
@@ -23,7 +21,8 @@ const jwtStrategy = new Jwt(jwtOptions, async (payload, done: any) => {
     if (!user) {
       return done(null, false); // User not found
     }
-    return done(null, { user: new UserDTO().map(user) }); // Pass user ID to the request object
+
+    return done(null, { id: user.id }); // Pass user ID to the request object
   } catch (error) {
     return done(error, false);
   }
@@ -36,9 +35,17 @@ const localStrategy = new Local(
   },
   async (email, password, done) => {
     try {
-      var users = await usersService.filter('Email', email);
-      L.info(users);
-      const user : User = users[0];
+        const phoneRegex = /^\d{10,15}$/;
+        if (phoneRegex.test(email)) {
+            var users = await usersService.filter('Phone', email);
+        } else {
+            var users = await usersService.filter('Email', email);
+        }
+      const user = users[0];
+      L.info(user);
+      if (!user) {
+        return done(null, false); // User not found
+      }
       if (!user) {
         return done(null, false, { message: 'Invalid email.' });
       }
@@ -46,10 +53,9 @@ const localStrategy = new Local(
       if (!validPassword) {
         return done(null, false, { message: 'Invalid credentials.' });
       }
-      L.info(''+ user.RoleID);
+
       return done(null, user);
     } catch (err) {
-      L.info('error: ' + err);
       return done(err);
     }
   }

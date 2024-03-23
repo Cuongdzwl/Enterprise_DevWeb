@@ -1,12 +1,10 @@
 import { Role } from './../../models/Role';
-import { PrismaClient } from '@prisma/client';
 import UsersService from '../../services/users.service';
 import FacultiesService from '../../services/faculties.service';
 import { Request, Response } from 'express';
 import { ISuperController } from '../../interfaces/ISuperController.interface';
-import { UserDTO } from '../../models/DTO/User.DTO';
-import L from '../../../common/logger';
-const prisma = new PrismaClient();
+import {UserDTO} from '../../models/DTO/User.DTO'
+
 export class UsersController implements ISuperController {
   async all(req: Request, res: Response): Promise<void> {
     if (req.query.search as string) {
@@ -17,8 +15,8 @@ export class UsersController implements ISuperController {
       res.status(200).json(users);
       return;
     }
-    const result = await UsersService.all();
-    res.json(result);
+    const users = await UsersService.all();
+    res.status(200).json(users);
   }
 
   async byId(req: Request, res: Response): Promise<void> {
@@ -26,13 +24,13 @@ export class UsersController implements ISuperController {
     const depth = Number.parseInt(req.query.depth?.toString() ?? '');
 
     try {
-      await UsersService.byId(id,depth).then((r) => {
-        if (r) {
-          const result: UserDTO = new UserDTO().map(r);
-          res.json(result);
-        } else {
-          res.status(404).end();
-        }
+      UsersService.byId(id).then((r) => {
+      if (r) {
+          const result : UserDTO = new UserDTO().map(r)
+        res.json(result);
+      } else {
+        res.status(404).end();
+      }
       });
     } catch (error) {
       res.status(400).json({ error: error.message }).end();

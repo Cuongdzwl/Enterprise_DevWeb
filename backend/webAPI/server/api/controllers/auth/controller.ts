@@ -1,6 +1,8 @@
 import { IAuthController } from 'server/api/interfaces/IAuthController.interface';
 import UserService from '../../services/users.service';
 import { Request, Response } from 'express';
+import authService from '../../services/auth.service';
+import { UserDTO } from 'server/api/models/DTO/User.DTO';
 import { User } from 'server/api/models/User';
 import bcrypt from 'bcrypt'
 
@@ -41,8 +43,7 @@ export class AuthController implements IAuthController {
     res.json().end();
   }
 
-  async forgotPassword(req: Request, res: Response): Promise<void> {
-    const email = req.query.email      
+  async forgotPassword(req: Request, res: Response): Promise<void> {     
     const email = req.query.email      
     const result = await UserService.all();
     res.json(result);

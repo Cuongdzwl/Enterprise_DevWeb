@@ -8,6 +8,7 @@ import l from './logger';
 import cors from 'cors';
 import passportJWT from 'passport-jwt';
 import passport from 'passport';
+import jwt from 'jsonwebtoken';
 
 import errorHandler from '../api/middlewares/error.handler';
 import * as OpenApiValidator from 'express-openapi-validator';

@@ -270,7 +270,25 @@ export class UsersService implements ISuperService<User> {
             'Phone can only contain numbers, with a maximum of 15 digits.',
         };
       }
+      // Validate Phone
+      if (user.Phone && !/^\d{1,15}$/.test(user.Phone)) {
+        return {
+          isValid: false,
+          error: UserExceptionMessage.INVALID,
+          message:
+            'Phone can only contain numbers, with a maximum of 15 digits.',
+        };
+      }
 
+      // Validate Address
+      if (user.Address && user.Address.length > 300) {
+        return {
+          isValid: false,
+          error: UserExceptionMessage.INVALID,
+          message:
+            'Address cannot be longer than 300 characters and cannot contain special characters.',
+        };
+      }
       // Validate Address
       if (user.Address && user.Address.length > 300) {
         return {
