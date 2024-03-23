@@ -1,0 +1,123 @@
+{
+  "account": [
+    {
+      "name": "David Nguyen",
+      "email": "davidnguyen@example.com",
+      "phone": "+84123456791",
+      "address": "Da Nang",
+      "role": 3,
+      "faculty": 4,
+      "id": 3
+    },
+    {
+      "name": "Sarah Tran",
+      "email": "sarahtran@example.com",
+      "phone": "+84123456792",
+      "address": "Hai Phong",
+      "role": 3,
+      "faculty": 3,
+      "id": 4
+    },
+    {
+      "name": "Linda Pham",
+      "email": "lindapham@example.com",
+      "phone": "+84123456794",
+      "address": "Bien Hoa",
+      "role": 3,
+      "faculty": 3,
+      "password": "12345678",
+      "id": 6
+    },
+    {
+      "name": "Daniel Do",
+      "email": "danieldo@example.com",
+      "phone": "+84123456797",
+      "address": "Ha Long",
+      "role": 3,
+      "faculty": 3,
+      "id": 9
+    }
+  ],
+  "role": [
+    {
+      "id": 3,
+      "name": "Role 3",
+      "description": "Description of Role 3"
+    },
+    {
+      "id": 4,
+      "name": "Role 4",
+      "description": "Description of Role 4"
+    }
+  ],
+  "faculty": [
+    {
+      "name": "Faculty 3",
+      "description": "Description of Faculty 3",
+      "guest": true,
+      "id": 3
+    },
+    {
+      "name": "Faculty 4",
+      "description": "Description of Faculty 4dasda",
+      "guest": false,
+      "id": 4
+    },
+    {
+      "name": "Bookcases & Shelves",
+      "description": "dsads",
+      "guest": "true",
+      "id": 5
+    }
+  ],
+  "event": [
+    {
+      "name": "event 1",
+      "description": "description 1",
+      "faculty": 3,
+      "closureDate": "2022-01-01",
+      "dueDate": "2022-02-01",
+      "id": "1"
+    },
+    {
+      "name": "event 2",
+      "description": "description 2",
+      "faculty": 4,
+      "closureDate": "2022-03-01",
+      "dueDate": "2022-04-01",
+      "id": "2"
+    },
+    {
+      "name": "event 3",
+      "description": "description 3",
+      "faculty": 3,
+      "closureDate": "2022-05-01",
+      "dueDate": "2022-06-01",
+      "id": "3"
+    },
+    {
+      "name": "event 4",
+      "description": "description 4",
+      "faculty": 4,
+      "closureDate": "2022-07-01",
+      "dueDate": "2022-08-01",
+      "id": "4"
+    },
+    {
+      "name": "event 5ffe",
+      "description": "description 5ddasdasfew",
+      "faculty": 5,
+      "closureDate": "9/1/2022",
+      "dueDate": "10/1/2022",
+      "id": "5"
+    },
+    {
+      "name": "Event 6",
+      "description": "fsda",
+      "faculty": 3,
+      "closureDate": "3/21/2024",
+      "dueDate": "3/21/2024",
+      "id": "Lumz5Q_"
+    }
+  ]
+}
