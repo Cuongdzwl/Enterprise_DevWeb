@@ -91,7 +91,22 @@ paths:
         - in: query
           name: depth
           schema:
-            type: number
+            type: string
+          description: Search parameter
+        - in: query
+          name: filter
+          schema:
+            type: string
+          description: Filter by field parameter
+        - in: query
+          name: keyword
+          schema:
+            type: string
+          description: Keyword parameter
+        - in: query
+          name: depth
+          schema:
+            type: string
           description: JSON response depth parameter
       responses:
         '200':

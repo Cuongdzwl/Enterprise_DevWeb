@@ -3,6 +3,9 @@ import UserService from '../../services/users.service';
 import { Request, Response } from 'express';
 import authService from '../../services/auth.service';
 import { UserDTO } from 'server/api/models/DTO/User.DTO';
+import { User } from '../../models/User'
+import L from '../../../common/logger'
+import * as bcrypt from 'bcrypt';
 
 export class AuthController implements IAuthController {
   logout(_: Request, res: Response): void {
@@ -11,8 +14,6 @@ export class AuthController implements IAuthController {
   }
   profile(_:Request, res: Response): void {
     res.status(200).json({ user: res.locals.user.user , message: 'User is authenticated' });
-    res.clearCookie('token');
-    res.status(200).json({ message: 'Logged out' });
   }
 
   updateProfile(req: Request, res: Response): void {
@@ -25,18 +26,15 @@ export class AuthController implements IAuthController {
     } catch (error) {
       res.status(400).json({ error: error.message }).end();
     }
-  user(_:Request, res: Response): void {
-    res.status(200).json({user: res.locals.user, message: 'User is authenticated' });
   }
   async login(req: Request, res: Response): Promise<void> {
     try {
       const { user, token } = await authService.login(req);
       res.json({ user, token });
     } catch (err) {
-      res.status(400).json({ message: err.message + "controller" });
+      res.status(400).json({ message: err.message });
     }
-  }
-
+  
     const { email, password, phone } = req.body;
     UserService.filter('Email', email).then((r) => {
       r = r as User;
@@ -49,12 +47,11 @@ export class AuthController implements IAuthController {
       }
     });
 
-
     res.json().end();
   }
 
-  async forgotPassword(req: Request, res: Response): Promise<void> {
-    const email = req.query.email         
+  async forgotPassword(req: Request, res: Response): Promise<void> {  
+    const email = req.query.email      
     const result = await UserService.all();
     res.json(result);
   }

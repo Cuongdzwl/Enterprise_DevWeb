@@ -4,9 +4,8 @@ generator client {
 
 datasource db {
   provider          = "sqlserver"
-  url               = "sqlserver://ducdd.database.windows.net:1433;database=ducdd;user=ducdd@ducdd;password=quainhangw12a2@;encrypt=true;trustServerCertificate=false;hostNameInCertificate=*.database.windows.net;loginTimeout=30;"
-
-  shadowDatabaseUrl = "sqlserver://ducdd.database.windows.net:1433;database=model2;user=ducdd@ducdd;password=quainhangw12a2@;encrypt=true;trustServerCertificate=false;hostNameInCertificate=*.database.windows.net;loginTimeout=30;"
+  url               = env("DATABASE_URL")
+  // shadowDatabaseUrl = env("DATABASE_URL")
 }
 
 model roles {
