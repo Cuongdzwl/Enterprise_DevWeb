@@ -14,4 +14,5 @@ export default function routes(app: Application): void {
   app.use('/api/v1/contributions', contributionsRouter);
   app.use('/api/v1/comments', commentsRouter);
   app.use('/api/v1/events', eventsRouter);
+  app.use('/api/v1/auth', authRouter);
 }

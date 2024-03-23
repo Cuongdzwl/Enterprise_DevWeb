@@ -3,13 +3,50 @@ import L from '../../common/logger';
 import { PrismaClient } from '@prisma/client';
 import { ExceptionMessage, NotificationExceptionMessage } from '../common/exception';
 import { ISuperService } from '../interfaces/ISuperService.interface';
-import UserDTO from '../models/DTO/User.DTO';
+import { Novu } from '@novu/node'; 
+import { NotificationSentThrough } from '../models/NotificationSentThrough';
+import { NotificationSentType } from '../models/NotificationSentType';
+import { User } from '../models/User';
+
+const novu = new Novu(process.env.NOVU_API_KEY as string);
 
 const prisma = new PrismaClient();
 const model = 'notifications';
 
-
 export class NotificationService implements ISuperService<Notification> {
+  private checkAPIKEY(): boolean {
+    return process.env.NOVU_API_KEY ? true : false;
+  }
+  bulkTrigger(user : User[], payload : any, type: NotificationSentType, through : NotificationSentThrough): void {
+    if(!this.checkAPIKEY()){
+      throw new Error('NOVU_API_KEY is not set');
+    }
+
+    // Workflow format [SENT_THROUGH][SENT_TYPE]
+
+    
+  } 
+  trigger(user : User, payload : any, type: NotificationSentType, through : NotificationSentThrough){
+    novu.trigger(`[`+ + `][]`, {
+      to: {
+        subscriberId: user.ID.toString(), // Convert subscriberId to string
+        email: through === NotificationSentThrough.Email ? user.Email : undefined,
+        phone: through === NotificationSentThrough.SMS ? user.Phone : undefined,
+      },
+      payload: payload
+    }).then((_) => {
+      // Save to database
+    });
+  } 
+  cancel(transactionID : string): Promise<any> {
+    return Promise.resolve(novu.events.cancel(transactionID));
+  } 
+  bulkCancel(){
+      
+  }
+  broadcast(){
+    
+  }
   all(): Promise<any> {
     const notifications = prisma.notifications.findMany();
     L.info(notifications, `fetch all ${model}(s)`);

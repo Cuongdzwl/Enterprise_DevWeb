@@ -5,33 +5,50 @@ info:
   version: 1.0.0
 servers:
   - url: /api/v1
-# security:
-#   - bearerAuth: []
+security:
+  - bearerAuth: []
 paths:
   /auth/login:
     post:
       tags:
         - Authentication
       summary: Login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                password:
+                  type: string
       responses:
         '200':
           description: Login successful
+        '401':
+          description: Unauthorized
   /auth/logout:
     post:
       tags:
         - Authentication
       summary: Logout
       responses:
-        '501':
-          description: Method not implemented
+        '200':
+          description: Logout successful
+        '401':
+          description: Unauthorized
   /auth/user:
     get:
       tags:
         - Authentication
       summary: Get user info
       responses:
-        '501':
-          description: Method not implemented
+        '200':
+          description: User Authenticated
+        '401':
+          description: Unauthorized
   /auth/forgotPassword:
     post:
       tags:
@@ -549,10 +566,6 @@ components:
           format: int64
           nullable: true
         Name:
-          type: string
-        Password:
-          type: string
-        Salt:
           type: string
         Email:
           type: string

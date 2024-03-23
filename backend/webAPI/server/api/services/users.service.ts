@@ -1,17 +1,32 @@
+import { Role } from './../models/Role';
 import L from '../../common/logger';
 import { PrismaClient } from '@prisma/client';
 import { User } from '../models/User';
 import { UserExceptionMessage } from '../common/exception';
-import  NotificationService  from './notifications.service';
+import NotificationService from './notifications.service';
 import { ISuperService } from '../interfaces/ISuperService.interface';
-import bcrypt from 'bcrypt';
+import utils from '../common/utils';
 
 const prisma = new PrismaClient();
 const model = 'user';
 
 export class UsersService implements ISuperService<User> {
   all(): Promise<any> {
-    const users = prisma.users.findMany();
+    const users = prisma.users.findMany({
+      select: {
+        ID: true,
+        Name: true,
+        Email: true,
+        Phone: true,
+        Address: true,
+        CreatedAt: true,
+        UpdatedAt: true,
+        RoleID: true,
+        FacultyID: true,
+        Role: {select: {ID: true, Name: true}},
+        Faculty: {select: {ID: true, Name: true}},
+      },
+    });
     L.info(users, `fetch all ${model}(s)`);
     return Promise.resolve(users);
   }
@@ -46,28 +61,13 @@ export class UsersService implements ISuperService<User> {
 
   // Create
   async create(user: User): Promise<any> {
-    // TODO: VALIDATE CONSTRAINTss
-    const validations = await this.validateConstraints(user)
-    if (!validations.isValid) {
-      return Promise.resolve({
-        error: validations.error,
-        message: validations.message,
-      });
-    }
-    //
     try {
       L.info(`create ${model} with id ${user.ID}`);
-      const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-      let password = '';
-      for (let i = 0; i < 8; i++) {
-        const randomIndex = Math.floor(Math.random() * characters.length);
-        password += characters[randomIndex];
-      }
-      // Send email
-      //
-      const saltRounds = 10;
-      const salt = bcrypt.genSaltSync(saltRounds);
-      const hashedPassword = bcrypt.hashSync(password, salt);
+
+      var password: string = utils.generatePassword();
+      L.info(`create ${model} with password ${password}`);
+      var salt: string = utils.generateSalt();
+      var hashedPassword: string = utils.hashedPassword(password, salt);
 
       // Continue with the rest of the code
       const createdUser = prisma.users.create({
@@ -110,14 +110,6 @@ export class UsersService implements ISuperService<User> {
   }
   // Update
   async update(id: number, user: User): Promise<any> {
-    // Validate
-    const validations = await this.validateConstraints(user)
-    if (!validations.isValid) {
-      return Promise.resolve({
-        error: validations.error,
-        message: validations.message,
-      });
-    }
     try {
       L.info(`update ${model} with id ${user.ID}`);
       const updatedUser = prisma.users.update({
@@ -141,51 +133,98 @@ export class UsersService implements ISuperService<User> {
       });
     }
   }
-  async validateConstraints(user: User): Promise<{isValid: boolean, error?: string, message?: string}> { {
-    // Validate Name
-    if (!user.Name || !/^[A-Za-z\s]{1,15}$/.test(user.Name)) {
-      return { isValid: false, error: UserExceptionMessage.INVALID_ROLEID, message: "User name is invalid, cannot contain numbers or special characters, and must have a maximum of 15 characters." };
-  }
 
-  // Validate Password
-  if (!user.Password || !/(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}/.test(user.Password)) {
-      return { isValid: false, error: UserExceptionMessage.INVALID, message: "Password must be at least 8 characters long and contain both letters and numbers." };
-  }
+  async validateConstraints(
+    user: User
+  ): Promise<{ isValid: boolean; error?: string; message?: string }> {
+    {
+      // Validate Name
+      if (!user.Name || !/^[A-Za-z\s]{1,15}$/.test(user.Name)) {
+        return {
+          isValid: false,
+          error: UserExceptionMessage.INVALID_ROLEID,
+          message:
+            'User name is invalid, cannot contain numbers or special characters, and must have a maximum of 15 characters.',
+        };
+      }
 
-  // Validate Salt
-  if (!user.Salt || !/^[a-z\d]{1,26}$/.test(user.Salt)) {
-      return { isValid: false, error: UserExceptionMessage.INVALID, message: "Salt is invalid, must be a string of random lowercase letters and numbers, maximum of 26 characters." };
-  }
+      // Validate Password
+      if (
+        !user.Password ||
+        !/(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}/.test(user.Password)
+      ) {
+        return {
+          isValid: false,
+          error: UserExceptionMessage.INVALID,
+          message:
+            'Password must be at least 8 characters long and contain both letters and numbers.',
+        };
+      }
 
-  // Validate Email
-  if (!user.Email || !/\S+@\S+\.\S+/.test(user.Email)) {
-      return { isValid: false, error: UserExceptionMessage.INVALID, message: "Email must contain '@' and cannot contain other special characters." };
-  }
+      // Validate Salt
+      if (!user.Salt || !/^[a-z\d]{1,26}$/.test(user.Salt)) {
+        return {
+          isValid: false,
+          error: UserExceptionMessage.INVALID,
+          message:
+            'Salt is invalid, must be a string of random lowercase letters and numbers, maximum of 26 characters.',
+        };
+      }
 
-  // Validate Role ID
-  if (!/^\d{1,20}$/.test(user.RoleID.toString())) {
-      return { isValid: false, error: UserExceptionMessage.INVALID_ROLEID, message: "Role ID must be a number with a maximum of 20 digits." };
-  }
+      // Validate Email
+      if (!user.Email || !/\S+@\S+\.\S+/.test(user.Email)) {
+        return {
+          isValid: false,
+          error: UserExceptionMessage.INVALID,
+          message:
+            "Email must contain '@' and cannot contain other special characters.",
+        };
+      }
 
-  const roleExists = await prisma.roles.findUnique({ where: { ID: user.RoleID } });
-    if (!roleExists) {
-        return { isValid: false, error: UserExceptionMessage.INVALID_ROLEID, message: "Referenced Role does not exist." };
+      // Validate Role ID
+      if (!/^\d{1,20}$/.test(user.RoleID.toString())) {
+        return {
+          isValid: false,
+          error: UserExceptionMessage.INVALID_ROLEID,
+          message: 'Role ID must be a number with a maximum of 20 digits.',
+        };
+      }
+
+      const roleExists = await prisma.roles.findUnique({
+        where: { ID: user.RoleID },
+      });
+      if (!roleExists) {
+        return {
+          isValid: false,
+          error: UserExceptionMessage.INVALID_ROLEID,
+          message: 'Referenced Role does not exist.',
+        };
+      }
+
+      // Validate Phone
+      if (user.Phone && !/^\d{1,15}$/.test(user.Phone)) {
+        return {
+          isValid: false,
+          error: UserExceptionMessage.INVALID,
+          message:
+            'Phone can only contain numbers, with a maximum of 15 digits.',
+        };
+      }
+
+      // Validate Address
+      if (user.Address && user.Address.length > 300) {
+        return {
+          isValid: false,
+          error: UserExceptionMessage.INVALID,
+          message:
+            'Address cannot be longer than 300 characters and cannot contain special characters.',
+        };
+      }
+
+      // If all validations pass
+      return { isValid: true };
     }
-
-  // Validate Phone
-  if (user.Phone && !/^\d{1,15}$/.test(user.Phone)) {
-      return { isValid: false, error: UserExceptionMessage.INVALID, message: "Phone can only contain numbers, with a maximum of 15 digits." };
   }
-
-  // Validate Address
-  if (user.Address && user.Address.length > 300) {
-      return { isValid: false, error: UserExceptionMessage.INVALID, message: "Address cannot be longer than 300 characters and cannot contain special characters." };
-  }
-
-  // If all validations pass
-  return { isValid: true };
-  }
-}
 }
 
 export default new UsersService();

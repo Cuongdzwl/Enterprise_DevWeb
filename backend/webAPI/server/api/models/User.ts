@@ -1,6 +1,5 @@
 import { Faculty } from "./Faculty";
 import { Role } from "./Role";
-
 export class User {
     ID: number;
     Name: string;
@@ -16,6 +15,7 @@ export class User {
 
     Role?: Role;
     Faculty?: Faculty;
+    static Email: string;
 
     constructor(ID: number, Name: string, Password: string, Salt: string, Email: string, CreatedAt: Date, UpdatedAt: Date, RoleID: number, FacultyID: number) {
         this.ID = ID;
