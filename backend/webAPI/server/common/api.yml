@@ -106,7 +106,7 @@ paths:
         - in: query
           name: depth
           schema:
-            type: string
+            type: number
           description: JSON response depth parameter
       responses:
         '200':
