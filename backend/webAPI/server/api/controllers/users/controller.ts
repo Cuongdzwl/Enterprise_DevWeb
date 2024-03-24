@@ -7,32 +7,17 @@ import { UserDTO } from '../../models/DTO/User.DTO';
 import L from '../../../common/logger';
 export class UsersController implements ISuperController {
   async all(req: Request, res: Response): Promise<void> {
-    var search: string = req.query.search as string;
-    var keyword: string = req.query.keyword as string;
-  
-
-    if (req.query.search) {
-      const users = await UsersService.search(search, keyword);
-      res.status(200).json(users);
-      return;
-    }
-
-    if (req.query.filter) {
-      const users = await UsersService.search(search, keyword);
-      res.status(200).json(users);
-      return;
-    }
     const depth = Number.parseInt(req.query.depth?.toString() ?? '');
-
     const users = await UsersService.all(depth);
-    
     res.status(200).json(users);
   }
 
   async byId(req: Request, res: Response): Promise<void> {
     const id = Number.parseInt(req.params['id']);
+    const depth = Number.parseInt(req.query.depth?.toString() ?? '');
+
     try {
-      await UsersService.byId(id).then((r) => {
+      await UsersService.byId(id,depth).then((r) => {
         if (r) {
           const result: UserDTO = new UserDTO().map(r);
           res.json(result);

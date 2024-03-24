@@ -3,15 +3,17 @@ import { Request, Response } from 'express';
 import { ISuperController } from '../../interfaces/ISuperController.interface';
 
 export class FacultiesController implements ISuperController {
-  async all(_: Request, res: Response): Promise<void> {
-    const result = await FacultyService.all();
+  async all(req: Request, res: Response): Promise<void> {
+    const depth = Number.parseInt(req.query.depth?.toString() ?? '');
+    const result = await FacultyService.all(depth);
     res.json(result);
   }
 
   byId(req: Request, res: Response): void {
     const id = Number.parseInt(req.params['id']);
+    const depth = Number.parseInt(req.query.depth?.toString() ?? '');
     try {
-      FacultyService.byId(id).then((r) => {
+      FacultyService.byId(id,depth).then((r) => {
         if (r) res.json(r);
         else res.status(404).end();
       });

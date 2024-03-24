@@ -34,9 +34,25 @@ export class UsersService implements ISuperService<User> {
     return Promise.resolve(users);
   }
   // Filter
-  byId(id: number): Promise<any> {
+  byId(id: number, depth?: number): Promise<any> {
+    var select: any = {
+      ID: true,
+      Name: true,
+      Email: true,
+      Phone: true,
+      Address: true,
+      CreatedAt: true,
+      UpdatedAt: true,
+      RoleID: true,
+      FacultyID: true,
+    };
+    if (depth == 1) {
+      select.Faculty = { select: { ID: true, Name: true } };
+      select.Role = { select: { ID: true, Name: true } };
+    }
     L.info(`fetch ${model} with id ${id}`);
     const user = prisma.users.findUnique({
+      select,
       where: { ID: id },
     });
     return Promise.resolve(user);
@@ -115,7 +131,7 @@ export class UsersService implements ISuperService<User> {
   // Update
   async update(id: number, user: User): Promise<any> {
     L.info(`update ${model} with id ${id}`);
-    this.byId(id)
+    this.byId(id) // Lambda function
       .then((result: User) => {
         if (user.Password) {
           var hashedPassword: string = utils.hashedPassword(
@@ -131,11 +147,10 @@ export class UsersService implements ISuperService<User> {
           Email: user.Email,
           Phone: user.Phone,
           Address: user.Address,
-
-        }
-        if(result.RoleID == 1){
-            data.RoleID = result.RoleID;
-            data.FacultyID = result.FacultyID;
+        };
+        if (result.RoleID == 1) {
+          data.RoleID = result.RoleID;
+          data.FacultyID = result.FacultyID;
         }
         const updatedUser = prisma.users.update({
           where: { ID: id },
@@ -149,8 +164,8 @@ export class UsersService implements ISuperService<User> {
           message: UserExceptionMessage.BAD_REQUEST,
         });
       });
-    }
-    
+  }
+
   async validateConstraints(
     user: User
   ): Promise<{ isValid: boolean; error?: string; message?: string }> {

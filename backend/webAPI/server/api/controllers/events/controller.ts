@@ -3,15 +3,19 @@ import { Request, Response } from 'express';
 import { ISuperController } from '../../interfaces/ISuperController.interface';
 
 export class EventsController implements ISuperController {
-    async all(_: Request, res: Response): Promise<void> {
-        const result = await EventsService.all();
+    async all(req: Request, res: Response): Promise<void> {
+        const depth = Number.parseInt(req.query.depth?.toString() ?? '');
+
+        const result = await EventsService.all(depth);
         res.json(result);
     }
 
     byId(req: Request, res: Response): void {
+        const depth = Number.parseInt(req.query.depth?.toString() ?? '');
+
         const id = Number.parseInt(req.params['id']);
         try {
-            EventsService.byId(id).then((r) => {
+            EventsService.byId(id,depth).then((r) => {
                 if (r) res.json(r);
                 else res.status(404).end();
             });
