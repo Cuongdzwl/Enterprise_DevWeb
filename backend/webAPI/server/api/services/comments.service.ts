@@ -8,15 +8,40 @@ const prisma = new PrismaClient();
 const model = 'comments';
 
 export class CommentsService implements ISuperService<Comment> {
-  all(): Promise<any> {
-    const comments = prisma.comments.findMany();
+  all(depth? : number): Promise<any> {
+    var select : any = {
+      ID : true,
+      Content : true,
+      CreatedAt : true,
+      UpdatedAt  : true,
+      ContributionID : true,
+      UserID: true,
+    }
+    if(depth == 1){
+      select.User = {select : {ID : true, Name : true}};
+      select.Contribution = {select : {ID : true, Name : true}};
+    }
+    const comments = prisma.comments.findMany({select,orderBy: [{'CreatedAt' : 'desc'}]});
     L.info(comments, `fetch all ${model}(s)`);
     return Promise.resolve(comments);
   }
 
-  byId(id: number): Promise<any> {
+  byId(id: number,depth? : number): Promise<any> {
+    var select : any = {
+      ID : true,
+      Content : true,
+      CreatedAt : true,
+      UpdatedAt  : true,
+      ContributionID : true,
+      UserID: true,
+    }
+    if(depth == 1){
+      select.User = {select : {ID : true, Name : true}};
+      select.Contribution = {select : {ID : true, Name : true}};
+    }
     L.info(`fetch ${model} with id ${id}`);
     const comment = prisma.comments.findUnique({
+      select,
       where: { ID: id },
     });
     return Promise.resolve(comment);

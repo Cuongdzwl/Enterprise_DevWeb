@@ -8,16 +8,57 @@ import { ISuperService } from '../interfaces/ISuperService.interface';
 const prisma = new PrismaClient();
 const model = 'contributions';
 
-export class ContributionsService implements ISuperService<Contribution>{
-  all(): Promise<any> {
-    const contributions = prisma.contributions.findMany();
+export class ContributionsService implements ISuperService<Contribution> {
+  all(depth?: number): Promise<any> {
+    var select: any = {
+      ID: true,
+      Name: true,
+      Content: true,
+      IsPublic: true,
+      IsApproved: true,
+      CreatedAt: true,
+      UpdatedAt: true,
+      EventID: true,
+      UserID: true,
+      StatusID: true,
+      LastEditByID :  true
+    };
+    if (depth == 1) {
+      select.User =  {select: {ID: true, Name: true}}
+      select.Event =  {select: {ID: true, Name: true}}
+      select.Files =  true;
+      select.Status =  true;
+      select.Comments =  true;
+    }
+    const contributions = prisma.contributions.findMany({select});
     L.info(contributions, `fetch all ${model}(s)`);
     return Promise.resolve(contributions);
   }
 
-  byId(id: number): Promise<any> {
+  byId(id: number, depth?: number): Promise<any> {
     L.info(`fetch ${model} with id ${id}`);
+    var select: any = {
+      ID: true,
+      Name: true,
+      Content: true,
+      IsPublic: true,
+      IsApproved: true,
+      CreatedAt: true,
+      UpdatedAt: true,
+      EventID: true,
+      UserID: true,
+      StatusID: true,
+      LastEditByID :  true
+    };
+    if (depth == 1) {
+      select.User =  {select: {ID: true, Name: true}}
+      select.Event =  {select: {ID: true, Name: true}}
+      select.Files =  true;
+      select.Status =  true;
+      select.Comments =  true;
+    }
     const contribution = prisma.contributions.findUnique({
+      select,
       where: { ID: id },
     });
     return Promise.resolve(contribution);
@@ -34,7 +75,7 @@ export class ContributionsService implements ISuperService<Contribution>{
   }
 
   async create(contribution: Contribution): Promise<any> {
-    const validations = await this.validateConstraints(contribution)
+    const validations = await this.validateConstraints(contribution);
     if (!validations.isValid) {
       return Promise.resolve({
         error: validations.error,
@@ -62,7 +103,7 @@ export class ContributionsService implements ISuperService<Contribution>{
       });
       return Promise.resolve(createdContribution);
     } catch (error) {
-      L.error(`create ${model} failed: ${error}`)
+      L.error(`create ${model} failed: ${error}`);
 
       return Promise.resolve({
         error: ContributionExceptionMessage.INVALID,
@@ -72,13 +113,13 @@ export class ContributionsService implements ISuperService<Contribution>{
   }
 
   delete(id: number): Promise<any> {
-    try{
+    try {
       L.info(`delete ${model} with id ${id}`);
       const deletedContribution = prisma.contributions.delete({
         where: { ID: id },
       });
       return Promise.resolve(deletedContribution);
-    }catch(error){
+    } catch (error) {
       L.error(`delete ${model} failed: ${error}`);
       return Promise.resolve({
         error: ContributionExceptionMessage.INVALID,
@@ -87,8 +128,8 @@ export class ContributionsService implements ISuperService<Contribution>{
     }
   }
 
-  async update(id: number ,contribution: Contribution): Promise<any> {
-    const validations = await this.validateConstraints(contribution)
+  async update(id: number, contribution: Contribution): Promise<any> {
+    const validations = await this.validateConstraints(contribution);
     if (!validations.isValid) {
       return Promise.resolve({
         error: validations.error,
@@ -117,7 +158,7 @@ export class ContributionsService implements ISuperService<Contribution>{
       });
       return Promise.resolve(updatedContribution);
     } catch (error) {
-      L.error(`update ${model} failed: ${error}`)
+      L.error(`update ${model} failed: ${error}`);
       return Promise.resolve({
         error: ContributionExceptionMessage.INVALID,
         message: ContributionExceptionMessage.BAD_REQUEST,
@@ -125,39 +166,82 @@ export class ContributionsService implements ISuperService<Contribution>{
     }
   }
 
-  async validateConstraints(contribution: Contribution): Promise<{isValid: boolean, error?: string, message?: string}> {
+  async validateConstraints(
+    contribution: Contribution
+  ): Promise<{ isValid: boolean; error?: string; message?: string }> {
     // Validate Name
     if (!contribution.Name || !/^[A-Za-z\s]{1,15}$/.test(contribution.Name)) {
-        return { isValid: false, error: ContributionExceptionMessage.INVALID, message: "Contribution name is invalid, cannot contain numbers or special characters, and must have a maximum of 15 characters." };
+      return {
+        isValid: false,
+        error: ContributionExceptionMessage.INVALID,
+        message:
+          'Contribution name is invalid, cannot contain numbers or special characters, and must have a maximum of 15 characters.',
+      };
     }
 
     // Validate Content
     if (!contribution.Content || contribution.Content.length > 3000) {
-        return { isValid: false, error: ContributionExceptionMessage.INVALID, message: "Content is invalid or too long, with a maximum of 3000 characters." };
+      return {
+        isValid: false,
+        error: ContributionExceptionMessage.INVALID,
+        message:
+          'Content is invalid or too long, with a maximum of 3000 characters.',
+      };
     }
 
     // Validate IsApproved and IsPublic
-    if (typeof contribution.IsApproved !== 'boolean' || typeof contribution.IsPublic !== 'boolean') {
-        return { isValid: false, error: ContributionExceptionMessage.INVALID, message: "IsApproved and IsPublic must be boolean values." };
+    if (
+      typeof contribution.IsApproved !== 'boolean' ||
+      typeof contribution.IsPublic !== 'boolean'
+    ) {
+      return {
+        isValid: false,
+        error: ContributionExceptionMessage.INVALID,
+        message: 'IsApproved and IsPublic must be boolean values.',
+      };
     }
 
     // Validate linkage IDs
     // Similar checks for EventID, StatusID, UserID, LastEditUserID...
-    const eventExists = await prisma.faculties.findUnique({ where: { ID: contribution.EventID } });
+    const eventExists = await prisma.faculties.findUnique({
+      where: { ID: contribution.EventID },
+    });
     if (!eventExists) {
-        return { isValid: false, error: ContributionExceptionMessage.INVALID_EVENTID, message: "Referenced event does not exist." };
+      return {
+        isValid: false,
+        error: ContributionExceptionMessage.INVALID_EVENTID,
+        message: 'Referenced event does not exist.',
+      };
     }
-    const userExists = await prisma.faculties.findUnique({ where: { ID: contribution.UserID } });
+    const userExists = await prisma.faculties.findUnique({
+      where: { ID: contribution.UserID },
+    });
     if (!userExists) {
-        return { isValid: false, error: ContributionExceptionMessage.INVALID_USERID, message: "Referenced user does not exist." };
+      return {
+        isValid: false,
+        error: ContributionExceptionMessage.INVALID_USERID,
+        message: 'Referenced user does not exist.',
+      };
     }
-    const lastEditByIdExists = await prisma.faculties.findUnique({ where: { ID: contribution.LastEditByID } });
+    const lastEditByIdExists = await prisma.faculties.findUnique({
+      where: { ID: contribution.LastEditByID },
+    });
     if (!lastEditByIdExists) {
-        return { isValid: false, error: ContributionExceptionMessage.INVALID_EVENTID, message: "Referenced user does not exist." };
+      return {
+        isValid: false,
+        error: ContributionExceptionMessage.INVALID_EVENTID,
+        message: 'Referenced user does not exist.',
+      };
     }
-    const statusExists = await prisma.faculties.findUnique({ where: { ID: contribution.StatusID } });
+    const statusExists = await prisma.faculties.findUnique({
+      where: { ID: contribution.StatusID },
+    });
     if (!statusExists) {
-        return { isValid: false, error: ContributionExceptionMessage.INVALID_EVENTID, message: "Referenced status does not exist." };
+      return {
+        isValid: false,
+        error: ContributionExceptionMessage.INVALID_EVENTID,
+        message: 'Referenced status does not exist.',
+      };
     }
     // If all validations pass
     return { isValid: true };

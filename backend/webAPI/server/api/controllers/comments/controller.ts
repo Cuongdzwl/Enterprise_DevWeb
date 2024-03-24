@@ -7,14 +7,18 @@ const prisma = new PrismaClient();
 export class CommentsController implements ISuperController {
     async all(req: Request, res: Response): Promise<void> {
         const id = Number.parseInt(req.params['id']);
-        const result = await CommentsService.all();
+        const depth = Number.parseInt(req.query.depth?.toString() ?? '');
+
+        const result = await CommentsService.all(depth);
         res.json(result);
     }
 
     byId(req: Request, res: Response): void {
         const id = Number.parseInt(req.params['id']);
+        const depth = Number.parseInt(req.query.depth?.toString() ?? '');
+
         try {
-            CommentsService.byId(id).then((r) => {
+            CommentsService.byId(id,depth).then((r) => {
                 if (r) res.json(r);
                 else res.status(404).end();
             });

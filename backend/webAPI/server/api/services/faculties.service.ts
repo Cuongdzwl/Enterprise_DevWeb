@@ -9,13 +9,39 @@ const prisma = new PrismaClient();
 const model = 'faculties';
 
 export class FacultiesService implements ISuperService<Faculty> {
-  all(): Promise<any> {
+  all(depth?: number): Promise<any> {
+    var select: any = {
+      ID: true,
+      Name: true,
+      Description: true,
+      IsEnabledGuest: true,
+      CreatedAt: true,
+      UpdatedAt: true,
+    };
+
+    if (depth == 1) {
+      select.Event = { select: { ID: true, Name: true } };
+      select.User = { select: { ID: true, Name: true } };
+    }
     const faculties = prisma.faculties.findMany();
     L.info(faculties, `fetch all ${model}(s)`);
     return Promise.resolve(faculties);
   }
   // Filter
-  byId(id: number): Promise<any> {
+  byId(id: number, depth?: number): Promise<any> {
+    var select: any = {
+      ID: true,
+      Name: true,
+      Description: true,
+      IsEnabledGuest: true,
+      CreatedAt: true,
+      UpdatedAt: true,
+    };
+
+    if (depth == 1) {
+      select.Events = { select: { ID: true, Name: true } };
+      select.Users = { select: { ID: true, Name: true } };
+    }
     L.info(`fetch ${model} with id ${id}`);
     const faculty = prisma.faculties.findUnique({
       where: { ID: id },
@@ -35,7 +61,7 @@ export class FacultiesService implements ISuperService<Faculty> {
 
   // Create
   async create(faculty: Faculty): Promise<any> {
-    const validations = await this.validateConstraints(faculty)
+    const validations = await this.validateConstraints(faculty);
     if (!validations.isValid) {
       return Promise.resolve({
         error: validations.error,
@@ -95,26 +121,41 @@ export class FacultiesService implements ISuperService<Faculty> {
       });
     }
   }
-  async validateConstraints(faculty: Faculty): Promise<{isValid: boolean, error?: string, message?: string}> {
+  async validateConstraints(
+    faculty: Faculty
+  ): Promise<{ isValid: boolean; error?: string; message?: string }> {
     // Validate Name
     if (!faculty.Name || !/^[A-Za-z\s]{1,15}$/.test(faculty.Name)) {
-        return { isValid: false, error: FacultyExceptionMessage.INVALID, message: "Faculty name is invalid, cannot contain numbers or special characters, and must have a maximum of 15 characters." };
+      return {
+        isValid: false,
+        error: FacultyExceptionMessage.INVALID,
+        message:
+          'Faculty name is invalid, cannot contain numbers or special characters, and must have a maximum of 15 characters.',
+      };
     }
 
     // Validate Description
     if (!faculty.Description || faculty.Description.length > 3000) {
-        return { isValid: false, error: FacultyExceptionMessage.INVALID, message: "Faculty description is invalid or too long, with a maximum of 3000 characters." };
+      return {
+        isValid: false,
+        error: FacultyExceptionMessage.INVALID,
+        message:
+          'Faculty description is invalid or too long, with a maximum of 3000 characters.',
+      };
     }
 
     // Validate IsEnabledGuest
     if (typeof faculty.IsEnabledGuest !== 'boolean') {
-        return { isValid: false, error: FacultyExceptionMessage.INVALID, message: "IsEnabledGuest must be a boolean value." };
+      return {
+        isValid: false,
+        error: FacultyExceptionMessage.INVALID,
+        message: 'IsEnabledGuest must be a boolean value.',
+      };
     }
 
     // If all validations pass
     return { isValid: true };
-}
-
+  }
 }
 
 export default new FacultiesService();

@@ -5,15 +5,19 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 export class ContributionsController implements ISuperController {
-    async all(_: Request, res: Response): Promise<void> {
-        const result = await ContributionsService.all();
+    async all(req: Request, res: Response): Promise<void> {
+        const depth = Number.parseInt(req.query.depth?.toString() ?? '');
+
+        const result = await ContributionsService.all(depth);
         res.json(result);
     }
 
     byId(req: Request, res: Response): void {
         const id = Number.parseInt(req.params['id']);
+        const depth = Number.parseInt(req.query.depth?.toString() ?? '');
+
         try {
-            ContributionsService.byId(id).then((r) => {
+            ContributionsService.byId(id,depth).then((r) => {
                 if (r) res.json(r);
                 else res.status(404).end();
             });
