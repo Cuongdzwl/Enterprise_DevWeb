@@ -65,6 +65,14 @@ export class UsersService implements ISuperService<User> {
 
   // Create
   async create(user: User): Promise<any> {
+    const validations = await this.validateConstraints(user);
+    if(!validations.isValid){
+      L.error(`create ${model} failed: invalid constraints`);
+    return Promise.resolve({
+      error: validations.error,
+      message: validations.message,
+    });
+    }
     try {
       L.info(`create ${model} with id ${user.ID}`);
 
@@ -159,34 +167,34 @@ export class UsersService implements ISuperService<User> {
       if (!user.Name || !/^[A-Za-z\s]{1,15}$/.test(user.Name)) {
         return {
           isValid: false,
-          error: UserExceptionMessage.INVALID_ROLEID,
+          error: UserExceptionMessage.INVALID,
           message:
             'User name is invalid, cannot contain numbers or special characters, and must have a maximum of 15 characters.',
         };
       }
 
-      // Validate Password
-      if (
-        !user.Password ||
-        !/(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}/.test(user.Password)
-      ) {
-        return {
-          isValid: false,
-          error: UserExceptionMessage.INVALID,
-          message:
-            'Password must be at least 8 characters long and contain both letters and numbers.',
-        };
-      }
+      // // Validate Password
+      // if (
+      //   !user.Password ||
+      //   !/(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}/.test(user.Password)
+      // ) {
+      //   return {
+      //     isValid: false,
+      //     error: UserExceptionMessage.INVALID,
+      //     message:
+      //       'Password must be at least 8 characters long and contain both letters and numbers.',
+      //   };
+      // }
 
-      // Validate Salt
-      if (!user.Salt || !/^[a-z\d]{1,26}$/.test(user.Salt)) {
-        return {
-          isValid: false,
-          error: UserExceptionMessage.INVALID,
-          message:
-            'Salt is invalid, must be a string of random lowercase letters and numbers, maximum of 26 characters.',
-        };
-      }
+      // // Validate Salt
+      // if (!user.Salt || !/^[a-z\d]{1,26}$/.test(user.Salt)) {
+      //   return {
+      //     isValid: false,
+      //     error: UserExceptionMessage.INVALID,
+      //     message:
+      //       'Salt is invalid, must be a string of random lowercase letters and numbers, maximum of 26 characters.',
+      //   };
+      // }
 
       // Validate Email
       if (!user.Email || !/\S+@\S+\.\S+/.test(user.Email)) {
@@ -217,6 +225,26 @@ export class UsersService implements ISuperService<User> {
           message: 'Referenced Role does not exist.',
         };
       }
+
+        // Validate Faculty ID
+        if (!/^\d{1,20}$/.test(user.FacultyID.toString())) {
+          return {
+            isValid: false,
+            error: UserExceptionMessage.INVALID_FACULTYID,
+            message: 'Faculty ID must be a number with a maximum of 20 digits.',
+          };
+        }
+  
+        const facultyexists = await prisma.faculties.findUnique({
+          where: { ID: user.FacultyID },
+        });
+        if (!facultyexists) {
+          return {
+            isValid: false,
+            error: UserExceptionMessage.INVALID_FACULTYID,
+            message: 'Referenced Faculty does not exist.',
+          };
+        }
 
       // Validate Phone
       if (user.Phone && !/^\d{1,15}$/.test(user.Phone)) {
