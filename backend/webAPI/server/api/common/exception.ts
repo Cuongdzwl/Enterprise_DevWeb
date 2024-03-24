@@ -7,6 +7,7 @@ export class ExceptionMessage{
 
 export class UserExceptionMessage extends ExceptionMessage{
     public static readonly INVALID_ROLEID: string = "Invalid Role ID";
+    public static readonly INVALID_FACULTYID: string = "Invalid Faculty ID";
 }
 
 export class FacultyExceptionMessage extends ExceptionMessage{
@@ -17,7 +18,7 @@ export class EventExceptionMessage extends ExceptionMessage{
 }
 
 export class FileExceptionMessage extends ExceptionMessage{
-    public static readonly INVALID_CONTRIBUTIONID: string = "Invalid File ID";
+    public static readonly INVALID_CONTRIBUTIONID: string = "Invalid Contribution ID";
 }
 
 export class ContributionExceptionMessage extends ExceptionMessage{
@@ -28,10 +29,15 @@ export class ContributionExceptionMessage extends ExceptionMessage{
 }
 
 export class NotificationExceptionMessage extends ExceptionMessage{
-    public static readonly INVALID_NOTIFICATIONID: string = "Invalid Notification ID";
+    public static readonly INVALID_NOTIFICATIONID: string = "Invalid Type Notification ID";
 }
 
 export class RoleExceptionMessage extends ExceptionMessage{
+}
+
+export class CommentExceptionMessage extends ExceptionMessage{
+    public static readonly INVALID_CONTRIBUTIONID: string = "Invalid Contribution ID";
+    public static readonly INVALID_USERID: string = "Invalid User ID";
 }
 
 

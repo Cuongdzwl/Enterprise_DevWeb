@@ -2,7 +2,7 @@ import { Comment } from '../models/Comment';
 import L from '../../common/logger';
 import { PrismaClient } from '@prisma/client';
 import { ISuperService } from '../interfaces/ISuperService.interface';
-import { ExceptionMessage } from '../common/exception';
+import { CommentExceptionMessage, ExceptionMessage } from '../common/exception';
 
 const prisma = new PrismaClient();
 const model = 'comments';
@@ -124,7 +124,18 @@ export class CommentsService implements ISuperService<Comment> {
 
     // Validate ContributionID and UserID
     if (!/^\d{1,20}$/.test(comment.ContributionID.toString()) || !/^\d{1,20}$/.test(comment.UserID.toString())) {
-        return { isValid: false, error: ExceptionMessage.INVALID, message: "ContributionID and UserID must be numbers and not exceed 20 digits." };
+        return { isValid: false, error: CommentExceptionMessage.INVALID_CONTRIBUTIONID, message: "ContributionID must be numbers and not exceed 20 digits." };
+    }
+    const contributionExists = await prisma.contributions.findUnique({ where: { ID: comment.ContributionID } });
+    if (!contributionExists) {
+        return { isValid: false, error: CommentExceptionMessage.INVALID_CONTRIBUTIONID, message: "Referenced faculty does not exist." };
+    }
+    if (!/^\d{1,20}$/.test(comment.UserID.toString()) || !/^\d{1,20}$/.test(comment.UserID.toString())) {
+      return { isValid: false, error: CommentExceptionMessage.INVALID_CONTRIBUTIONID, message: "UserID must be numbers and not exceed 20 digits." };
+    }
+    const userExists = await prisma.users.findUnique({ where: { ID: comment.UserID } });
+    if (!userExists) {
+        return { isValid: false, error: CommentExceptionMessage.INVALID_USERID, message: "Referenced UserID does not exist." };
     }
 
     // If all validations pass

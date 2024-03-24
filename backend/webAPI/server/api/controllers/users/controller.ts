@@ -1,10 +1,12 @@
 import { Role } from './../../models/Role';
+import { PrismaClient } from '@prisma/client';
 import UsersService from '../../services/users.service';
 import FacultiesService from '../../services/faculties.service';
 import { Request, Response } from 'express';
 import { ISuperController } from '../../interfaces/ISuperController.interface';
 import { UserDTO } from '../../models/DTO/User.DTO';
 import L from '../../../common/logger';
+const prisma = new PrismaClient();
 export class UsersController implements ISuperController {
   async all(req: Request, res: Response): Promise<void> {
     const depth = Number.parseInt(req.query.depth?.toString() ?? '');
@@ -29,9 +31,11 @@ export class UsersController implements ISuperController {
       res.status(400).json({ error: error.message }).end();
     }
   }
-  create(req: Request, res: Response): void {
-    if (!UsersService.validateConstraints(req.body)) {
-      res.status(400).json({}).end();
+  async create(req: Request, res: Response): Promise<void> {
+    const validations = await UsersService.validateConstraints(req.body);
+    if(!validations.isValid){
+      res.status(400).json({error: validations.error, message : validations.message}).end();
+      return;
     }
     try {
       UsersService.create(req.body).then((r) =>
@@ -55,10 +59,22 @@ export class UsersController implements ISuperController {
   }
 
   async update(req: Request, res: Response): Promise<void> {
-    if (!UsersService.validateConstraints(req.body)) {
-      res.status(400).json({}).end();
+    const validations = await UsersService.validateConstraints(req.body);
+    if(!validations.isValid){
+      res.status(400).json({error: validations.error, message : validations.message}).end();
+      return;
     }
     const id = Number.parseInt(req.params['id']);
+    if (!/^\d{1,20}$/.test(id.toString())) {
+      res.status(400).json({error: "Invalid User ID", message : "User ID must be a number with a maximum of 20 digits."}).end();
+      return;
+    }
+    const userExist = await prisma.users.findUnique({where : {ID : id}})
+    if(!userExist)
+    {
+      res.status(400).json({error: "Invalid User ID", message : "Referenced User does not exist."}).end();
+      return;
+    }
     try {
       await UsersService.update(id, req.body).then((r) => {
         // TODO: FIX THIS!! WRONG RESPONSE CODE

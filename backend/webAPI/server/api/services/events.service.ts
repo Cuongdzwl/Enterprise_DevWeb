@@ -168,9 +168,16 @@ export class EventsService implements ISuperService<Event> {
     }
 
     // Validate FacultyID by checking if the referenced faculty exists
+<<<<<<< HEAD
     const facultyExists = await prisma.faculties.findUnique({
       where: { ID: event.FacultyID },
     });
+=======
+    if (!/^\d{1,20}$/.test(event.FacultyID.toString()) || !/^\d{1,20}$/.test(event.FacultyID.toString())) {
+      return { isValid: false, error: EventExceptionMessage.INVALID_FACULTYID, message: "ContributionID must be numbers and not exceed 20 digits." };
+  }
+    const facultyExists = await prisma.faculties.findUnique({ where: { ID: event.FacultyID } });
+>>>>>>> db66e8dac20309695d4e0d76bf26850acaea0584
     if (!facultyExists) {
       return {
         isValid: false,
