@@ -125,9 +125,9 @@ export class EventsService implements ISuperService<Event>{
       // }
 
       // Validate ClosureDate and FinalDate
-      if (!(event.ClosureDate instanceof Date) || !(event.FinalDate instanceof Date)) {
-        return { isValid: false, error: EventExceptionMessage.INVALID, message: "Dates must be valid dates." };
-      }
+      // if (!(event.ClosureDate instanceof Date) || !(event.FinalDate instanceof Date)) {
+      //   return { isValid: false, error: EventExceptionMessage.INVALID, message: "Dates must be valid dates." };
+      // }
 
       if (new Date(event.ClosureDate) >= new Date(event.FinalDate)) {
           return { isValid: false, error: EventExceptionMessage.INVALID, message: "Closure date must be before final date." };
