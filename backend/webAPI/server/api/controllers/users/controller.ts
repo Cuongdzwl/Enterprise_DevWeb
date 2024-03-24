@@ -7,7 +7,6 @@ import { ISuperController } from '../../interfaces/ISuperController.interface';
 import { UserDTO } from '../../models/DTO/User.DTO';
 import L from '../../../common/logger';
 const prisma = new PrismaClient();
-
 export class UsersController implements ISuperController {
   async all(req: Request, res: Response): Promise<void> {
     var search: string = req.query.search as string;
