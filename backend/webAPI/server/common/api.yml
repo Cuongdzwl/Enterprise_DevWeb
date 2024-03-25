@@ -371,6 +371,52 @@ paths:
           description: Event deleted
         '404':
           description: Event not found
+  /files/upload:
+    post:
+      tags:
+        - Files
+      summary: Uploads a file by specifying its local file path along with ID and ContributionID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - filePath
+                - ID
+                - ContributionID
+              properties:
+                Path:
+                  type: string
+                  description: Local file path to be uploaded.
+                ID:
+                  type: integer
+                  description: The unique identifier for the file.
+                ContributionID:
+                  type: integer
+                  description: The contribution identifier associated with the file.
+      responses:
+        201:
+          description: File uploaded successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  url:
+                    type: string
+                    description: URL of the uploaded file on Azure Blob Storage.
+                  ID:
+                    type: integer
+                    description: The unique identifier for the file returned.
+                  ContributionID:
+                    type: integer
+                    description: The contribution identifier associated with the file returned.
+        400:
+          description: Bad Request. Invalid input or missing fields.
+        500:
+          description: Error uploading the file.
   /contributions:
     get:
       tags:
@@ -823,6 +869,22 @@ components:
         - EventID
         - UserID
         - StatusID
+    Role:
+      type: object
+      required:
+        - Name
+        - Description
+      properties:
+        ID:
+          type: integer
+          format: int64
+          description: The unique identifier for the role
+        Name:
+          type: string
+          description: The name of the role
+        Description:
+          type: string
+          description: A description of the role
     Authentication:
       type: object
       properties:
