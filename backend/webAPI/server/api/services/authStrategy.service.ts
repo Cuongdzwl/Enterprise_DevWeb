@@ -1,4 +1,5 @@
 import { ExtractJwt, Strategy as Jwt } from 'passport-jwt';
+import { Strategy as Google } from 'passport-google-oauth2';
 import { Strategy as Local } from 'passport-local';
 import L from '../../common/logger';
 import usersService from './users.service';
@@ -28,7 +29,6 @@ const jwtStrategy = new Jwt(jwtOptions, async (payload, done: any) => {
     return done(error, false);
   }
 });
-// Strategy
 const localStrategy = new Local(
   {
     usernameField: 'email',

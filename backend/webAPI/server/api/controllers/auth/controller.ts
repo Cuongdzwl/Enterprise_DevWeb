@@ -3,14 +3,16 @@ import UserService from '../../services/users.service';
 import { Request, Response } from 'express';
 import authService from '../../services/auth.service';
 import { UserDTO } from 'server/api/models/DTO/User.DTO';
-import L from '../../../common/logger'
+import L from '../../../common/logger';
 export class AuthController implements IAuthController {
   logout(_: Request, res: Response): void {
     res.clearCookie('token');
     res.status(200).json({ message: 'Logged out' });
   }
-  profile(_:Request, res: Response): void {
-    res.status(200).json({ user: res.locals.user.user , message: 'User is authenticated' });
+  profile(_: Request, res: Response): void {
+    res
+      .status(200)
+      .json({ user: res.locals.user.user, message: 'User is authenticated' });
   }
 
   updateProfile(req: Request, res: Response): void {
@@ -34,17 +36,30 @@ export class AuthController implements IAuthController {
   }
 
   async forgotPassword(req: Request, res: Response): Promise<void> {
-    const email = req.query.email      
-    const result = await UserService.all();
-    res.json(result);
+    const email = req.query.email;
+    authService.forgotPassword(email as string,req.headers.origin as string).then((r) => {
+      if (r) {
+        res.status(200).json('Email sent');
+      } else {
+        res.status(404).json('User not found');
+      }
+    });
   }
-  async verifyOTP(req : Request, res: Response): Promise<void>{
-    req 
-    res
+  async verifyOTP(req: Request, res: Response): Promise<void> {
+    req;
+    res;
   }
-  async resetPassword(req : Request, res: Response): Promise<void>{
-    req 
-    res
+  async resetPassword(req: Request, res: Response): Promise<void> {
+    const token: string = req.query.token as string;
+    const newPassword: string = req.body.newPassword;
+    if (!token) {
+      res.status(401).json({ message: 'Invalid token' });
+    }
+    authService
+      .resetPassword(token, newPassword)
+      .then(() =>
+        res.status(200).json({ message: 'Password reset successful' })
+      );
   }
 }
 export default new AuthController();

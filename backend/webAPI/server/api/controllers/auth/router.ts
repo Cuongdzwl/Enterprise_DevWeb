@@ -8,4 +8,5 @@ export default express
   .put('/user',authenticateToken, controller.updateProfile)
   .get('/logout',authenticateToken, controller.logout)
   .post('/forgotPassword', controller.forgotPassword)
-  .post('/verify', controller.verifyOTP);
+  .post('/verify', controller.verifyOTP)
+  .post('/resetPassword', controller.resetPassword);

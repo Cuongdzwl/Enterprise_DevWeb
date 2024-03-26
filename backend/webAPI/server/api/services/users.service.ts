@@ -1,3 +1,4 @@
+import { error } from 'console';
 import { Role } from './../models/Role';
 import L from '../../common/logger';
 import { PrismaClient } from '@prisma/client';
@@ -6,6 +7,7 @@ import { UserExceptionMessage } from '../common/exception';
 import NotificationService from './notifications.service';
 import { ISuperService } from '../interfaces/ISuperService.interface';
 import utils from '../common/utils';
+import { UserDTO } from '../models/DTO/User.DTO';
 
 const prisma = new PrismaClient();
 const model = 'user';
@@ -82,12 +84,12 @@ export class UsersService implements ISuperService<User> {
   // Create
   async create(user: User): Promise<any> {
     const validations = await this.validateConstraints(user);
-    if(!validations.isValid){
+    if (!validations.isValid) {
       L.error(`create ${model} failed: invalid constraints`);
-    return Promise.resolve({
-      error: validations.error,
-      message: validations.message,
-    });
+      return Promise.resolve({
+        error: validations.error,
+        message: validations.message,
+      });
     }
     try {
       L.info(`create ${model} with id ${user.ID}`);
@@ -137,41 +139,46 @@ export class UsersService implements ISuperService<User> {
     }
   }
   // Update
-  async update(id: number, user: User): Promise<any> {
+  async update(id: number, user: User, updateProfile?: boolean): Promise<any> {
     L.info(`update ${model} with id ${id}`);
-    this.byId(id) // Lambda function
-      .then((result: User) => {
-        if (user.Password) {
-          var hashedPassword: string = utils.hashedPassword(
-            user.Password,
-            result.Salt
-          );
-        } else {
-          hashedPassword = result.Password;
-        }
-        var data: any = {
-          Name: user.Name,
-          Password: hashedPassword,
-          Email: user.Email,
-          Phone: user.Phone,
-          Address: user.Address,
-        };
-        if (result.RoleID == 1) {
-          data.RoleID = result.RoleID;
-          data.FacultyID = result.FacultyID;
-        }
-        const updatedUser = prisma.users.update({
-          where: { ID: id },
-          data,
-        });
-        return Promise.resolve(updatedUser);
-      })
-      .catch(() => {
-        return Promise.resolve({
-          error: UserExceptionMessage.INVALID,
-          message: UserExceptionMessage.BAD_REQUEST,
-        });
+
+    const result = await prisma.users.findUnique({ where: { ID: id } });
+
+    if (!result)
+      return Promise.reject({
+        error: UserExceptionMessage.INVALID,
+        message: UserExceptionMessage.BAD_REQUEST,
       });
+
+    if (user.Password) {
+      var hashedPassword: string = utils.hashedPassword(
+        user.Password,
+        result.Salt
+      );
+    } else {
+      hashedPassword = result.Password;
+    }
+    L.info(result);
+    L.info(user);
+    var data: any = {
+      Name: user.Name,
+      Password: hashedPassword,
+      Email: user.Email,
+      Phone: user.Phone,
+      Address: user.Address,
+      RoleID: user.RoleID,
+      FacultyID: user.FacultyID,
+    };
+    L.info(data);
+    L.info(result.ID + ' updated');
+    if (updateProfile && updateProfile == true) {
+      (data.RoleID = result.RoleID), (data.FacultyID = result.FacultyID);
+    }
+    const updatedUser = await prisma.users.update({
+      where: { ID: id },
+      data,
+    });
+    return Promise.resolve(new UserDTO().map(updatedUser as User)); 
   }
 
   async validateConstraints(
@@ -241,25 +248,28 @@ export class UsersService implements ISuperService<User> {
         };
       }
 
-        // Validate Faculty ID
-        if (!/^\d{1,20}$/.test(user.FacultyID.toString())) {
-          return {
-            isValid: false,
-            error: UserExceptionMessage.INVALID_FACULTYID,
-            message: 'Faculty ID must be a number with a maximum of 20 digits.',
-          };
-        }
-  
-        const facultyexists = await prisma.faculties.findUnique({
-          where: { ID: user.FacultyID },
-        });
-        if (!facultyexists) {
-          return {
-            isValid: false,
-            error: UserExceptionMessage.INVALID_FACULTYID,
-            message: 'Referenced Faculty does not exist.',
-          };
-        }
+      // Validate Faculty ID
+      if (
+        user.FacultyID != null &&
+        !/^\d{1,20}$/.test(user.FacultyID.toString())
+      ) {
+        return {
+          isValid: false,
+          error: UserExceptionMessage.INVALID_FACULTYID,
+          message: 'Faculty ID must be a number with a maximum of 20 digits.',
+        };
+      }
+
+      const facultyexists = await prisma.faculties.findUnique({
+        where: { ID: user.FacultyID },
+      });
+      if (!facultyexists) {
+        return {
+          isValid: false,
+          error: UserExceptionMessage.INVALID_FACULTYID,
+          message: 'Referenced Faculty does not exist.',
+        };
+      }
 
       // Validate Phone
       if (user.Phone && !/^\d{1,15}$/.test(user.Phone)) {

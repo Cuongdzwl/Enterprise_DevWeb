@@ -3,8 +3,8 @@ generator client {
 }
 
 datasource db {
-  provider          = "sqlserver"
-  url               = env("DATABASE_URL")
+  provider = "sqlserver"
+  url      = env("DATABASE_URL")
   // shadowDatabaseUrl = env("DATABASE_URL")
 }
 
@@ -27,25 +27,26 @@ model faculties {
 }
 
 model users {
-  ID               Int             @id @default(autoincrement())
-  Name             String
-  Password         String
-  Salt             String
-  Email            String          @unique
-  Phone            String?
-  Address          String?
-  CreatedAt        DateTime        @default(now())
-  UpdatedAt        DateTime        @default(now()) @updatedAt
-  Role             roles           @relation(fields: [RoleID], references: [ID], onDelete: Cascade, onUpdate: NoAction)
-  RoleID           Int
-  Faculty          faculties?      @relation(fields: [FacultyID], references: [ID], onDelete: NoAction, onUpdate: NoAction)
-  FacultyID        Int?
-  Comments         comments[]
-  Contributions    contributions[]
-  OTP              String?         @db.VarChar(64)
-  OTPUsed          Boolean?        @default(false) 
-  OTPRequestedTime DateTime?
-  OTPExpriedTime   DateTime?
+  ID                Int             @id @default(autoincrement())
+  Name              String
+  Password          String
+  Salt              String
+  Email             String          @unique
+  Phone             String?
+  Address           String?
+  CreatedAt         DateTime        @default(now())
+  UpdatedAt         DateTime        @default(now()) @updatedAt
+  Role              roles           @relation(fields: [RoleID], references: [ID], onDelete: Cascade, onUpdate: NoAction)
+  RoleID            Int
+  Faculty           faculties?      @relation(fields: [FacultyID], references: [ID], onDelete: NoAction, onUpdate: NoAction)
+  FacultyID         Int?
+  Comments          comments[]
+  Contributions     contributions[]
+  ResetPassword     String?         @db.VarChar(255)
+  OTP               String?         @db.VarChar(64)
+  OTPUsed           Boolean?        @default(false)
+  OTPRequestedTime  DateTime?
+  OTPExpriedTime    DateTime?
 }
 
 model events {

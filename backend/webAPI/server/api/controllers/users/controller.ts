@@ -76,8 +76,8 @@ export class UsersController implements ISuperController {
       return;
     }
     try {
-      await UsersService.update(id, req.body).then((r) => {
-        // TODO: FIX THIS!! WRONG RESPONSE CODE
+      await UsersService.update(id, req.body,false).then((r) => { 
+        L.info(r);
         if (r) res.status(201).json(r);
         else res.status(404).end();
       });

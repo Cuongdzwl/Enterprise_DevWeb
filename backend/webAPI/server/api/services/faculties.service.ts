@@ -96,12 +96,6 @@ export class FacultiesService implements ISuperService<Faculty> {
   }
   // Update
   update(id: number, faculty: Faculty): Promise<any> {
-    if (!this.validateConstraints(faculty)) {
-      return Promise.resolve({
-        error: ExceptionMessage.INVALID,
-        message: ExceptionMessage.BAD_REQUEST,
-      });
-    }
     try {
       L.info(`update ${model} with id ${faculty.ID}`);
       const updatedFaculty = prisma.faculties.update({
@@ -115,7 +109,7 @@ export class FacultiesService implements ISuperService<Faculty> {
       return Promise.resolve(updatedFaculty);
     } catch (error) {
       L.error(`update ${model} failed: ${error}`);
-      return Promise.resolve({
+      return Promise.reject({
         error: ExceptionMessage.INVALID,
         message: ExceptionMessage.BAD_REQUEST,
       });

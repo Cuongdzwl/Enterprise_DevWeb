@@ -64,6 +64,12 @@ paths:
     post:
       tags:
         - Authentication
+      parameters:
+        - in: query
+          name: email
+          schema:
+            type: string
+          description: Email to send the OTP
       summary: Forgot password
       responses:
         '200':
@@ -82,6 +88,28 @@ paths:
       responses:
         '501':
           description: Method not implemented
+  /auth/resetPassword:
+    post:
+      tags:
+        - Authentication
+      summary: Reset password
+      parameters:
+       - in: query
+         name: token
+         schema:
+           type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                newPassword:
+                  type: string
+      responses:
+        '200':
+          description: Password Reset Successfully
   /users:
     get:
       tags:

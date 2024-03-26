@@ -5,12 +5,12 @@ import { IDTO } from './DTO';
 
 export class UserDTO implements IDTO<User, UserDTO> {
   ID: number;
-  Name: string;
-  Email: string;
+  Name?: string;
+  Email?: string;
   Phone?: string;
   Address?: string;
-  RoleID: number;
-  FacultyID: number;
+  RoleID?: number;
+  FacultyID?: number;
 
   Role?: Role;
   Faculty?: Faculty;
@@ -24,6 +24,9 @@ export class UserDTO implements IDTO<User, UserDTO> {
     this.Address = user.Address;
     this.RoleID = user.RoleID;
     this.FacultyID = user.FacultyID;
+    this.Role = user.Role;
+    this.Faculty = user.Faculty;
+  
     return this;
   }
 }
