@@ -5,11 +5,14 @@ import { ExceptionMessage, FileExceptionMessage } from '../common/exception';
 import { ISuperService } from '../interfaces/ISuperService.interface';
 import * as path from 'path';
 import { BlobServiceClient } from '@azure/storage-blob';
+import * as dotenv from 'dotenv';
+
+dotenv.config();
 
 const prisma = new PrismaClient();
 const model = 'files';
-const AZURE_STORAGE_CONNECTION_STRING = "DefaultEndpointsProtocol=https;AccountName=ducddsa;AccountKey=2sCmFG1XWdtvp7uj7jCnfdM5MZmi8JNIe0xm41wVaU426sC7v5mJqiIJgTuXdaUN1xzk5JV+bws6+AStqN/Tcw==;EndpointSuffix=core.windows.net";
-const containerName = "ducddsa";
+const AZURE_STORAGE_CONNECTION_STRING = "AZURE_STORAGE";
+const containerName = "CONTAINER_NAME";
 
 export class FilesService implements ISuperService<File> {
   all(): Promise<any> {
