@@ -145,15 +145,10 @@ export class EventsService implements ISuperService<Event> {
           return { isValid: false, error: EventExceptionMessage.INVALID, message: "Event name is invalid, cannot contain numbers or special characters, and must have a maximum of 15 characters." };
       }
 
-      // // Validate Description
-      // if (!event.Description || event.Description.length > 3000) {
-      //     return { isValid: false, error: EventExceptionMessage.INVALID, message: "Event description is invalid or too long, with a maximum of 3000 characters." };
-      // }
-
       // Validate ClosureDate and FinalDate
-      // if (!(event.ClosureDate instanceof Date) || !(event.FinalDate instanceof Date)) {
-      //   return { isValid: false, error: EventExceptionMessage.INVALID, message: "Dates must be valid dates." };
-      // }
+      if (!(event.ClosureDate) || !(event.FinalDate)) {
+        return { isValid: false, error: EventExceptionMessage.INVALID, message: "Dates must be valid dates." };
+      }
 
       if (new Date(event.ClosureDate) >= new Date(event.FinalDate)) {
           return { isValid: false, error: EventExceptionMessage.INVALID, message: "Closure date must be before final date." };

@@ -1,11 +1,18 @@
 import L from '../../common/logger';
 import { PrismaClient } from '@prisma/client';
 import { File } from '../models/File';
-import { EventExceptionMessage, ExceptionMessage, FileExceptionMessage } from '../common/exception';
+import { ExceptionMessage, FileExceptionMessage } from '../common/exception';
 import { ISuperService } from '../interfaces/ISuperService.interface';
+import * as path from 'path';
+import { BlobServiceClient } from '@azure/storage-blob';
+import * as dotenv from 'dotenv';
+
+dotenv.config();
 
 const prisma = new PrismaClient();
 const model = 'files';
+const AZURE_STORAGE_CONNECTION_STRING = "AZURE_STORAGE";
+const containerName = "CONTAINER_NAME";
 
 export class FilesService implements ISuperService<File> {
   all(): Promise<any> {
@@ -32,9 +39,28 @@ export class FilesService implements ISuperService<File> {
     return Promise.resolve(files);
   }
 
+  async uploadFileToBlob(filePath: string): Promise<string> {
+    const blobServiceClient = BlobServiceClient.fromConnectionString(AZURE_STORAGE_CONNECTION_STRING);
+    const containerClient = blobServiceClient.getContainerClient(containerName);
+    const blobName = `uploads/${Date.now()}-${path.basename(filePath)}`;
+    const blockBlobClient = containerClient.getBlockBlobClient(blobName);
+
+    await blockBlobClient.uploadFile(filePath);
+    return blockBlobClient.url;
+}
   // Create
   async create(file: File): Promise<any> {
     // TODO: VALIDATE CONSTRAINTss
+    console.log(file.Path);
+    const filePath = file.Path;
+    try {
+      file.Url = await this.uploadFileToBlob(filePath);
+    } catch (error) {
+      return Promise.resolve({
+        error: "Invalid File Path",
+        message: "Directory of File Path is not exist",
+      });
+    }
     const validations = await this.validateConstraints(file)
     if(!validations.isValid){
       L.error(`create ${model} failed: invalid constraints`);
@@ -80,6 +106,16 @@ export class FilesService implements ISuperService<File> {
   // Update
   async update(id: number, file: File): Promise<any> {
     // Validate
+    console.log(file.Path);
+    const filePath = file.Path;
+    try {
+      file.Url = await this.uploadFileToBlob(filePath);
+    } catch (error) {
+      return Promise.resolve({
+        error: "Invalid File Path",
+        message: "Directory of File Path is not exist",
+      });
+    }
     const validations = await this.validateConstraints(file)
     if(!validations.isValid){
       L.error(`update ${model} failed: invalid constraints`);
@@ -116,6 +152,11 @@ export class FilesService implements ISuperService<File> {
     if (!/^\d{1,20}$/.test(file.ContributionID.toString())) {
         return { isValid: false, error: FileExceptionMessage.INVALID_CONTRIBUTIONID, message: "Invalid Contribution ID format." };
     }
+
+    const contributionsExists = await prisma.contributions.findUnique({ where: { ID: file.ContributionID } });
+      if (!contributionsExists) {
+          return { isValid: false, error: FileExceptionMessage.INVALID_CONTRIBUTIONID, message: "Invalid Contribution ID format." };
+      }
 
     // If all validations pass
     return { isValid: true };

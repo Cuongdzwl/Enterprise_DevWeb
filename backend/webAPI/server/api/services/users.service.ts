@@ -188,29 +188,17 @@ export class UsersService implements ISuperService<User> {
         };
       }
 
-      // // Validate Password
-      // if (
-      //   !user.Password ||
-      //   !/(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}/.test(user.Password)
-      // ) {
-      //   return {
-      //     isValid: false,
-      //     error: UserExceptionMessage.INVALID,
-      //     message:
-      //       'Password must be at least 8 characters long and contain both letters and numbers.',
-      //   };
-      // }
-
-      // // Validate Salt
-      // if (!user.Salt || !/^[a-z\d]{1,26}$/.test(user.Salt)) {
-      //   return {
-      //     isValid: false,
-      //     error: UserExceptionMessage.INVALID,
-      //     message:
-      //       'Salt is invalid, must be a string of random lowercase letters and numbers, maximum of 26 characters.',
-      //   };
-      // }
-
+      //  Validate Password
+      if (!user.Password){
+        if (!/(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}/.test(user.Password)) {
+            return {
+              isValid: false,
+              error: UserExceptionMessage.INVALID,
+              message:
+                'Password must be at least 8 characters long and contain both letters and numbers.',
+            };
+          }
+      }
       // Validate Email
       if (!user.Email || !/\S+@\S+\.\S+/.test(user.Email)) {
         return {
@@ -242,23 +230,25 @@ export class UsersService implements ISuperService<User> {
       }
 
         // Validate Faculty ID
-        if (!/^\d{1,20}$/.test(user.FacultyID.toString())) {
-          return {
-            isValid: false,
-            error: UserExceptionMessage.INVALID_FACULTYID,
-            message: 'Faculty ID must be a number with a maximum of 20 digits.',
-          };
-        }
-  
-        const facultyexists = await prisma.faculties.findUnique({
-          where: { ID: user.FacultyID },
-        });
-        if (!facultyexists) {
-          return {
-            isValid: false,
-            error: UserExceptionMessage.INVALID_FACULTYID,
-            message: 'Referenced Faculty does not exist.',
-          };
+        if(!user.FacultyID){
+          if (!/^\d{1,20}$/.test(user.FacultyID.toString())) {
+            return {
+              isValid: false,
+              error: UserExceptionMessage.INVALID_FACULTYID,
+              message: 'Faculty ID must be a number with a maximum of 20 digits.',
+            };
+          }
+          console.log(user.FacultyID);
+          const facultyexists = await prisma.faculties.findUnique({
+            where: { ID: user.FacultyID },
+          });
+          if (!facultyexists) {
+            return {
+              isValid: false,
+              error: UserExceptionMessage.INVALID_FACULTYID,
+              message: 'Referenced Faculty does not exist.',
+            };
+          }
         }
 
       // Validate Phone
@@ -280,6 +270,7 @@ export class UsersService implements ISuperService<User> {
             'Address cannot be longer than 300 characters and cannot contain special characters.',
         };
       }
+
 
       // If all validations pass
       return { isValid: true };
