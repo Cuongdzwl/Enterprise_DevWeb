@@ -15,9 +15,11 @@ export class ContributionsController implements ISuperController {
     byId(req: Request, res: Response): void {
         const id = Number.parseInt(req.params['id']);
         const depth = Number.parseInt(req.query.depth?.toString() ?? '');
+        const comment :boolean = req.query.comment?.toString() == "true" ? true : false;
+        const file : boolean = req.query.file?.toString() == "true" ? true : false;
 
         try {
-            ContributionsService.byId(id,depth).then((r) => {
+            ContributionsService.byId(id,depth,comment,file).then((r) => {
                 if (r) res.json(r);
                 else res.status(404).end();
             });
@@ -25,6 +27,7 @@ export class ContributionsController implements ISuperController {
             res.status(400).json({ error: error.message }).end();
         }
     }
+
 
     async create(req: Request, res: Response): Promise <void> {
         const validations = await ContributionsService.validateConstraints(req.body);

@@ -23,7 +23,7 @@ model faculties {
   CreatedAt      DateTime @default(now())
   UpdatedAt      DateTime @default(now()) @updatedAt
   Events         events[]
-  User           users[]
+  Users           users[]
 }
 
 model users {

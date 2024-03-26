@@ -26,16 +26,14 @@ export class ContributionsService implements ISuperService<Contribution> {
     if (depth == 1) {
       select.User =  {select: {ID: true, Name: true}}
       select.Event =  {select: {ID: true, Name: true}}
-      select.Files =  true;
-      select.Status =  true;
-      select.Comments =  true;
+      select.Status =  {select: {ID: true, Name: true}}
     }
     const contributions = prisma.contributions.findMany({select});
     L.info(contributions, `fetch all ${model}(s)`);
     return Promise.resolve(contributions);
   }
 
-  byId(id: number, depth?: number): Promise<any> {
+  byId(id: number, depth?: number, comment?: boolean, file?: boolean): Promise<any> {
     L.info(`fetch ${model} with id ${id}`);
     var select: any = {
       ID: true,
@@ -53,10 +51,14 @@ export class ContributionsService implements ISuperService<Contribution> {
     if (depth == 1) {
       select.User =  {select: {ID: true, Name: true}}
       select.Event =  {select: {ID: true, Name: true}}
-      select.Files =  true;
-      select.Status =  true;
-      select.Comments =  true;
+      select.Status =  {select: {ID: true, Name: true}};
     }
+
+    if(comment == true)
+      select.Comments =  {select: {ID: true, Content: true,UserID: true, User : { select:{ID : true, Name: true}}}, where :{ ContributionID: id}};
+    if(file == true)
+      select.Files =  {select: {ID: true, Url: true}, where :{ ContributionID : id}};
+
     const contribution = prisma.contributions.findUnique({
       select,
       where: { ID: id },
@@ -223,16 +225,16 @@ export class ContributionsService implements ISuperService<Contribution> {
         message: 'Referenced user does not exist.',
       };
     }
-    const lastEditByIdExists = await prisma.faculties.findUnique({
-      where: { ID: contribution.LastEditByID },
-    });
-    if (!lastEditByIdExists) {
-      return {
-        isValid: false,
-        error: ContributionExceptionMessage.INVALID_EVENTID,
-        message: 'Referenced user does not exist.',
-      };
-    }
+    // const lastEditByIdExists = await prisma.users.findUnique({
+    //   where: { ID: contribution.LastEditByID },
+    // });
+    // if (!lastEditByIdExists) {
+    //   return {
+    //     isValid: false,
+    //     error: ContributionExceptionMessage.INVALID_EVENTID,
+    //     message: 'Referenced user does not exist.',
+    //   };
+    // }
     const statusExists = await prisma.faculties.findUnique({
       where: { ID: contribution.StatusID },
     });

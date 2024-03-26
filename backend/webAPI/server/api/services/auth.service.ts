@@ -81,34 +81,35 @@ export class AuthService {
     phone;
     email;
   }
-  async verifyOTP(email: string, code: string): Promise<any> {
-    return prisma.users.findUnique({ where: { Email: email } }).then((user) => {
-      if (!user)
-        return Promise.reject({
-          message: 'User does not exist',
-        });
-      // Verify the code
-      if (user.OTP !== code)
-        return Promise.reject({
-          message: 'Wrong OTP code',
-        });
-      // Verify the code expiration
-      if (user.OTPExpriedTime && new Date() > new Date(user.OTPExpriedTime))
-        return Promise.reject('Code expired');
-      // Update the user's password
-      return prisma.users
-        .update({
-          where: { ID: user.ID },
-          data: {
-            OTPUsed: true,
-          },
-        })
-        .then(() => {
-          return Promise.resolve({
-            message: 'OTP verified successfully',
-          });
-        });
-    });
+  async verifyOTP(code: string): Promise<any> {
+    code
+    // return prisma.users.findUnique({ where: { ID : code } }).then((user) => {
+    //   if (!user)
+    //     return Promise.reject({
+    //       message: 'User does not exist',
+    //     });
+    //   // Verify the code
+    //   if (user.OTP !== code)
+    //     return Promise.reject({
+    //       message: 'Wrong OTP code',
+    //     });
+    //   // Verify the code expiration
+    //   if (user.OTPExpriedTime && new Date() > new Date(user.OTPExpriedTime))
+    //     return Promise.reject('Code expired');
+    //   // Update the user's password
+    //   return prisma.users
+    //     .update({
+    //       where: { ID: user.ID },
+    //       data: {
+    //         OTPUsed: true,
+    //       },
+    //     })
+    //     .then(() => {
+    //       return Promise.resolve({
+    //         message: 'OTP verified successfully',
+    //       });
+    //     });
+    // });
   }
   async resetPassword(token: string, newPassword: string): Promise<any> {
     try {

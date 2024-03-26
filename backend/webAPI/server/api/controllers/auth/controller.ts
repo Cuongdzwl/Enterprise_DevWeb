@@ -46,8 +46,18 @@ export class AuthController implements IAuthController {
     });
   }
   async verifyOTP(req: Request, res: Response): Promise<void> {
-    req;
-    res;
+    let code = '';
+    if (req.query.code) {
+      code = req.query.code.toString();
+    } else {
+      res.status(400).json({ message: 'No code provided' });
+      return;
+    }
+
+    authService.verifyOTP(code).then((r) => {
+      if (r) return res.status(200).json({ message: 'OTP verified' });
+      else return res.status(400).json({ message: 'Wrong OTP' });
+    });
   }
   async resetPassword(req: Request, res: Response): Promise<void> {
     const token: string = req.query.token as string;

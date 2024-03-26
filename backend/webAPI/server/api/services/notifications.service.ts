@@ -1,4 +1,4 @@
-import { Notification } from 'server/api/models/Notification';
+import { Notification } from '../../models/Notification';
 import L from '../../common/logger';
 import { PrismaClient } from '@prisma/client';
 import {
@@ -46,8 +46,10 @@ export class NotificationService implements ISuperService<Notification> {
     };
 
     var phone: string | undefined = undefined;
+    //
     if (user.Phone || through === NotificationSentThrough.SMS)
       to.phone = user.Phone;
+    //
     var sendType : any = {}
     if(through === NotificationSentThrough.SMS && !to.phone) {
       sendType.sms = "true";

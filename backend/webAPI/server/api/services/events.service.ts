@@ -30,7 +30,8 @@ export class EventsService implements ISuperService<Event> {
     return Promise.resolve(events);
   }
 
-  byId(id: number, depth?: number): Promise<any> {
+  byId(id: number, depth?: number, contribution? : boolean): Promise<any> {
+    L.info(id + '')
     var select: any = {
       ID: true,
       Name: true,
@@ -45,6 +46,10 @@ export class EventsService implements ISuperService<Event> {
     if (depth == 1) {
       select.Faculty = { select: { ID: true, Name: true } };
     }
+    if(contribution == true){
+      select.Contributions = { select: { ID: true, Name: true }, where:{ EventID : id} };
+    }
+    
     const event = prisma.events.findUnique({
       select,
       where: { ID: id },
@@ -134,55 +139,41 @@ export class EventsService implements ISuperService<Event> {
         message: EventExceptionMessage.INVALID,
       });
     }
-  }
-  async validateConstraints(
-    event: Event
-  ): Promise<{ isValid: boolean; error?: string; message?: string }> {
-    // Validate Name
-    if (!event.Name || !/^[A-Za-z\s]{1,15}$/.test(event.Name)) {
-      return {
-        isValid: false,
-        error: EventExceptionMessage.INVALID,
-        message:
-          'Event name is invalid, cannot contain numbers or special characters, and must have a maximum of 15 characters.',
-      };
+
+     
+}
+
+    async validateConstraints(event : Event): Promise<{isValid: boolean, error?: string, message?: string}> {
+
+      // Validate Name
+      if (!event.Name || !/^[A-Za-z\s]{1,15}$/.test(event.Name)) {
+          return { isValid: false, error: EventExceptionMessage.INVALID, message: "Event name is invalid, cannot contain numbers or special characters, and must have a maximum of 15 characters." };
+      }
+
+      // Validate ClosureDate and FinalDate
+      if (!(event.ClosureDate) || !(event.FinalDate)) {
+        return { isValid: false, error: EventExceptionMessage.INVALID, message: "Dates must be valid dates." };
+      }
+
+      if (new Date(event.ClosureDate) >= new Date(event.FinalDate)) {
+          return { isValid: false, error: EventExceptionMessage.INVALID, message: "Closure date must be before final date." };
+      }
+
+      // Validate FacultyID by checking if the referenced faculty exists
+      if (!/^\d{1,20}$/.test(event.FacultyID.toString()) || !/^\d{1,20}$/.test(event.FacultyID.toString())) {
+        return { isValid: false, error: EventExceptionMessage.INVALID_FACULTYID, message: "ContributionID must be numbers and not exceed 20 digits." };
+
+    }
+      const facultyExists = await prisma.faculties.findUnique({ where: { ID: event.FacultyID } });
+      if (!facultyExists) {
+          return { isValid: false, error: EventExceptionMessage.INVALID_FACULTYID, message: "Referenced faculty does not exist." };
+      }
+
+      // If all validations pass
+      return { isValid: true };
     }
 
-    // Validate Description
-    if (!event.Description || event.Description.length > 3000) {
-      return {
-        isValid: false,
-        error: EventExceptionMessage.INVALID,
-        message:
-          'Event description is invalid or too long, with a maximum of 3000 characters.',
-      };
-    }
 
-    // Validate ClosureDate and FinalDate
-    if (new Date(event.ClosureDate) >= new Date(event.FinalDate)) {
-      return {
-        isValid: false,
-        error: EventExceptionMessage.INVALID,
-        message: 'Closure date must be before final date.',
-      };
-    }
-
-    // Validate FacultyID by checking if the referenced faculty exists
-    if (!/^\d{1,20}$/.test(event.FacultyID.toString()) || !/^\d{1,20}$/.test(event.FacultyID.toString())) {
-      return { isValid: false, error: EventExceptionMessage.INVALID_FACULTYID, message: "ContributionID must be numbers and not exceed 20 digits." };
-  }
-    const facultyExists = await prisma.faculties.findUnique({ where: { ID: event.FacultyID } });
-    if (!facultyExists) {
-      return {
-        isValid: false,
-        error: EventExceptionMessage.INVALID_FACULTYID,
-        message: 'Referenced faculty does not exist.',
-      };
-    }
-
-    // If all validations pass
-    return { isValid: true };
-  }
 }
 
 export default new EventsService();

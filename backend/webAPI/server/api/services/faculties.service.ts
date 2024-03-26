@@ -28,7 +28,7 @@ export class FacultiesService implements ISuperService<Faculty> {
     return Promise.resolve(faculties);
   }
   // Filter
-  byId(id: number, depth?: number): Promise<any> {
+  byId(id: number, depth?: number,event? : boolean, user? : boolean): Promise<any> {
     var select: any = {
       ID: true,
       Name: true,
@@ -39,11 +39,18 @@ export class FacultiesService implements ISuperService<Faculty> {
     };
 
     if (depth == 1) {
-      select.Events = { select: { ID: true, Name: true } };
-      select.Users = { select: { ID: true, Name: true } };
     }
+
+    if(event == true){
+      select.Events = { select: { ID: true, Name: true }, where:{ FacultyID : id} };
+    }
+    if(user == true){
+      select.Users = { select: { ID: true, Name: true }, where:{ FacultyID : id} };
+    }
+
     L.info(`fetch ${model} with id ${id}`);
     const faculty = prisma.faculties.findUnique({
+      select,
       where: { ID: id },
     });
     return Promise.resolve(faculty);
@@ -96,6 +103,12 @@ export class FacultiesService implements ISuperService<Faculty> {
   }
   // Update
   update(id: number, faculty: Faculty): Promise<any> {
+    if (!this.validateConstraints(faculty)) {
+      return Promise.resolve({
+        error: ExceptionMessage.INVALID,
+        message: ExceptionMessage.BAD_REQUEST,
+      });
+    }
     try {
       L.info(`update ${model} with id ${faculty.ID}`);
       const updatedFaculty = prisma.faculties.update({
@@ -109,7 +122,7 @@ export class FacultiesService implements ISuperService<Faculty> {
       return Promise.resolve(updatedFaculty);
     } catch (error) {
       L.error(`update ${model} failed: ${error}`);
-      return Promise.reject({
+      return Promise.resolve({
         error: ExceptionMessage.INVALID,
         message: ExceptionMessage.BAD_REQUEST,
       });

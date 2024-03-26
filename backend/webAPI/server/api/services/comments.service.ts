@@ -121,7 +121,6 @@ export class CommentsService implements ISuperService<Comment> {
     if (!comment.Content || comment.Content.length > 1000) {
         return { isValid: false, error: ExceptionMessage.INVALID, message: "Comment content is invalid or too long, with a maximum of 1000 characters." };
     }
-
     // Validate ContributionID and UserID
     if (!/^\d{1,20}$/.test(comment.ContributionID.toString()) || !/^\d{1,20}$/.test(comment.UserID.toString())) {
         return { isValid: false, error: CommentExceptionMessage.INVALID_CONTRIBUTIONID, message: "ContributionID must be numbers and not exceed 20 digits." };
@@ -130,9 +129,15 @@ export class CommentsService implements ISuperService<Comment> {
     if (!contributionExists) {
         return { isValid: false, error: CommentExceptionMessage.INVALID_CONTRIBUTIONID, message: "Referenced faculty does not exist." };
     }
+
+
+
     if (!/^\d{1,20}$/.test(comment.UserID.toString()) || !/^\d{1,20}$/.test(comment.UserID.toString())) {
       return { isValid: false, error: CommentExceptionMessage.INVALID_CONTRIBUTIONID, message: "UserID must be numbers and not exceed 20 digits." };
     }
+
+
+
     const userExists = await prisma.users.findUnique({ where: { ID: comment.UserID } });
     if (!userExists) {
         return { isValid: false, error: CommentExceptionMessage.INVALID_USERID, message: "Referenced UserID does not exist." };
