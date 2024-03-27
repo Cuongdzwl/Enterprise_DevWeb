@@ -20,10 +20,12 @@ export class FacultiesService implements ISuperService<Faculty> {
     };
 
     if (depth == 1) {
-      select.Event = { select: { ID: true, Name: true } };
-      select.User = { select: { ID: true, Name: true } };
+      select.Events = { select: { ID: true, Name: true } };
+      select.Users = { select: { ID: true, Name: true } };
     }
-    const faculties = prisma.faculties.findMany();
+    const faculties = prisma.faculties.findMany({
+      select,
+    });
     L.info(faculties, `fetch all ${model}(s)`);
     return Promise.resolve(faculties);
   }

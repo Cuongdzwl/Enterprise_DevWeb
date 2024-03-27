@@ -89,8 +89,8 @@ export class EventsService implements ISuperService<Event> {
       return Promise.resolve(createdEvent);
     } catch (error) {
       L.error(`create ${model} failed: ${error}`);
-      return Promise.resolve({
-        error: error.message,
+      return Promise.reject({
+        error: EventExceptionMessage.INVALID,
         message: EventExceptionMessage.INVALID,
       });
     }
@@ -104,9 +104,9 @@ export class EventsService implements ISuperService<Event> {
       return Promise.resolve(deletedEvent);
     } catch (error) {
       L.error(`delete ${model} failed: ${error}`);
-      return Promise.resolve({
+      return Promise.reject({
         error: EventExceptionMessage.INVALID,
-        message: EventExceptionMessage.BAD_REQUEST,
+        message: EventExceptionMessage.NOT_FOUND,
       });
     }
   }
@@ -134,8 +134,8 @@ export class EventsService implements ISuperService<Event> {
       return Promise.resolve(createdEvent);
     } catch (error) {
       L.error(`create ${model} failed: ${error}`);
-      return Promise.resolve({
-        error: error.message,
+      return Promise.reject({
+        error: EventExceptionMessage.INVALID,
         message: EventExceptionMessage.INVALID,
       });
     }
