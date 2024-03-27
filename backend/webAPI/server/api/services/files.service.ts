@@ -152,12 +152,25 @@ async downloadBlobToFile(url: string, outputPath: string): Promise<void> {
     }
   }
     async validateConstraints(file: File): Promise<{isValid: boolean, error?: string, message?: string}> {
+    const stats = fs.statSync(file.Path);
+    const fileSizeInBytes = stats.size;
+    const fileSizeInMegabytes = fileSizeInBytes / (1024*1024);
+    if (fileSizeInMegabytes > 5) {
+      return { isValid: false, error: FileExceptionMessage.INVALID, message: "File size exceeds 5 MB limit." };
+    }
     // Validate URL
-    // if (!file.Url || file.Url.length > 3000) {
-    //     return { isValid: false, error: FileExceptionMessage.INVALID, message: "File URL is invalid or too long, with a maximum of 3000 characters." };
-    // }
+    if (!file.Url || file.Url.length > 3000) {
+        return { isValid: false, error: FileExceptionMessage.INVALID, message: "File URL is invalid or too long, with a maximum of 3000 characters." };
+    }
 
     // Validate ContributionID
+    if(file.ContributionID === null || file.ContributionID === undefined|| !file.ContributionID){
+      return {
+        isValid: false,
+        error: FileExceptionMessage.INVALID_CONTRIBUTIONID,
+        message: 'Contribution ID must be a number with a maximum of 20 digits',
+      };
+    }
     if (!/^\d{1,20}$/.test(file.ContributionID.toString())) {
         return { isValid: false, error: FileExceptionMessage.INVALID_CONTRIBUTIONID, message: "Invalid Contribution ID format." };
     }

@@ -92,12 +92,12 @@ export class RolesService implements ISuperService<Role> {
   async validateConstraints(role: Role): Promise<{isValid: boolean, error?: string, message?: string}> {
     // Validate Content
     if (!role.Name || !/^[A-Za-z\s]{1,15}$/.test(role.Name)) {
-        // return {
-        //   isValid: false,
-        //   error: ExceptionMessage.INVALID,
-        //   message:
-        //     'Role name is invalid, cannot contain numbers or special characters, and must have a maximum of 15 characters.',
-        // };
+        return {
+          isValid: false,
+          error: ExceptionMessage.INVALID,
+          message:
+            'Role name is invalid, cannot contain numbers or special characters, and must have a maximum of 15 characters.',
+        };
       }
     return { isValid: true };
 }
