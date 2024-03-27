@@ -153,6 +153,19 @@ export class FacultiesService implements ISuperService<Faculty> {
       };
     }
 
+    // Validate Uniquely Existing Fields
+    const facultyNameExisted = await prisma.faculties.findFirst({
+      where: {
+        Name: faculty.Name,  // Server only have 1 Marketing Manager
+      },
+    });
+    if (facultyNameExisted) {
+      return {
+        isValid: false,
+        error: FacultyExceptionMessage.FACULTY_NAME_EXISTED,
+        message: `A ${faculty.Name} already exists.`,
+      };
+    }
     // If all validations pass
     return { isValid: true };
   }

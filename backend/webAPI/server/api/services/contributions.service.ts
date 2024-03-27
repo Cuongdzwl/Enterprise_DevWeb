@@ -202,7 +202,20 @@ export class ContributionsService implements ISuperService<Contribution> {
     }
 
     // Validate linkage IDs
-    // Similar checks for EventID, StatusID, UserID, LastEditUserID...
+    if(contribution.EventID === null || contribution.EventID === undefined || !contribution.EventID){
+      return {
+        isValid: false,
+        error: ContributionExceptionMessage.INVALID_EVENTID,
+        message: 'Event ID must be a number with a maximum of 20 digits.',
+      };
+    }
+    if (!/^\d{1,20}$/.test(contribution.EventID.toString())) {
+      return {
+        isValid: false,
+        error: ContributionExceptionMessage.INVALID_EVENTID,
+        message: 'Invalid Event ID format.',
+      };
+    }
     const eventExists = await prisma.faculties.findUnique({
       where: { ID: contribution.EventID },
     });
@@ -213,14 +226,42 @@ export class ContributionsService implements ISuperService<Contribution> {
         message: 'Referenced event does not exist.',
       };
     }
+    if(contribution.UserID === null || contribution.UserID === undefined || !contribution.UserID){
+      return {
+        isValid: false,
+        error: ContributionExceptionMessage.INVALID_USERID,
+        message: 'User ID must be a number with a maximum of 20 digits.',
+      };
+    }
+    if (!/^\d{1,20}$/.test(contribution.UserID.toString())) {
+      return {
+        isValid: false,
+        error: ContributionExceptionMessage.INVALID_USERID,
+        message: 'Invalid User ID format.',
+      };
+    }
     const userExists = await prisma.faculties.findUnique({
       where: { ID: contribution.UserID },
     });
     if (!userExists) {
       return {
         isValid: false,
-        error: ContributionExceptionMessage.INVALID_USERID,
+        error: ContributionExceptionMessage.INVALID_LASTEDITBYID,
         message: 'Referenced user does not exist.',
+      };
+    }
+    if(contribution.LastEditByID === null || contribution.LastEditByID === undefined || !contribution.LastEditByID){
+      return {
+        isValid: false,
+        error: ContributionExceptionMessage.INVALID_LASTEDITBYID,
+        message: 'Last Edit By ID must be a number with a maximum of 20 digits.',
+      };
+    }
+    if (!/^\d{1,20}$/.test(contribution.LastEditByID.toString())) {
+      return {
+        isValid: false,
+        error: ContributionExceptionMessage.INVALID_EVENTID,
+        message: 'Invalid Last Edit By ID format.',
       };
     }
     const lastEditByIdExists = await prisma.faculties.findUnique({
@@ -231,6 +272,20 @@ export class ContributionsService implements ISuperService<Contribution> {
         isValid: false,
         error: ContributionExceptionMessage.INVALID_EVENTID,
         message: 'Referenced user does not exist.',
+      };
+    }
+    if(contribution.StatusID === null || contribution.StatusID === undefined || !contribution.StatusID){
+      return {
+        isValid: false,
+        error: ContributionExceptionMessage.INVALID_LASTEDITBYID,
+        message: 'Status ID must be a number with a maximum of 20 digits.',
+      };
+    }
+    if (!/^\d{1,20}$/.test(contribution.StatusID.toString())) {
+      return {
+        isValid: false,
+        error: ContributionExceptionMessage.INVALID_STATUSID,
+        message: 'Invalid Status ID format.',
       };
     }
     const statusExists = await prisma.faculties.findUnique({

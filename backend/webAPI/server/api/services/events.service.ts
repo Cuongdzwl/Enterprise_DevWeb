@@ -151,19 +151,29 @@ export class EventsService implements ISuperService<Event> {
       // }
 
       // Validate ClosureDate and FinalDate
-      // if (!(event.ClosureDate instanceof Date) || !(event.FinalDate instanceof Date)) {
-      //   return { isValid: false, error: EventExceptionMessage.INVALID, message: "Dates must be valid dates." };
-      // }
+      if (!(event.ClosureDate) || !(event.FinalDate)) {
+        return { isValid: false, error: EventExceptionMessage.INVALID, message: "Dates must be valid dates." };
+      }
 
       if (new Date(event.ClosureDate) >= new Date(event.FinalDate)) {
           return { isValid: false, error: EventExceptionMessage.INVALID, message: "Closure date must be before final date." };
       }
 
       // Validate FacultyID by checking if the referenced faculty exists
-      if (!/^\d{1,20}$/.test(event.FacultyID.toString()) || !/^\d{1,20}$/.test(event.FacultyID.toString())) {
-        return { isValid: false, error: EventExceptionMessage.INVALID_FACULTYID, message: "ContributionID must be numbers and not exceed 20 digits." };
-
-    }
+      if(event.FacultyID === null || event.FacultyID === undefined|| !event.FacultyID){
+        return {
+          isValid: false,
+          error: EventExceptionMessage.INVALID_FACULTYID,
+          message: 'Faculty ID must be a number with a maximum of 20 digits.',
+        };
+      }
+      if (!/^\d{1,20}$/.test(event.FacultyID.toString())) {
+        return {
+          isValid: false,
+          error: EventExceptionMessage.INVALID_FACULTYID,
+          message: 'Invalid Faculty ID format.',
+        };
+      }
       const facultyExists = await prisma.faculties.findUnique({ where: { ID: event.FacultyID } });
       if (!facultyExists) {
           return { isValid: false, error: EventExceptionMessage.INVALID_FACULTYID, message: "Referenced faculty does not exist." };

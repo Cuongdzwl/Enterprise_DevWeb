@@ -3,7 +3,10 @@ import UserService from '../../services/users.service';
 import { Request, Response } from 'express';
 import authService from '../../services/auth.service';
 import { UserDTO } from 'server/api/models/DTO/User.DTO';
+import { User } from '../../models/User'
 import L from '../../../common/logger'
+import * as bcrypt from 'bcrypt';
+
 export class AuthController implements IAuthController {
   logout(_: Request, res: Response): void {
     res.clearCookie('token');
@@ -31,9 +34,23 @@ export class AuthController implements IAuthController {
     } catch (err) {
       res.status(400).json({ message: err.message });
     }
+  
+    const { email, password, phone } = req.body;
+    UserService.filter('Email', email).then((r) => {
+      r = r as User;
+      if (r) {
+        const salt = r.Salt
+        bcrypt.hash(password, salt)
+      }
+      else{
+        res.status(404).end()
+      }
+    });
+
+    res.json().end();
   }
 
-  async forgotPassword(req: Request, res: Response): Promise<void> {
+  async forgotPassword(req: Request, res: Response): Promise<void> {  
     const email = req.query.email      
     const result = await UserService.all();
     res.json(result);
