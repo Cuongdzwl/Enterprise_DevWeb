@@ -61,7 +61,7 @@ paths:
              $ref: '#/components/schemas/User'
              type: object
   /auth/forgotPassword:
-;    post:
+    post:
       tags:
         - Authentication
       parameters:
