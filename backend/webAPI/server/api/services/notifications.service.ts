@@ -8,13 +8,13 @@ import {
 import { ISuperService } from '../interfaces/ISuperService.interface';
 import { Novu } from '@novu/node';
 import { NotificationSentThrough } from '../models/NotificationSentThrough';
-import { NotificationSentType } from '../models/NotificationSentType';
+import { NotificationSentType } from '../models/NotificationSentType';   
 import { User } from '../models/User';
 
 const novu = new Novu(process.env.NOVU_API_KEY as string);
 
 const prisma = new PrismaClient();
-const model = 'notifications';
+const model = 'scheduledNotifications';
 
 export class NotificationService implements ISuperService<Notification> {
   private checkAPIKEY(): boolean {
@@ -49,9 +49,11 @@ export class NotificationService implements ISuperService<Notification> {
     //
     if (user.Phone || through === NotificationSentThrough.SMS)
       to.phone = user.Phone;
-    //
+    if (user.NewPhone || through === NotificationSentThrough.NewSMS)
+      to.phone = user.NewPhone;
+
     var sendType : any = {}
-    if(through === NotificationSentThrough.SMS && !to.phone) {
+    if(through === NotificationSentThrough.SMS || through === NotificationSentThrough.NewSMS && !to.phone) {
       sendType.sms = "true";
     }
     if(through === NotificationSentThrough.Email) {
@@ -61,13 +63,17 @@ export class NotificationService implements ISuperService<Notification> {
       sendType.inapp = "true";
     }
     payload.sentType = sendType;
+    L.info(to)
+    L.info(payload)
     novu
       .trigger(type as string, {
         to,
         payload: payload,
       })
       .then((_) => {
-        // Save to database
+        if (payload.SendAt){
+          // save to db
+        }
       });
   }
   cancel(transactionID: string): Promise<any> {
@@ -76,38 +82,38 @@ export class NotificationService implements ISuperService<Notification> {
   bulkCancel() {}
   broadcast() {}
   all(): Promise<any> {
-    const notifications = prisma.notifications.findMany();
-    L.info(notifications, `fetch all ${model}(s)`);
-    return Promise.resolve(notifications);
+    const scheduledNotifications = prisma.scheduledNotifications.findMany();
+    L.info(scheduledNotifications, `fetch all ${model}(s)`);
+    return Promise.resolve(scheduledNotifications);
   }
   // Filter
   byId(id: number): Promise<any> {
     L.info(`fetch ${model} with id ${id}`);
-    const notification = prisma.notifications.findUnique({
+    const notification = prisma.scheduledNotifications.findUnique({
       where: { ID: id },
     });
     return Promise.resolve(notification);
   }
 
   search(field: string, key: string): Promise<any> {
-    const notifications = prisma.notifications.findMany({
+    const scheduledNotifications = prisma.scheduledNotifications.findMany({
       where: {
         [field]: {
           contains: key,
         },
       },
     });
-    L.info(notifications, `fetch all ${model}(s)`);
-    return Promise.resolve(notifications);
+    L.info(scheduledNotifications, `fetch all ${model}(s)`);
+    return Promise.resolve(scheduledNotifications);
   }
   filter(field: string, key: string): Promise<any> {
-    const notifications = prisma.notifications.findMany({
+    const scheduledNotifications = prisma.scheduledNotifications.findMany({
       where: {
         [field]: key,
       },
     });
-    L.info(notifications, `fetch all ${model}(s)`);
-    return Promise.resolve(notifications);
+    L.info(scheduledNotifications, `fetch all ${model}(s)`);
+    return Promise.resolve(scheduledNotifications);
   }
 
   // Create
@@ -123,16 +129,12 @@ export class NotificationService implements ISuperService<Notification> {
     try {
       // Validate Constraint
       L.info(`create ${model} with id ${notification.ID}`);
-      const createdNotification = prisma.notifications.create({
-        data: {
-          Content: notification.Content,
-          SentTo: notification.SentTo,
-          FromID: 0,
-          FromTable: 'default',
-          IsCancelled: false,
-          NotificationSentTypeID: notification.NotificationSentType as number,
-        },
-      });
+      // const createdNotification = prisma.scheduledNotifications.create({
+      //   data: {
+
+      //   },
+      // });
+      const createdNotification = null
       return Promise.resolve(createdNotification);
     } catch (error) {
       L.error(`create ${model} failed: ${error}`);
@@ -146,7 +148,7 @@ export class NotificationService implements ISuperService<Notification> {
   delete(id: number): Promise<any> {
     try {
       L.info(`delete ${model} with id ${id}`);
-      const deletedNotification = prisma.notifications.delete({
+      const deletedNotification = prisma.scheduledNotifications.delete({
         where: { ID: id },
       });
       return Promise.resolve(deletedNotification);
@@ -169,7 +171,7 @@ export class NotificationService implements ISuperService<Notification> {
     }
     try {
       L.info(`update ${model} with id ${notification.ID}`);
-      const updatedNotification = prisma.notifications.update({
+      const updatedNotification = prisma.scheduledNotifications.update({
         where: { ID: id },
         data: {},
       });
@@ -185,46 +187,47 @@ export class NotificationService implements ISuperService<Notification> {
   async validateConstraints(
     notification: Notification
   ): Promise<{ isValid: boolean; error?: string; message?: string }> {
-    // Validate Content
-    if (!notification.Content || notification.Content.length > 1000) {
-      return {
-        isValid: false,
-        error: NotificationExceptionMessage.INVALID,
-        message:
-          'Notification content is invalid or too long, with a maximum of 1000 characters.',
-      };
-    }
+    notification
+  //   // Validate Content
+  //   if (!notification.Content || notification.Content.length > 1000) {
+  //     return {
+  //       isValid: false,
+  //       error: NotificationExceptionMessage.INVALID,
+  //       message:
+  //         'Notification content is invalid or too long, with a maximum of 1000 characters.',
+  //     };
+  //   }
 
-    // Validate SendAt
-    if (!notification.SentAt || new Date(notification.SentAt) < new Date()) {
-      return {
-        isValid: false,
-        error: NotificationExceptionMessage.INVALID,
-        message: 'SendAt must be set to a time in the future.',
-      };
-    }
+  //   // Validate SendAt
+  //   if (!notification.SentAt || new Date(notification.SentAt) < new Date()) {
+  //     return {
+  //       isValid: false,
+  //       error: NotificationExceptionMessage.INVALID,
+  //       message: 'SendAt must be set to a time in the future.',
+  //     };
+  //   }
 
-    // Validate SendTo
-    if (!notification.SentTo) {
-      return {
-        isValid: false,
-        error: NotificationExceptionMessage.INVALID_NOTIFICATIONID,
-        message: 'SendTo cannot be empty.',
-      };
-    }
-    if (
-      !notification.FromTable ||
-      !/^[A-Za-z\s]{1,30}$/.test(notification.FromTable)
-    ) {
-      return {
-        isValid: false,
-        error: NotificationExceptionMessage.INVALID_NOTIFICATIONID,
-        message:
-          'FromTable is invalid, must not contain special characters, and have a maximum of 30 characters.',
-      };
-    }
+  //   // Validate SendTo
+  //   if (!notification.SentTo) {
+  //     return {
+  //       isValid: false,
+  //       error: NotificationExceptionMessage.INVALID_NOTIFICATIONID,
+  //       message: 'SendTo cannot be empty.',
+  //     };
+  //   }
+  //   if (
+  //     !notification.FromTable ||
+  //     !/^[A-Za-z\s]{1,30}$/.test(notification.FromTable)
+  //   ) {
+  //     return {
+  //       isValid: false,
+  //       error: NotificationExceptionMessage.INVALID_NOTIFICATIONID,
+  //       message:
+  //         'FromTable is invalid, must not contain special characters, and have a maximum of 30 characters.',
+  //     };
+  //   }
 
-    // If all validations pass
+  //   // If all validations pass
     return { isValid: true };
   }
 }

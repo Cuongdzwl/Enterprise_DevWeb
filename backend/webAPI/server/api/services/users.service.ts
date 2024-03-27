@@ -8,6 +8,9 @@ import NotificationService from './notifications.service';
 import { ISuperService } from '../interfaces/ISuperService.interface';
 import utils from '../common/utils';
 import { UserDTO } from '../models/DTO/User.DTO';
+import { NotificationSentThrough } from '../models/NotificationSentThrough';
+import { NotificationSentType } from '../models/NotificationSentType';
+import { Faculty } from '../models/Faculty';
 
 const prisma = new PrismaClient();
 const model = 'user';
@@ -98,20 +101,41 @@ export class UsersService implements ISuperService<User> {
       L.info(`create ${model} with password ${password}`);
       var salt: string = utils.generateSalt();
       var hashedPassword: string = utils.hashedPassword(password, salt);
-
+      //
       // Continue with the rest of the code
-      const createdUser = prisma.users.create({
+      const createdUser = await prisma.users.create({
         data: {
           Name: user.Name,
           Password: hashedPassword,
           Salt: salt,
           Email: user.Email,
-          Phone: user.Phone,
+          NewPhone: user.Phone,
           Address: user.Address,
           RoleID: user.RoleID,
           FacultyID: user.FacultyID,
         },
       });
+      // Send email
+      var faculty: Faculty | null = await prisma.faculties.findUnique({
+        where: { ID: user.FacultyID },
+      });
+      if (!(faculty == null)) {
+        const payload: any = {
+          Faculty: { Name: faculty.Name },
+          Name: user.Name,
+          Password: password.toString(),
+        };
+        NotificationService.trigger(
+          user,
+          payload,
+          NotificationSentType.EMAILPASSWORD,
+          NotificationSentThrough.Email
+        );
+      } else
+        return Promise.reject({
+          error: UserExceptionMessage.INVALID,
+          message: UserExceptionMessage.INVALID_FACULTYID,
+        });
       return Promise.resolve(createdUser);
     } catch (error) {
       L.error(`create ${model} failed: ${error}`);
@@ -178,7 +202,7 @@ export class UsersService implements ISuperService<User> {
       where: { ID: id },
       data,
     });
-    return Promise.resolve(new UserDTO().map(updatedUser as User)); 
+    return Promise.resolve(new UserDTO().map(updatedUser as User));
   }
 
   async validateConstraints(
@@ -196,15 +220,15 @@ export class UsersService implements ISuperService<User> {
       }
 
       //  Validate Password
-      if (user.Password){
+      if (user.Password) {
         if (!/(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}/.test(user.Password)) {
-            return {
-              isValid: false,
-              error: UserExceptionMessage.INVALID,
-              message:
-                'Password must be at least 8 characters long and contain both letters and numbers.',
-            };
-          }
+          return {
+            isValid: false,
+            error: UserExceptionMessage.INVALID,
+            message:
+              'Password must be at least 8 characters long and contain both letters and numbers.',
+          };
+        }
       }
       // Validate Email
       if (!user.Email || !/\S+@\S+\.\S+/.test(user.Email)) {
@@ -249,7 +273,7 @@ export class UsersService implements ISuperService<User> {
       }
       const facultyexists = await prisma.faculties.findUnique({
         where: { ID: user.FacultyID },
-      })
+      });
       if (!facultyexists) {
         return {
           isValid: false,
@@ -277,7 +301,6 @@ export class UsersService implements ISuperService<User> {
             'Address cannot be longer than 300 characters and cannot contain special characters.',
         };
       }
-
 
       // If all validations pass
       return { isValid: true };

@@ -61,7 +61,7 @@ paths:
              $ref: '#/components/schemas/User'
              type: object
   /auth/forgotPassword:
-    post:
+;    post:
       tags:
         - Authentication
       parameters:
@@ -80,14 +80,62 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/User'
-  /auth/verifyOTP:
+  /auth/otp:
+    get:
+      tags:
+        - Authentication
+      summary: Get OTP
+      responses:
+        '200':
+          description: OTP sent
+        '404':
+          description: User Not Found
+        '401':
+          description: Unauthorized
+  /auth/verify:
     post:
       tags:
         - Authentication
       summary: Verify OTP
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                code:
+                  type: string
       responses:
         '501':
           description: Method not implemented
+        '200':
+          description: Sucessfully verified OTP
+        '400':
+          description: Bad Request
+  /auth/verify/phone:
+    post:
+      tags:
+        - Authentication
+      summary: Verify OTP for changing p hone number
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                code:
+                  type: string
+      responses:
+        '200':
+          description: Sucessfully verified OTP
+        '404':
+          description: User Not Found
+        '400':
+          description: Bad Request
+        '401':
+          description: Unauthorized
   /auth/resetPassword:
     post:
       tags:

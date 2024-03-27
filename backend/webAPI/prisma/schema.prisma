@@ -23,43 +23,46 @@ model faculties {
   CreatedAt      DateTime @default(now())
   UpdatedAt      DateTime @default(now()) @updatedAt
   Events         events[]
-  Users           users[]
+  Users          users[]
 }
 
 model users {
-  ID                Int             @id @default(autoincrement())
-  Name              String
-  Password          String
-  Salt              String
-  Email             String          @unique
-  Phone             String?
-  Address           String?
-  CreatedAt         DateTime        @default(now())
-  UpdatedAt         DateTime        @default(now()) @updatedAt
-  Role              roles           @relation(fields: [RoleID], references: [ID], onDelete: Cascade, onUpdate: NoAction)
-  RoleID            Int
-  Faculty           faculties?      @relation(fields: [FacultyID], references: [ID], onDelete: NoAction, onUpdate: NoAction)
-  FacultyID         Int?
-  Comments          comments[]
-  Contributions     contributions[]
-  ResetPassword     String?         @db.VarChar(255)
-  OTP               String?         @db.VarChar(64)
-  OTPUsed           Boolean?        @default(false)
-  OTPRequestedTime  DateTime?
-  OTPExpriedTime    DateTime?
+  ID               Int             @id @default(autoincrement())
+  Name             String
+  Password         String
+  Salt             String
+  Email            String          @unique
+  Phone            String?
+  NewPhone         String?
+  Address          String?
+  CreatedAt        DateTime        @default(now())
+  UpdatedAt        DateTime        @default(now()) @updatedAt
+  Role             roles           @relation(fields: [RoleID], references: [ID], onDelete: Cascade, onUpdate: NoAction)
+  RoleID           Int
+  Faculty          faculties?      @relation(fields: [FacultyID], references: [ID], onDelete: NoAction, onUpdate: NoAction)
+  FacultyID        Int?
+  Comments         comments[]
+  Contributions    contributions[]
+  ResetPassword    String?         @db.VarChar(255)
+  OTP              String?         @db.VarChar(64)
+  OTPUsed          Boolean?        @default(false)
+  OTPRequestedTime DateTime?
+  OTPExpriedTime   DateTime?
+  GoogleID         String?         @db.VarChar(255)
 }
 
 model events {
-  ID            Int             @id @default(autoincrement())
-  Name          String
-  Description   String
-  ClosureDate   DateTime
-  FinalDate     DateTime
-  CreatedAt     DateTime        @default(now())
-  UpdatedAt     DateTime        @default(now()) @updatedAt
-  Faculty       faculties       @relation(fields: [FacultyID], references: [ID], onDelete: Cascade, onUpdate: NoAction)
-  FacultyID     Int
-  Contributions contributions[]
+  ID                     Int                      @id @default(autoincrement())
+  Name                   String
+  Description            String
+  ClosureDate            DateTime
+  FinalDate              DateTime
+  CreatedAt              DateTime                 @default(now())
+  UpdatedAt              DateTime                 @default(now()) @updatedAt
+  Faculty                faculties                @relation(fields: [FacultyID], references: [ID], onDelete: Cascade, onUpdate: NoAction)
+  FacultyID              Int
+  Contributions          contributions[]
+  scheduledNotifications scheduledNotifications[]
 }
 
 model comments {
@@ -108,19 +111,21 @@ model contributionStatuses {
 }
 
 model notificationSentTypes {
-  ID           Int             @id @default(autoincrement())
+  ID           Int                      @id @default(autoincrement())
   Name         String
-  Notification notifications[]
+  Notification scheduledNotifications[]
 }
 
-model notifications {
+model scheduledNotifications {
   ID                     Int                   @id @default(autoincrement())
-  Content                String
-  NotificationSentType   notificationSentTypes @relation(fields: [NotificationSentTypeID], references: [ID], onDelete: Cascade, onUpdate: NoAction)
   NotificationSentTypeID Int
-  SentAt                 DateTime              @default(now())
+  NotificationSentType   notificationSentTypes @relation(fields: [NotificationSentTypeID], references: [ID], onDelete: NoAction, onUpdate: NoAction)
+  EventID                Int
+  Event                  events                @relation(fields: [EventID], references: [ID], onDelete: NoAction, onUpdate: NoAction)
   SentTo                 Int
-  FromID                 Int
-  FromTable              String
-  IsCancelled            Boolean
+  SentAt                 DateTime
+  TransactionID          String?
+  Acknowledged           Boolean?
+  Status                 String?
+  IsCancelled            Boolean               @default(false)
 }

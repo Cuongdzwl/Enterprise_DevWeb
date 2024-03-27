@@ -29,47 +29,98 @@ export class AuthController implements IAuthController {
   async login(req: Request, res: Response): Promise<void> {
     try {
       const { user, token } = await authService.login(req);
-      res.json({ user, token });
+      res.status(200).json({ user, token });
     } catch (err) {
-      res.status(400).json({ message: err.message });
+      res.status(400).json({ message: err });
     }
   }
 
+
   async forgotPassword(req: Request, res: Response): Promise<void> {
-    const email = req.query.email;
-    authService.forgotPassword(email as string,req.headers.origin as string).then((r) => {
-      if (r) {
-        res.status(200).json('Email sent');
-      } else {
-        res.status(404).json('User not found');
-      }
-    });
+    const email = req.query.email?.toString();
+    await authService
+      .forgotPassword(email as string, req.headers.origin as string)
+      .then((r) => {
+        L.info(r);
+        if (r) {
+          res.status(200).json('Email sent');
+        } else {
+          res.status(404).json('User not found');
+        }
+      })
+      .catch((err) => {
+        res.status(400).json('error: ' + err.message);
+      });
   }
+
   async verifyOTP(req: Request, res: Response): Promise<void> {
-    let code = '';
-    if (req.query.code) {
-      code = req.query.code.toString();
-    } else {
-      res.status(400).json({ message: 'No code provided' });
+    const code = req.body.code?.toString() || '';
+    const otpRegex = /^\d{6}$/;
+    const check = otpRegex.test(code);
+
+    L.info(req.body);
+    if (!check) {
+      res.status(400).json({ message: 'Wrong OTP' }).end();
+      return;
+    }
+    await authService
+      .verifyOTP(code, res.locals.user.user.ID)
+      .then((r) => {
+        if (r) return res.status(200).json({ message: 'OTP verified' });
+        else return res.status(400).json({ message: 'Wrong OTP' });
+      })
+      .catch((err) => {
+        res.status(400).json(err);
+      });
+  }
+
+  async sendOTP(_: Request, res: Response): Promise<void> {
+    await authService
+      .sendOTP(res.locals.user.user.ID,res.locals.user.user.NewPhone)
+      .then((r) => {
+        if (r) return res.status(200).json({ message: 'OTP sent' });
+        else return res.status(400).json({ message: 'OTP not sent' });
+      })
+      .catch((err) => {
+        res.status(400).json(err);
+      });
+  }
+
+  async verifyPhone(req: Request, res: Response): Promise<void> {
+    const code :string = req.body.code?.toString() || '';
+    const otpRegex = /^\d{6}$/;
+    const check = otpRegex.test(code);
+
+    if (!check) {
+      res.status(400).json({ message: 'Wrong OTP' }).end();
       return;
     }
 
-    authService.verifyOTP(code).then((r) => {
-      if (r) return res.status(200).json({ message: 'OTP verified' });
-      else return res.status(400).json({ message: 'Wrong OTP' });
-    });
+    await authService
+      .verifyPhone(code, res.locals.user.user.ID)
+      .then((r) => {
+        if (r) return res.status(200).json({ message: 'Phone verified' });
+        else return res.status(400).json({ message: 'Wrong phone' });
+      })
+      .catch((err) => {
+        res.status(400).json(err);
+      });
   }
   async resetPassword(req: Request, res: Response): Promise<void> {
-    const token: string = req.query.token as string;
+    const token: string = req.query.token?.toString() as string;
     const newPassword: string = req.body.newPassword;
-    if (!token) {
-      res.status(401).json({ message: 'Invalid token' });
+    if (req.query.token == null) {
+      res.status(401).json({ message: 'Missing token' }).end();
+      return;
     }
-    authService
+    await authService
       .resetPassword(token, newPassword)
       .then(() =>
         res.status(200).json({ message: 'Password reset successful' })
-      );
+      )
+      .catch((err) => {
+        res.status(400).json(err);
+      });
   }
 }
 export default new AuthController();

@@ -205,7 +205,7 @@ export class ContributionsService implements ISuperService<Contribution> {
 
     // Validate linkage IDs
     // Similar checks for EventID, StatusID, UserID, LastEditUserID...
-    const eventExists = await prisma.faculties.findUnique({
+    const eventExists = await prisma.events.findUnique({
       where: { ID: contribution.EventID },
     });
     if (!eventExists) {
@@ -215,7 +215,7 @@ export class ContributionsService implements ISuperService<Contribution> {
         message: 'Referenced event does not exist.',
       };
     }
-    const userExists = await prisma.faculties.findUnique({
+    const userExists = await prisma.users.findUnique({
       where: { ID: contribution.UserID },
     });
     if (!userExists) {
@@ -235,7 +235,7 @@ export class ContributionsService implements ISuperService<Contribution> {
     //     message: 'Referenced user does not exist.',
     //   };
     // }
-    const statusExists = await prisma.faculties.findUnique({
+    const statusExists = await prisma.contributionStatuses.findUnique({
       where: { ID: contribution.StatusID },
     });
     if (!statusExists) {

@@ -40,8 +40,8 @@ export class FilesService implements ISuperService<File> {
   }
 
   async uploadFileToBlob(filePath: string): Promise<string> {
-    const blobServiceClient = BlobServiceClient.fromConnectionString(AZURE_STORAGE_CONNECTION_STRING);
-    const containerClient = blobServiceClient.getContainerClient(containerName);
+    const blobServiceClient = BlobServiceClient.fromConnectionString(process.env.AZURE_STORAGE_CONNECTION_STRING || '');
+    const containerClient = blobServiceClient.getContainerClient(process.env.AZURE_STORAGE_CONTAINER_NAME || '');
     const blobName = `uploads/${Date.now()}-${path.basename(filePath)}`;
     const blockBlobClient = containerClient.getBlockBlobClient(blobName);
 

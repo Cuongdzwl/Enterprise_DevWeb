@@ -1,3 +1,4 @@
+import { error } from 'console';
 import { PrismaClient } from '@prisma/client';
 import utils from '../common/utils';
 import { UserDTO } from '../models/DTO/User.DTO';
@@ -7,7 +8,7 @@ import jwt from 'jsonwebtoken';
 import L from '../../common/logger';
 import bcrypt from 'bcrypt';
 import usersService from './users.service';
-import { ExceptionMessage } from '../common/exception';
+import { AuthExceptionMessage, ExceptionMessage } from '../common/exception';
 import notificationsService from './notifications.service';
 import { NotificationSentType } from '../models/NotificationSentType';
 import { NotificationSentThrough } from '../models/NotificationSentThrough';
@@ -37,12 +38,36 @@ export class AuthService {
       )(req);
     });
   }
+
+  async google(req: Request): Promise<any> {
+    return new Promise((resolve, reject) => {
+      authStrategy.authenticate(
+        'google',
+        { session: false },
+        (err: any, user: User) => {
+          if (err) {
+            reject(err);
+          } else {
+            const token = jwt.sign(
+              { id: user.ID },
+              process.env.JWT_SECRET || 'default',
+              { expiresIn: '1h' }
+            );
+            resolve({ user: new UserDTO().map(user), token });
+          }
+        }
+      )(req);
+    });
+  }
   async forgotPassword(email: string, origin: string): Promise<any> {
-    prisma.users
+    const resolve: any = prisma.users
       .findUnique({ where: { Email: email } })
       .then((user) => {
-        L.info(user)
-        if (!user) return Promise.reject('User not found');
+        if (!user)
+          return Promise.reject({
+            error: AuthExceptionMessage.BAD_REQUEST,
+            message: AuthExceptionMessage.USER_NOT_FOUND,
+          });
         const payload = {
           id: user.ID,
           for: 'password_reset',
@@ -66,50 +91,107 @@ export class AuthService {
         // Send email
         notificationsService.trigger(
           user as User,
-          { token , resetLink, securityEmail},
+          { token, resetLink, securityEmail },
           NotificationSentType.EMAILRESETPASSWORD,
           NotificationSentThrough.Email
         );
-        return Promise.resolve(user);
+        return Promise.resolve({ isSuccess: true });
       })
       .catch((_) => {
-        Promise.reject({ message: ExceptionMessage.BAD_REQUEST });
+        return Promise.reject({
+          error: AuthExceptionMessage.BAD_REQUEST,
+          message: ExceptionMessage.INVALID,
+        });
       });
+    return resolve;
   }
 
-  async bindPhoneToEmail(phone: string, email: string): Promise<any> {
-    phone;
-    email;
+  async verifyPhone(code: string, userid: number): Promise<any> {
+    return this.verifyOTP(code, userid).then((r) => {
+      if (r.isValid) {
+        const updated =  prisma.users.update({
+          where: { ID: userid },
+          data: {
+            OTPUsed: true,
+            Phone: r.user.NewPhone,
+          },
+        });
+        return Promise.resolve(updated)
+      }
+      return Promise.reject(r.isValid)
+    }).catch((err) => {
+      return Promise.reject(err)
+    });
   }
-  async verifyOTP(code: string): Promise<any> {
-    code
-    // return prisma.users.findUnique({ where: { ID : code } }).then((user) => {
-    //   if (!user)
-    //     return Promise.reject({
-    //       message: 'User does not exist',
-    //     });
-    //   // Verify the code
-    //   if (user.OTP !== code)
-    //     return Promise.reject({
-    //       message: 'Wrong OTP code',
-    //     });
-    //   // Verify the code expiration
-    //   if (user.OTPExpriedTime && new Date() > new Date(user.OTPExpriedTime))
-    //     return Promise.reject('Code expired');
-    //   // Update the user's password
-    //   return prisma.users
-    //     .update({
-    //       where: { ID: user.ID },
-    //       data: {
-    //         OTPUsed: true,
-    //       },
-    //     })
-    //     .then(() => {
-    //       return Promise.resolve({
-    //         message: 'OTP verified successfully',
-    //       });
-    //     });
-    // });
+  async sendOTP(userid: number, phone?: string, email?: string): Promise<any> {
+    const OTP = utils.generateOTP();
+    // jwt.sign(
+    //   { id: userid, OTP: OTP, for: 'OTP' },
+    //   process.env.JWT_SECRET || 'default',
+    //   {
+    //     expiresIn: '5m',
+    //   }
+    // );
+    var updateduser = await prisma.users.update({
+      where: { ID: userid },
+      data: {
+        OTP: OTP,
+        OTPUsed: false,
+        OTPExpriedTime: new Date(Date.now() + 5 * 60000),
+        OTPRequestedTime: new Date(),
+      },
+    });
+    // send emal
+    if (email) {
+      notificationsService.trigger(
+        updateduser as User,
+        { OTP: OTP },
+        NotificationSentType.EMAILOTP,
+        NotificationSentThrough.Email
+      );
+    }
+    if(phone){
+      notificationsService.trigger(
+        updateduser as User,
+        { OTP: OTP },
+        NotificationSentType.PHONEOTP,
+        NotificationSentThrough.NewSMS
+      );
+    }
+
+    return Promise.resolve(updateduser);
+  }
+
+  async verifyOTP(code: string, userid: number): Promise<any> {
+    const user = await prisma.users.findUnique({
+      where: { OTP: code, ID: userid },
+    });
+
+    if (!user) {
+      return Promise.reject({
+        isValid: false,
+        error: AuthExceptionMessage.BAD_REQUEST,
+        message: AuthExceptionMessage.USER_NOT_FOUND,
+      });
+    }
+    const currentTime = new Date();
+    L.info(currentTime.toString);
+    const OTPExpriedTime = user.OTPExpriedTime;
+    L.info(OTPExpriedTime);
+
+    if (!OTPExpriedTime || currentTime > OTPExpriedTime) {
+      return Promise.reject({ isValid: false, message: 'OTP has expired' });
+    }
+
+    if (user.OTPUsed) {
+      return Promise.reject({
+        isValid: false,
+        message: 'OTP has already been used',
+      });
+    }
+
+    // OTP is valid
+    return Promise.resolve({ isValid: true, message: 'OTP is valid', user });
   }
   async resetPassword(token: string, newPassword: string): Promise<any> {
     try {
@@ -126,7 +208,8 @@ export class AuthService {
         .then((user) => {
           if (!user) {
             return Promise.reject({
-              message: 'User not found',
+              error: AuthExceptionMessage.BAD_REQUEST,
+              message: AuthExceptionMessage.NOT_FOUND,
             });
           }
           const hashedPassword = bcrypt.hashSync(newPassword, user.Salt);
@@ -137,7 +220,10 @@ export class AuthService {
               data: { Password: hashedPassword },
             })
             .catch((_) => {
-              return Promise.reject({ message: ExceptionMessage.BAD_REQUEST });
+              return Promise.reject({
+                error: AuthExceptionMessage.BAD_REQUEST,
+                message: AuthExceptionMessage.INVALID_TOKEN,
+              });
             });
 
           // Add a return statement here if needed
@@ -148,7 +234,8 @@ export class AuthService {
     } catch (error) {
       return Promise.reject({
         isValid: false,
-        message: ExceptionMessage.BAD_REQUEST,
+        error: ExceptionMessage.BAD_REQUEST,
+        message: AuthExceptionMessage.UNKNOWN,
       });
     }
   }

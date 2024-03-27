@@ -19,7 +19,7 @@ export class UsersController implements ISuperController {
     const depth = Number.parseInt(req.query.depth?.toString() ?? '');
 
     try {
-      await UsersService.byId(id,depth).then((r) => {
+      await UsersService.byId(id, depth).then((r) => {
         if (r) {
           const result: UserDTO = new UserDTO().map(r);
           res.json(result);
@@ -33,17 +33,22 @@ export class UsersController implements ISuperController {
   }
   async create(req: Request, res: Response): Promise<void> {
     const validations = await UsersService.validateConstraints(req.body);
-    if(!validations.isValid){
-      res.status(400).json({error: validations.error, message : validations.message}).end();
+    if (!validations.isValid) {
+      res
+        .status(400)
+        .json({ error: validations.error, message: validations.message })
+        .end();
       return;
     }
-    try {
-      UsersService.create(req.body).then((r) =>
-        res.status(201).location(`/api/v1/users/${r.id}`).json(r)
-      );
-    } catch (error) {
-      res.status(400).json({ error: error.message }).end();
-    }
+
+    UsersService.create(req.body)
+      .then((r) => {
+        if (r) res.status(201).location(`/api/v1/users/${r.id}`).json(r);
+        else res.status(400).end();
+      })
+      .catch((error) => {
+        res.status(400).json({ error: error.message }).end();
+      });
   }
 
   delete(req: Request, res: Response): void {
@@ -60,23 +65,37 @@ export class UsersController implements ISuperController {
 
   async update(req: Request, res: Response): Promise<void> {
     const validations = await UsersService.validateConstraints(req.body);
-    if(!validations.isValid){
-      res.status(400).json({error: validations.error, message : validations.message}).end();
+    if (!validations.isValid) {
+      res
+        .status(400)
+        .json({ error: validations.error, message: validations.message })
+        .end();
       return;
     }
     const id = Number.parseInt(req.params['id']);
     if (!/^\d{1,20}$/.test(id.toString())) {
-      res.status(400).json({error: "Invalid User ID", message : "User ID must be a number with a maximum of 20 digits."}).end();
+      res
+        .status(400)
+        .json({
+          error: 'Invalid User ID',
+          message: 'User ID must be a number with a maximum of 20 digits.',
+        })
+        .end();
       return;
     }
-    const userExist = await prisma.users.findUnique({where : {ID : id}})
-    if(!userExist)
-    {
-      res.status(400).json({error: "Invalid User ID", message : "Referenced User does not exist."}).end();
+    const userExist = await prisma.users.findUnique({ where: { ID: id } });
+    if (!userExist) {
+      res
+        .status(400)
+        .json({
+          error: 'Invalid User ID',
+          message: 'Referenced User does not exist.',
+        })
+        .end();
       return;
     }
     try {
-      await UsersService.update(id, req.body,false).then((r) => { 
+      await UsersService.update(id, req.body, false).then((r) => {
         L.info(r);
         if (r) res.status(201).json(r);
         else res.status(404).end();
