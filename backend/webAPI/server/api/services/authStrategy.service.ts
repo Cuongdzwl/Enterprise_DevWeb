@@ -12,7 +12,7 @@ import { User } from '../models/User';
 // Config
 const jwtOptions: any = {
   jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
-  secretOrKey: process.env.JWT_SECRET,
+  secretOrKey: process.env.JWT_SECRET || 'de',
 };
 
 // Strategy
