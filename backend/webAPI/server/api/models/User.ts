@@ -16,7 +16,7 @@ export class User {
     OTPUsed?: boolean;
     OTPRequestedTime?: Date;
     OTPExpriedTime?: Date;
-    GoogleID? : string;
+    GoogleID? : string ;
 
     RoleID: number;
     FacultyID: number;
