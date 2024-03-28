@@ -18,16 +18,27 @@ jobs:
           node-version:  '18.x'
 
           
-      - name: Create .env file
-        run: |
-          cd ./backend/webAPI
-          npx dotenv-vault@latest keys
-          
-
-      - name: npm install, build, and test
+      - name: Initialize
         run: |
           cd ./backend/webAPI
           npm install
+        env:
+            OPENAPI_SPEC : ${{secrets.OPENAPI_SPEC}},
+            DATABASE_URL: ${{secrets.DATABASE_URL}},
+            AZURE_STORAGE_CONNECTION_STRING: ${{secrets.AZURE_STORAGE_CONNECTION_STRING}},
+            AZURE_STORAGE_CONTAINER_NAME: ${{secrets.AZURE_STORAGE_CONTAINER_NAME}},
+            JWT_SECRET: ${{secrets.JWT_SECRET}},
+            SESSION_SECRET: ${{secrets.SESSION_SECRET}},
+            GOOGLE_CLIENT_SECRET: ${{secrets.GOOGLE_CLIENT_SECRET}},
+            GOOGLE_CLIENT_ID: ${{secrets.GOOGLE_CLIENT_ID}},
+            NOVU_API_KEY: ${{secrets.NOVU_API_KEY}},
+            NOVU_IDENTIFIER: ${{secrets.NOVU_IDENTIFIER}}
+          
+
+
+      - name: build code
+        run: |
+          cd ./backend/webAPI
           npm run compile --if-present   
           
 
