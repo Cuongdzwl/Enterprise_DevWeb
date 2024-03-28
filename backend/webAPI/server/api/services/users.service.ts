@@ -123,10 +123,10 @@ export class UsersService implements ISuperService<User> {
         const payload: any = {
           Faculty: { Name: faculty.Name },
           Name: user.Name,
-          Password: password.toString(),
+          Password: password,
         };
         NotificationService.trigger(
-          user,
+          createdUser as User,
           payload,
           NotificationSentType.EMAILPASSWORD,
           NotificationSentThrough.Email
@@ -149,14 +149,23 @@ export class UsersService implements ISuperService<User> {
   delete(id: number): Promise<any> {
     try {
       L.info(`delete ${model} with id ${id}`);
-      const deletedUser = prisma.users.delete({
-        where: { ID: id },
-      });
-      return Promise.resolve(deletedUser);
+      return prisma.users
+        .delete({
+          where: { ID: id },
+        })
+        .then((r) => {
+          return Promise.resolve(r);
+        })
+        .catch((_) => {
+          return Promise.reject({
+            error: UserExceptionMessage.INVALID,
+            message: UserExceptionMessage.BAD_REQUEST,
+          });
+        });
     } catch (error) {
       L.error(`delete ${model} failed: ${error}`);
 
-      return Promise.resolve({
+      return Promise.reject({
         error: UserExceptionMessage.INVALID,
         message: UserExceptionMessage.BAD_REQUEST,
       });

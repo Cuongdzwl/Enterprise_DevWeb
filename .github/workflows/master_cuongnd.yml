@@ -20,19 +20,6 @@ jobs:
           
       - name: Create .env file
         run: |
-          cd ./backend/webAPI
-          echo "NODE_ENV=production" > .env
-          echo "PORT=8080" >> .env
-          echo "DATABASE_URL=\"${{ secrets.DATABASE_URL }}\"" >> .env
-          echo "AZURE_STORAGE_CONNECTION_STRING=\"${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}\"" >> .env
-          echo "AZURE_STORAGE_CONTAINER_NAME=\"${{ secrets.AZURE_STORAGE_CONTAINER_NAME }}\"" >> .env
-          echo "JWT_SECRET=\"${{ secrets.JWT_SECRET }}\"" >> .env
-          echo "SESSION_SECRET=\"${{ secrets.SESSION_SECRET }}\"" >> .env
-          echo "GOOGLE_CLIENT_SECRET=\"${{ secrets.GOOGLE_CLIENT_SECRET }}\"" >> .env
-          echo "GOOGLE_CLIENT_ID=\"${{ secrets.GOOGLE_CLIENT_ID }}\"" >> .env
-          echo "NOVU_API_KEY=\"${{ secrets.NOVU_API_KEY }}\"" >> .env
-          echo "NOVU_IDENTIFIER=\"${{ secrets.NOVU_IDENTIFIER }}\"" >> .env
-          echo "OPENAPI_SPEC=\"${{ secrets.OPENAPI_SPEC }}\"" >> .env
 
       - name: npm install, build, and test
         run: |

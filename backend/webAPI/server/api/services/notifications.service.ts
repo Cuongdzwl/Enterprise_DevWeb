@@ -41,7 +41,7 @@ export class NotificationService implements ISuperService<Notification> {
     through: NotificationSentThrough
   ) {
     var to: any = {
-      subscriberId: user.ID.toString(), // Convert subscriberId to string
+      subscriberId: user.ID,
       email: through === NotificationSentThrough.Email ? user.Email : undefined,
     };
 
