@@ -22,7 +22,7 @@ jobs:
         run: |
           cd ./backend/webAPI
           npm install
-          echo > 
+          echo > .env
           touch .env
           echo 'OPENAPI_SPEC="${{ secrets.OPENAPI_SPEC}}"' >> .env
           echo 'DATABASE_URL="${{ secrets.DATABASE_URL}}"' >> .env
