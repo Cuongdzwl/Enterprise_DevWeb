@@ -64,6 +64,12 @@ paths:
     post:
       tags:
         - Authentication
+      parameters:
+        - in: query
+          name: email
+          schema:
+            type: string
+          description: Email to send the OTP
       summary: Forgot password
       responses:
         '200':
@@ -74,14 +80,84 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/User'
-  /auth/verifyOTP:
+  /auth/otp:
+    get:
+      tags:
+        - Authentication
+      summary: Get OTP
+      responses:
+        '200':
+          description: OTP sent
+        '404':
+          description: User Not Found
+        '401':
+          description: Unauthorized
+  /auth/verify:
     post:
       tags:
         - Authentication
       summary: Verify OTP
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                code:
+                  type: string
       responses:
         '501':
           description: Method not implemented
+        '200':
+          description: Sucessfully verified OTP
+        '400':
+          description: Bad Request
+  /auth/verify/phone:
+    post:
+      tags:
+        - Authentication
+      summary: Verify OTP for changing p hone number
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                code:
+                  type: string
+      responses:
+        '200':
+          description: Sucessfully verified OTP
+        '404':
+          description: User Not Found
+        '400':
+          description: Bad Request
+        '401':
+          description: Unauthorized
+  /auth/resetPassword:
+    post:
+      tags:
+        - Authentication
+      summary: Reset password
+      parameters:
+       - in: query
+         name: token
+         schema:
+           type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                newPassword:
+                  type: string
+      responses:
+        '200':
+          description: Password Reset Successfully
   /users:
     get:
       tags:
@@ -245,6 +321,16 @@ paths:
           schema:
             type: number
           description: JSON response depth parameter
+        - in: query
+          name: event
+          schema:
+            type: boolean
+          description: Include Events
+        - in: query
+          name: user
+          schema:
+            type: boolean
+          description: Include Users
       responses:
         '200':
           description: A faculty
@@ -325,13 +411,244 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Event'
+  /files:
+    get:
+      tags:
+        - Files
+      summary: Get all files
+      responses:
+        '200':
+          description: A list of files
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/File'
+  /files/upload:
+    post:
+      tags:
+        - Files
+      summary: Uploads a file by specifying its local file path along with ID and ContributionID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - Path
+                - ID
+                - ContributionID
+              properties:
+                Path:
+                  type: string
+                  description: Local file path to be uploaded.
+                ID:
+                  type: integer
+                  description: The unique identifier for the file.
+                ContributionID:
+                  type: integer
+                  description: The contribution identifier associated with the file.
+      responses:
+        201:
+          description: File uploaded successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  url:
+                    type: string
+                    description: URL of the uploaded file on Azure Blob Storage.
+                  ID:
+                    type: integer
+                    description: The unique identifier for the file returned.
+                  ContributionID:
+                    type: integer
+                    description: The contribution identifier associated with the file returned.
+        400:
+          description: Bad Request. Invalid input or missing fields.
+        500:
+          description: Error uploading the file.
+  /files/{id}:
+    get:
+      tags:
+        - Files
+      summary: Get a file by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: File details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/File'
+    delete:
+      tags:
+        - Files
+      summary: Delete a file
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: File deleted successfully
+  /files/upload/{id}:
+    put:
+      tags:
+        - Files
+      summary: Update the information of an existing file
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+            description: The unique identifier of the file to be updated
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - Path
+                - ContributionID
+              properties:
+                Path:
+                  type: string
+                  description: New local file path for the uploaded file.
+                ContributionID:
+                  type: integer
+                  description: Updated contribution identifier associated with the file.
+      responses:
+        '200':
+          description: File information updated successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ID:
+                    type: integer
+                    description: The unique identifier for the file.
+                  Path:
+                    type: string
+                    description: New local file path for the uploaded file.
+                  ContributionID:
+                    type: integer
+                    description: Updated contribution identifier associated with the file.
+        '400':
+          description: Bad Request. Invalid input or missing required fields.
+        '404':
+          description: Not Found. The file with the specified ID was not found.
+        '500':
+          description: Internal Server Error. An error occurred while processing the request.
+  /roles:
+    get:
+      tags:
+        - Roles
+      summary: Get all roles
+      responses:
+        '200':
+          description: A list of roles
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Role'
+    post:
+      tags:
+        - Roles
+      summary: Create a new role
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Role'
+      responses:
+        '201':
+          description: Role created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Role'
+  /roles/{id}:
+    get:
+      tags:
+        - Roles
+      summary: Get a role by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: A role
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Role'
+    put:
+      tags:
+        - Roles
+      summary: Update a role
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Role'
+      responses:
+        '200':
+          description: Role updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Role'
+    delete:
+      tags:
+        - Roles
+      summary: Delete a role
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Role deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Role'
   /events/{id}:
     get:
       tags:
         - Events
       summary: Get an event by ID
       parameters:
-        - name: eventId
+        - name: id
           in: path
           required: true
           schema:
@@ -341,6 +658,11 @@ paths:
           schema:
             type: number
           description: JSON response depth parameter
+        - in: query
+          name: contribution
+          schema:
+            type: boolean
+          description: Include Contribution
       responses:
         '200':
           description: An event object
@@ -355,7 +677,7 @@ paths:
         - Events
       summary: Update an event
       parameters:
-        - name: eventId
+        - name: id
           in: path
           required: true
           schema:
@@ -376,7 +698,7 @@ paths:
         - Events
       summary: Delete an event
       parameters:
-        - name: eventId
+        - name: id
           in: path
           required: true
           schema:
@@ -485,6 +807,16 @@ paths:
           schema:
             type: number
           description: JSON response depth parameter
+        - in: query
+          name: comment
+          schema:
+            type: boolean
+          description: Inclues comments of a contribution
+        - in: query
+          name: file
+          schema:
+            type: boolean
+          description: Include files of a contribution
       responses:
         '200':
           description: A contribution
@@ -884,6 +1216,30 @@ components:
         - EventID
         - UserID
         - StatusID
+    File:
+      type: object
+      properties:
+        ID:
+          type: integer
+          format: int64
+          description: Unique identifier for the file
+        name:
+          type: string
+          description: Name of the file
+        url:
+          type: string
+          description: URL to access the file
+        createdAt:
+          type: string
+          format: date-time
+          description: Date and time when the file was uploaded
+        updatedAt:
+          type: string
+          format: date-time
+          description: Date and time when the file information was last updated
+      required:
+        - name
+        - url
     Role:
       type: object
       required:

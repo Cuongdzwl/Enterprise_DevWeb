@@ -15,11 +15,12 @@ export class EventsController implements ISuperController {
     }
 
     byId(req: Request, res: Response): void {
+        const id = Number.parseInt(req.params['id']);        
         const depth = Number.parseInt(req.query.depth?.toString() ?? '');
+        const contribution : boolean = req.query.contribution?.toString() == 'true' ? true: false ;
 
-        const id = Number.parseInt(req.params['id']);
         try {
-            EventsService.byId(id,depth).then((r) => {
+            EventsService.byId(id,depth,contribution).then((r) => {
                 if (r) res.json(r);
                 else res.status(404).end();
             });

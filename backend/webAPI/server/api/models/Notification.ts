@@ -1,25 +1,29 @@
 import { NotificationSentType } from "./NotificationSentType";
 
 export class Notification {
-    ID?: number;
-    Content: string;
-    NotificationSentType: number;
-    SentAt: Date;
+    ID: number;
+    EventID?: number;
     SentTo: number;
-    FromID: number;
-    FromTable: string;
+    SentAt: Date;
+    NotificationSentTypeID: number;
+    TransactionID?: string;
+    Acknowledged?: boolean ;
+    Status?: string ;
     IsCancelled: boolean;
+    
+    NotificationSentType?: NotificationSentType ;
+    Event?: Event ;
 
-    constructor({ ID, Content, NotificationSentType, SentAt, SentTo, FromID, FromTable, IsCancelled }: { ID: number; Content: string; NotificationSentType: NotificationSentType; SentAt: Date; SentTo: number; FromID: number; FromTable: string; IsCancelled: boolean; },) {
+    constructor(ID: number, EventID: number, SentTo: number, SentAt: Date, NotificationSentTypeID: number, TransactionID: string, Acknowledged: boolean, Status: string, IsCancelled: boolean) {
         this.ID = ID;
-        this.Content = Content;
-        this.NotificationSentType = Number(NotificationSentType);
-        this.SentAt = SentAt;
+        this.EventID = EventID;
         this.SentTo = SentTo;
-        this.FromID = FromID;
-        this.FromTable = FromTable;
-        this.IsCancelled = IsCancelled
+        this.SentAt = SentAt;
+        this.NotificationSentTypeID = NotificationSentTypeID;
+        this.TransactionID = TransactionID;
+        this.Acknowledged = Acknowledged;
+        this.Status = Status;
+        this.IsCancelled = IsCancelled;
     }
-
 
 }
