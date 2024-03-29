@@ -732,16 +732,47 @@ paths:
     post:
       tags:
         - Contributions
-      summary: Create a new contribution
+      summary: Create a new contribution with optional file paths
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Contribution'
+              type: object
+              properties:
+                Name:
+                  type: string
+                Content:
+                  type: string
+                IsPublic:
+                  type: boolean
+                IsApproved:
+                  type: boolean
+                EventID:
+                  type: integer
+                UserID:
+                  type: integer
+                StatusID:
+                  type: integer
+                files:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      Path:
+                        type: string
+                        description: String path of the file
+              required:
+                - Name
+                - Content
+                - IsPublic
+                - IsApproved
+                - EventID
+                - UserID
+                - StatusID
       responses:
         '201':
-          description: Contribution created
+          description: Contribution created with optional file paths
           content:
             application/json:
               schema:
@@ -762,16 +793,6 @@ paths:
           schema:
             type: number
           description: JSON response depth parameter
-        - in: query
-          name: comment
-          schema:
-            type: boolean
-          description: Inclues comments of a contribution
-        - in: query
-          name: file
-          schema:
-            type: boolean
-          description: Include files of a contribution
       responses:
         '200':
           description: A contribution
@@ -782,7 +803,7 @@ paths:
     put:
       tags:
         - Contributions
-      summary: Update a contribution
+      summary: Update a contribution and its files
       parameters:
         - name: id
           in: path
@@ -794,10 +815,41 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Contribution'
+              type: object
+              properties:
+                Name:
+                  type: string
+                Content:
+                  type: string
+                IsPublic:
+                  type: boolean
+                IsApproved:
+                  type: boolean
+                EventID:
+                  type: integer
+                UserID:
+                  type: integer
+                StatusID:
+                  type: integer
+                files:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      Path:
+                        type: string
+                        description: String path of the file
+              required:
+                - Name
+                - Content
+                - IsPublic
+                - IsApproved
+                - EventID
+                - UserID
+                - StatusID
       responses:
         '200':
-          description: Contribution updated
+          description: Contribution and its files updated
           content:
             application/json:
               schema:
