@@ -27,7 +27,7 @@ export class UsersController implements ISuperController {
           res.status(404).end();
         }
       });
-    } catch (error) {
+    } catch (error) { 
       res.status(400).json({ error: error.message }).end();
     }
   }
@@ -107,11 +107,12 @@ export class UsersController implements ISuperController {
   profile(_: Request, res: Response): void {
     res.status(201).json(res.locals.user.user.userID).end();
   }
-  updateProfile(req: Request, res: Response): void {
+  async updateProfile(req: Request, res: Response): Promise <void> {
     const id = Number.parseInt(res.locals.user.user.userID);
     try {
-      UsersService.update(id, req.body).then((r) => {
-        if (r) res.json(r);
+      await UsersService.update(id, req.body).then((r) => {
+        // TODO: FIX THIS!! WRONG RESPONSE CODE
+        if (r) res.status(201).json(r);
         else res.status(404).end();
       });
     } catch (error) {

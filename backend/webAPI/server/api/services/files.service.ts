@@ -3,16 +3,21 @@ import { PrismaClient } from '@prisma/client';
 import { File } from '../models/File';
 import { ExceptionMessage, FileExceptionMessage } from '../common/exception';
 import { ISuperService } from '../interfaces/ISuperService.interface';
-import * as path from 'path';
 import { BlobServiceClient } from '@azure/storage-blob';
-import * as dotenv from 'dotenv';
+import * as path from 'path';
+import * as fs from 'fs';
+import axios from 'axios';
+import stream from 'stream';
+import { promisify } from 'util';
 
-dotenv.config();
 
 const prisma = new PrismaClient();
 const model = 'files';
-const AZURE_STORAGE_CONNECTION_STRING = "AZURE_STORAGE";
-const containerName = "CONTAINER_NAME";
+const AZURE_STORAGE_CONNECTION_STRING = "DefaultEndpointsProtocol=https;AccountName=ducddsa;AccountKey=2sCmFG1XWdtvp7uj7jCnfdM5MZmi8JNIe0xm41wVaU426sC7v5mJqiIJgTuXdaUN1xzk5JV+bws6+AStqN/Tcw==;EndpointSuffix=core.windows.net";
+const containerName = "ducddsa";
+const pipeline = promisify(stream.pipeline);
+const archiver = require('archiver');
+
 
 export class FilesService implements ISuperService<File> {
   all(): Promise<any> {
@@ -21,11 +26,17 @@ export class FilesService implements ISuperService<File> {
     return Promise.resolve(files);
   }
   // Filter
-  byId(id: number): Promise<any> {
+  async byId(id: number): Promise<any> {
     L.info(`fetch ${model} with id ${id}`);
-    const file = prisma.files.findUnique({
+    const file = await prisma.files.findUnique({
       where: { ID: id },
-    });
+    })
+    if (!file || !file.Url) {
+      L.error(`File with ID ${id} not found or does not have a URL`);
+      return Promise.reject(`File with ID ${id} not found or does not have a URL`);
+    }
+    const outputPath = `downloads/${file.ID}.pdf`;
+    await this.downloadBlobToFile(file.Url, outputPath);
     return Promise.resolve(file);
   }
 
@@ -38,18 +49,32 @@ export class FilesService implements ISuperService<File> {
     L.info(files, `fetch all ${model}(s)`);
     return Promise.resolve(files);
   }
-
   async uploadFileToBlob(filePath: string): Promise<string> {
-    const blobServiceClient = BlobServiceClient.fromConnectionString(process.env.AZURE_STORAGE_CONNECTION_STRING || '');
-    const containerClient = blobServiceClient.getContainerClient(process.env.AZURE_STORAGE_CONTAINER_NAME || '');
+    const blobServiceClient = BlobServiceClient.fromConnectionString(AZURE_STORAGE_CONNECTION_STRING);
+    const containerClient = blobServiceClient.getContainerClient(containerName);
     const blobName = `uploads/${Date.now()}-${path.basename(filePath)}`;
     const blockBlobClient = containerClient.getBlockBlobClient(blobName);
 
     await blockBlobClient.uploadFile(filePath);
     return blockBlobClient.url;
 }
+async downloadBlobToFile(url: string, outputPath: string): Promise<void> {
+  try {
+      const response = await axios({
+          method: 'GET',
+          url: url,
+          responseType: 'stream',
+      });
+      await pipeline(response.data, fs.createWriteStream(outputPath));
+      L.info(`Downloaded file from ${url} to ${outputPath}`);
+  } catch (error) {
+      L.error(`Error downloading file from ${url}: ${error}`);
+      throw error;
+  }
+}
+
   // Create
-  async create(file: File): Promise<any> {
+  async create(file: File ): Promise<any> {
     // TODO: VALIDATE CONSTRAINTss
     console.log(file.Path);
     const filePath = file.Path;
@@ -72,6 +97,9 @@ export class FilesService implements ISuperService<File> {
     try {
       // Validate Constraint
       L.info(`create ${model} with id ${file.ID}`);
+      console.log(file.Path);
+      const filePath = file.Path;
+      file.Url = await this.uploadFileToBlob(filePath);
       const createdFile = prisma.files.create({
         data: {
           Url: file.Url,
@@ -126,6 +154,7 @@ export class FilesService implements ISuperService<File> {
     }
     try {
       L.info(`update ${model} with id ${file.ID}`);
+      file.Url = await this.uploadFileToBlob(file.Path);
       const updatedFile = prisma.files.update({
         where: { ID: id },
         data: {
@@ -143,12 +172,25 @@ export class FilesService implements ISuperService<File> {
     }
   }
     async validateConstraints(file: File): Promise<{isValid: boolean, error?: string, message?: string}> {
+    const stats = fs.statSync(file.Path);
+    const fileSizeInBytes = stats.size;
+    const fileSizeInMegabytes = fileSizeInBytes / (1024*1024);
+    if (fileSizeInMegabytes > 5) {
+      return { isValid: false, error: FileExceptionMessage.INVALID, message: "File size exceeds 5 MB limit." };
+    }
     // Validate URL
     if (!file.Url || file.Url.length > 3000) {
         return { isValid: false, error: FileExceptionMessage.INVALID, message: "File URL is invalid or too long, with a maximum of 3000 characters." };
     }
 
     // Validate ContributionID
+    if(file.ContributionID === null || file.ContributionID === undefined|| !file.ContributionID){
+      return {
+        isValid: false,
+        error: FileExceptionMessage.INVALID_CONTRIBUTIONID,
+        message: 'Contribution ID must be a number with a maximum of 20 digits',
+      };
+    }
     if (!/^\d{1,20}$/.test(file.ContributionID.toString())) {
         return { isValid: false, error: FileExceptionMessage.INVALID_CONTRIBUTIONID, message: "Invalid Contribution ID format." };
     }

@@ -10,10 +10,17 @@ export class ExceptionMessage{
 export class UserExceptionMessage extends ExceptionMessage{
     public static readonly INVALID_ROLEID: string = "Invalid Role ID";
     public static readonly INVALID_FACULTYID: string = "Invalid Faculty ID";
+    public static readonly ROLE_ALREADY_ASSIGNED_IN_FACULTY: string = "Faculty have only one user with role Marketing Coordinator"
+    public static readonly ROLE_ALREADY_ASSIGNED_IN_SEVER: string = "Server have only one user with role Marketing Manager"
+    public static readonly  EMAIL_EXISTED: string = "Email already exists"
+   
+    
 }
 
 export class FacultyExceptionMessage extends ExceptionMessage{
     public static readonly INCORRECT_PASSWORD: string = "Password incorrect";
+    public static readonly INVALID_FACULTYID: string = "Invalid Faculty ID";
+    public static readonly FACULTY_NAME_EXISTED: string = "This name already exists";
 }
 export class EventExceptionMessage extends ExceptionMessage{
     public static readonly INVALID_FACULTYID: string = "Invalid Faculty ID";

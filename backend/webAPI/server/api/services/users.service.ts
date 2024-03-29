@@ -6,6 +6,7 @@ import { User } from '../models/User';
 import { UserExceptionMessage } from '../common/exception';
 import NotificationService from './notifications.service';
 import { ISuperService } from '../interfaces/ISuperService.interface';
+import bcrypt from 'bcrypt';
 import utils from '../common/utils';
 import { UserDTO } from '../models/DTO/User.DTO';
 import { NotificationSentThrough } from '../models/NotificationSentThrough';
@@ -109,7 +110,7 @@ export class UsersService implements ISuperService<User> {
           Password: hashedPassword,
           Salt: salt,
           Email: user.Email,
-          NewPhone: user.Phone,
+          Phone: user.Phone,
           Address: user.Address,
           RoleID: user.RoleID,
           FacultyID: user.FacultyID,
@@ -249,12 +250,33 @@ export class UsersService implements ISuperService<User> {
         };
       }
 
+      // Validate Uniquely Existing Fields
+      const userNameExisted = await prisma.users.findFirst({
+        where: {
+          Email: user.Email,  // Name Email only have 1 in server
+        },
+      });
+      if (userNameExisted) {
+        return {
+          isValid: false,
+          error: UserExceptionMessage.EMAIL_EXISTED,
+          message: `A ${userNameExisted} already exists.`,
+        };
+      }
+      
       // Validate Role ID
-      if (!/^\d{1,20}$/.test(user.RoleID.toString())) {
+      if(user.RoleID === null || user.RoleID === undefined || !user.FacultyID){
         return {
           isValid: false,
           error: UserExceptionMessage.INVALID_ROLEID,
           message: 'Role ID must be a number with a maximum of 20 digits.',
+        };
+      }
+      if (!/^\d{1,20}$/.test(user.RoleID.toString())) {
+        return {
+          isValid: false,
+          error: UserExceptionMessage.INVALID_ROLEID,
+          message: 'Invalid Contribution ID format.',
         };
       }
 
@@ -311,10 +333,66 @@ export class UsersService implements ISuperService<User> {
         };
       }
 
+
+          //validate role name and relationship
+          if (roleExists.Name === 'Marketing Manager' || roleExists.Name === 'Marketing Coordinator' || roleExists.Name === 'Admin' || roleExists.Name === 'Student') {
+            if(roleExists.Name === 'Marketing Manager'){
+              const userWithRoleMarketingManager = await prisma.users.findFirst({
+                where: {
+                  RoleID: user.RoleID,  // Server only have 1 Marketing Manager
+                },
+              });
+              if (userWithRoleMarketingManager) {
+                return {
+                  isValid: false,
+                  error: UserExceptionMessage.ROLE_ALREADY_ASSIGNED_IN_SEVER,
+                  message: `A ${roleExists.Name} already exists in this server.`,
+                };
+              }
+            }
+            if(roleExists.Name === 'Marketing Coordinator'){
+    
+            const userWithRoleInFaculty = await prisma.users.findFirst({
+              where: {
+                RoleID: user.RoleID,
+                FacultyID: user.FacultyID, // Faculty only have 1 Marketing Coordinator
+              },
+            });
+            if (userWithRoleInFaculty) {
+              return {
+                isValid: false,
+                error: UserExceptionMessage.ROLE_ALREADY_ASSIGNED_IN_FACULTY,
+                message: `A ${roleExists.Name} already exists in this faculty.`,
+              };
+            }
+          }
+          } else {
+            return {
+              isValid: false,
+              error: UserExceptionMessage.INVALID_FACULTYID,
+              message: 'Role name must be belong to the allowed names like Marketing Manager , Marketing Coordinator , Admin , Student.',
+            };
+          };
+    
       // If all validations pass
       return { isValid: true };
     }
   }
+  async validateConstraintsForPassword(
+    user: User
+  ): Promise<{ isValid: boolean; error?: string; message?: string }> {
+    //validate password
+    if (!user.Password){
+      if (!/(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}/.test(user.Password)) {
+          return {
+            isValid: false,
+            error: UserExceptionMessage.INVALID,
+            message:
+              'Password must be at least 8 characters long and contain both letters and numbers.',
+          };
+        }
+      }
+     return { isValid: true };}
 }
 
 export default new UsersService();

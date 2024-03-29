@@ -122,25 +122,39 @@ export class CommentsService implements ISuperService<Comment> {
         return { isValid: false, error: ExceptionMessage.INVALID, message: "Comment content is invalid or too long, with a maximum of 1000 characters." };
     }
     // Validate ContributionID and UserID
+    if(comment.ContributionID === null || comment.ContributionID === undefined || !comment.ContributionID){
+      return {
+        isValid: false,
+        error: CommentExceptionMessage.INVALID_CONTRIBUTIONID,
+        message: 'Contribution ID must be a number with a maximum of 20 digits.',
+      };
+    }
     if (!/^\d{1,20}$/.test(comment.ContributionID.toString()) || !/^\d{1,20}$/.test(comment.UserID.toString())) {
         return { isValid: false, error: CommentExceptionMessage.INVALID_CONTRIBUTIONID, message: "ContributionID must be numbers and not exceed 20 digits." };
     }
     const contributionExists = await prisma.contributions.findUnique({ where: { ID: comment.ContributionID } });
     if (!contributionExists) {
-        return { isValid: false, error: CommentExceptionMessage.INVALID_CONTRIBUTIONID, message: "Referenced faculty does not exist." };
+        return { isValid: false, error: CommentExceptionMessage.INVALID_CONTRIBUTIONID, message: "Referenced Contribution does not exist." };
+    }
+    if(comment.UserID === null || comment.UserID === undefined || !comment.UserID){
+      return {
+        isValid: false,
+        error: CommentExceptionMessage.INVALID_CONTRIBUTIONID,
+        message: 'User ID must be a number with a maximum of 20 digits.',
+      };
     }
 
 
 
     if (!/^\d{1,20}$/.test(comment.UserID.toString()) || !/^\d{1,20}$/.test(comment.UserID.toString())) {
-      return { isValid: false, error: CommentExceptionMessage.INVALID_CONTRIBUTIONID, message: "UserID must be numbers and not exceed 20 digits." };
+      return { isValid: false, error: CommentExceptionMessage.INVALID_CONTRIBUTIONID, message: "User ID must be numbers and not exceed 20 digits." };
     }
 
 
 
     const userExists = await prisma.users.findUnique({ where: { ID: comment.UserID } });
     if (!userExists) {
-        return { isValid: false, error: CommentExceptionMessage.INVALID_USERID, message: "Referenced UserID does not exist." };
+        return { isValid: false, error: CommentExceptionMessage.INVALID_USERID, message: "Referenced User ID does not exist." };
     }
 
     // If all validations pass
