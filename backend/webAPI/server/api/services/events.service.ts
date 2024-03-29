@@ -30,7 +30,8 @@ export class EventsService implements ISuperService<Event> {
     return Promise.resolve(events);
   }
 
-  byId(id: number, depth?: number): Promise<any> {
+  byId(id: number, depth?: number, contribution? : boolean): Promise<any> {
+    L.info(id + '')
     var select: any = {
       ID: true,
       Name: true,
@@ -45,6 +46,10 @@ export class EventsService implements ISuperService<Event> {
     if (depth == 1) {
       select.Faculty = { select: { ID: true, Name: true } };
     }
+    if(contribution == true){
+      select.Contributions = { select: { ID: true, Name: true }, where:{ EventID : id} };
+    }
+    
     const event = prisma.events.findUnique({
       select,
       where: { ID: id },
@@ -84,8 +89,8 @@ export class EventsService implements ISuperService<Event> {
       return Promise.resolve(createdEvent);
     } catch (error) {
       L.error(`create ${model} failed: ${error}`);
-      return Promise.resolve({
-        error: error.message,
+      return Promise.reject({
+        error: EventExceptionMessage.INVALID,
         message: EventExceptionMessage.INVALID,
       });
     }
@@ -99,9 +104,9 @@ export class EventsService implements ISuperService<Event> {
       return Promise.resolve(deletedEvent);
     } catch (error) {
       L.error(`delete ${model} failed: ${error}`);
-      return Promise.resolve({
+      return Promise.reject({
         error: EventExceptionMessage.INVALID,
-        message: EventExceptionMessage.BAD_REQUEST,
+        message: EventExceptionMessage.NOT_FOUND,
       });
     }
   }
@@ -129,8 +134,8 @@ export class EventsService implements ISuperService<Event> {
       return Promise.resolve(createdEvent);
     } catch (error) {
       L.error(`create ${model} failed: ${error}`);
-      return Promise.resolve({
-        error: error.message,
+      return Promise.reject({
+        error: EventExceptionMessage.INVALID,
         message: EventExceptionMessage.INVALID,
       });
     }
@@ -144,11 +149,6 @@ export class EventsService implements ISuperService<Event> {
       if (!event.Name || !/^[A-Za-z\s]{1,15}$/.test(event.Name)) {
           return { isValid: false, error: EventExceptionMessage.INVALID, message: "Event name is invalid, cannot contain numbers or special characters, and must have a maximum of 15 characters." };
       }
-
-      // // Validate Description
-      // if (!event.Description || event.Description.length > 3000) {
-      //     return { isValid: false, error: EventExceptionMessage.INVALID, message: "Event description is invalid or too long, with a maximum of 3000 characters." };
-      // }
 
       // Validate ClosureDate and FinalDate
       if (!(event.ClosureDate) || !(event.FinalDate)) {

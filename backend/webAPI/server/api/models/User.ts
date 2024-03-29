@@ -7,15 +7,22 @@ export class User {
     Salt: string;
     Email: string;
     Phone?: string; 
+    NewPhone?: string; 
     Address?: string; 
     CreatedAt: Date;
     UpdatedAt: Date;
+    ResetPassword?: string;
+    OTP?: string;
+    OTPUsed?: boolean;
+    OTPRequestedTime?: Date;
+    OTPExpriedTime?: Date;
+    GoogleID? : string ;
+
     RoleID: number;
     FacultyID: number;
 
     Role?: Role;
     Faculty?: Faculty;
-    static Email: string;
 
     constructor(ID: number, Name: string, Password: string, Salt: string, Email: string, CreatedAt: Date, UpdatedAt: Date, RoleID: number, FacultyID: number) {
         this.ID = ID;

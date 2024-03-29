@@ -91,21 +91,6 @@ paths:
         - in: query
           name: depth
           schema:
-            type: string
-          description: Search parameter
-        - in: query
-          name: filter
-          schema:
-            type: string
-          description: Filter by field parameter
-        - in: query
-          name: keyword
-          schema:
-            type: string
-          description: Keyword parameter
-        - in: query
-          name: depth
-          schema:
             type: number
           description: JSON response depth parameter
       responses:
@@ -325,67 +310,20 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Event'
-  /events/{id}:
+  /files:
     get:
       tags:
-        - Events
-      summary: Get an event by ID
-      parameters:
-        - name: eventId
-          in: path
-          required: true
-          schema:
-            type: integer
-        - in: query
-          name: depth
-          schema:
-            type: number
-          description: JSON response depth parameter
+        - Files
+      summary: Get all files
       responses:
         '200':
-          description: An event object
+          description: A list of files
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Event'
-        '404':
-          description: Event not found
-    put:
-      tags:
-        - Events
-      summary: Update an event
-      parameters:
-        - name: eventId
-          in: path
-          required: true
-          schema:
-            type: integer
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Event'
-      responses:
-        '200':
-          description: Event updated
-        '404':
-          description: Event not found
-    delete:
-      tags:
-        - Events
-      summary: Delete an event
-      parameters:
-        - name: eventId
-          in: path
-          required: true
-          schema:
-            type: integer
-      responses:
-        '204':
-          description: Event deleted
-        '404':
-          description: Event not found
+                type: array
+                items:
+                  $ref: '#/components/schemas/File'
   /files/upload:
     post:
       tags:
@@ -398,7 +336,7 @@ paths:
             schema:
               type: object
               required:
-                - filePath
+                - Path
                 - ID
                 - ContributionID
               properties:
@@ -432,93 +370,28 @@ paths:
           description: Bad Request. Invalid input or missing fields.
         500:
           description: Error uploading the file.
-  /contributions:
+  /files/{id}:
     get:
       tags:
-        - Contributions
-      summary: Get all contributions
-      parameters:
-        - in: query
-          name: depth
-          schema:
-            type: number
-          description: JSON response depth parameter
-      responses:
-        '200':
-          description: A list of contributions
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Contribution'
-    post:
-      tags:
-        - Contributions
-      summary: Create a new contribution
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Contribution'
-      responses:
-        '201':
-          description: Contribution created
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Contribution'
-  /contributions/{id}:
-    get:
-      tags:
-        - Contributions
-      summary: Get a contribution by ID
+        - Files
+      summary: Get a file by ID
       parameters:
         - name: id
           in: path
           required: true
           schema:
             type: integer
-        - in: query
-          name: depth
-          schema:
-            type: number
-          description: JSON response depth parameter
       responses:
         '200':
-          description: A contribution
+          description: File details
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Contribution'
-    put:
-      tags:
-        - Contributions
-      summary: Update a contribution
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Contribution'
-      responses:
-        '200':
-          description: Contribution updated
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Contribution'
+                $ref: '#/components/schemas/File'
     delete:
       tags:
-        - Contributions
-      summary: Delete a contribution
+        - Files
+      summary: Delete a file
       parameters:
         - name: id
           in: path
@@ -527,11 +400,58 @@ paths:
             type: integer
       responses:
         '200':
-          description: Contribution deleted
+          description: File deleted successfully
+  /files/upload/{id}:
+    put:
+      tags:
+        - Files
+      summary: Update the information of an existing file
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+            description: The unique identifier of the file to be updated
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - Path
+                - ContributionID
+              properties:
+                Path:
+                  type: string
+                  description: New local file path for the uploaded file.
+                ContributionID:
+                  type: integer
+                  description: Updated contribution identifier associated with the file.
+      responses:
+        '200':
+          description: File information updated successfully.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Contribution'
+                type: object
+                properties:
+                  ID:
+                    type: integer
+                    description: The unique identifier for the file.
+                  Path:
+                    type: string
+                    description: New local file path for the uploaded file.
+                  ContributionID:
+                    type: integer
+                    description: Updated contribution identifier associated with the file.
+        '400':
+          description: Bad Request. Invalid input or missing required fields.
+        '404':
+          description: Not Found. The file with the specified ID was not found.
+        '500':
+          description: Internal Server Error. An error occurred while processing the request.
   /roles:
     get:
       tags:
@@ -621,6 +541,229 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Role'
+  /events/{id}:
+    get:
+      tags:
+        - Events
+      summary: Get an event by ID
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - in: query
+          name: depth
+          schema:
+            type: number
+          description: JSON response depth parameter
+      responses:
+        '200':
+          description: An event object
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+        '404':
+          description: Event not found
+    put:
+      tags:
+        - Events
+      summary: Update an event
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Event'
+      responses:
+        '200':
+          description: Event updated
+        '404':
+          description: Event not found
+    delete:
+      tags:
+        - Events
+      summary: Delete an event
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Event deleted
+        '404':
+          description: Event not found
+  /contributions:
+    get:
+      tags:
+        - Contributions
+      summary: Get all contributions
+      parameters:
+        - in: query
+          name: depth
+          schema:
+            type: number
+          description: JSON response depth parameter
+      responses:
+        '200':
+          description: A list of contributions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Contribution'
+    post:
+      tags:
+        - Contributions
+      summary: Create a new contribution with optional file paths
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                Name:
+                  type: string
+                Content:
+                  type: string
+                IsPublic:
+                  type: boolean
+                IsApproved:
+                  type: boolean
+                EventID:
+                  type: integer
+                UserID:
+                  type: integer
+                StatusID:
+                  type: integer
+                files:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      Path:
+                        type: string
+                        description: String path of the file
+              required:
+                - Name
+                - Content
+                - IsPublic
+                - IsApproved
+                - EventID
+                - UserID
+                - StatusID
+      responses:
+        '201':
+          description: Contribution created with optional file paths
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Contribution'
+  /contributions/{id}:
+    get:
+      tags:
+        - Contributions
+      summary: Get a contribution by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - in: query
+          name: depth
+          schema:
+            type: number
+          description: JSON response depth parameter
+      responses:
+        '200':
+          description: A contribution
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Contribution'
+    put:
+      tags:
+        - Contributions
+      summary: Update a contribution and its files
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                Name:
+                  type: string
+                Content:
+                  type: string
+                IsPublic:
+                  type: boolean
+                IsApproved:
+                  type: boolean
+                EventID:
+                  type: integer
+                UserID:
+                  type: integer
+                StatusID:
+                  type: integer
+                files:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      Path:
+                        type: string
+                        description: String path of the file
+              required:
+                - Name
+                - Content
+                - IsPublic
+                - IsApproved
+                - EventID
+                - UserID
+                - StatusID
+      responses:
+        '200':
+          description: Contribution and its files updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Contribution'
+    delete:
+      tags:
+        - Contributions
+      summary: Delete a contribution
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Contribution deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Contribution'
   /comments:
     get:
       tags:
@@ -884,6 +1027,30 @@ components:
         - EventID
         - UserID
         - StatusID
+    File:
+      type: object
+      properties:
+        ID:
+          type: integer
+          format: int64
+          description: Unique identifier for the file
+        name:
+          type: string
+          description: Name of the file
+        url:
+          type: string
+          description: URL to access the file
+        createdAt:
+          type: string
+          format: date-time
+          description: Date and time when the file was uploaded
+        updatedAt:
+          type: string
+          format: date-time
+          description: Date and time when the file information was last updated
+      required:
+        - name
+        - url
     Role:
       type: object
       required:
@@ -911,22 +1078,6 @@ components:
       required:
         - Email
         - string
-    Role:
-      type: object
-      required:
-        - name
-        - description
-      properties:
-        ID:
-          type: integer
-          format: int64
-          description: The unique identifier for the role
-        name:
-          type: string
-          description: The name of the role
-        description:
-          type: string
-          description: A description of the role
   securitySchemes:
     bearerAuth: # arbitrary name for the security scheme
       type: http

@@ -20,15 +20,17 @@ export class FacultiesService implements ISuperService<Faculty> {
     };
 
     if (depth == 1) {
-      select.Event = { select: { ID: true, Name: true } };
-      select.User = { select: { ID: true, Name: true } };
+      select.Events = { select: { ID: true, Name: true } };
+      select.Users = { select: { ID: true, Name: true } };
     }
-    const faculties = prisma.faculties.findMany();
+    const faculties = prisma.faculties.findMany({
+      select,
+    });
     L.info(faculties, `fetch all ${model}(s)`);
     return Promise.resolve(faculties);
   }
   // Filter
-  byId(id: number, depth?: number): Promise<any> {
+  byId(id: number, depth?: number,event? : boolean, user? : boolean): Promise<any> {
     var select: any = {
       ID: true,
       Name: true,
@@ -39,11 +41,18 @@ export class FacultiesService implements ISuperService<Faculty> {
     };
 
     if (depth == 1) {
-      select.Events = { select: { ID: true, Name: true } };
-      select.Users = { select: { ID: true, Name: true } };
     }
+
+    if(event == true){
+      select.Events = { select: { ID: true, Name: true }, where:{ FacultyID : id} };
+    }
+    if(user == true){
+      select.Users = { select: { ID: true, Name: true }, where:{ FacultyID : id} };
+    }
+
     L.info(`fetch ${model} with id ${id}`);
     const faculty = prisma.faculties.findUnique({
+      select,
       where: { ID: id },
     });
     return Promise.resolve(faculty);

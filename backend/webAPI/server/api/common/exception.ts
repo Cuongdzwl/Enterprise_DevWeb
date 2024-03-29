@@ -1,8 +1,10 @@
 export class ExceptionMessage{
     public static readonly INVALID : string = "Invalid";
     public static readonly NOT_FOUND : string = "Not Found";
+    public static readonly USER_NOT_FOUND : string = "User Not Found";
     public static readonly BAD_REQUEST : string = "Bad Request";
     public static readonly UNKNOWN : string = "Internal Server Error";
+
 }
 
 export class UserExceptionMessage extends ExceptionMessage{
@@ -45,6 +47,15 @@ export class RoleExceptionMessage extends ExceptionMessage{
 export class CommentExceptionMessage extends ExceptionMessage{
     public static readonly INVALID_CONTRIBUTIONID: string = "Invalid Contribution ID";
     public static readonly INVALID_USERID: string = "Invalid User ID";
+}
+
+export class AuthExceptionMessage extends ExceptionMessage{
+    public static readonly INVALID_EMAIL: string = "Invalid Email";
+    public static readonly INVALID_PASSWORD: string = "Invalid Password";
+    public static readonly INVALID_TOKEN: string = "Invalid Token";
+    public static readonly INVALID_OTP: string = "Invalid OTP";
+    public static readonly INVALID_OTP_EXPIRED: string = "OTP has expired";
+    public static readonly INVALID_OTP_USED: string = "OTP has already been used";
 }
 
 

@@ -5,5 +5,5 @@ export default express
   .post('/upload', controller.create)
   .get('/', controller.all)
   .get('/:id', controller.byId)
-  .delete('/delete', controller.delete)
+  .delete('/:id', controller.delete)
   .put('/upload/:id', controller.update);

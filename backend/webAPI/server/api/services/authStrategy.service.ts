@@ -1,4 +1,5 @@
 import { ExtractJwt, Strategy as Jwt } from 'passport-jwt';
+import { Strategy as Google } from 'passport-google-oauth2';
 import { Strategy as Local } from 'passport-local';
 import L from '../../common/logger';
 import usersService from './users.service';
@@ -11,7 +12,7 @@ import { User } from '../models/User';
 // Config
 const jwtOptions: any = {
   jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
-  secretOrKey: process.env.JWT_SECRET,
+  secretOrKey: process.env.JWT_SECRET || 'de',
 };
 
 // Strategy
@@ -28,7 +29,6 @@ const jwtStrategy = new Jwt(jwtOptions, async (payload, done: any) => {
     return done(error, false);
   }
 });
-// Strategy
 const localStrategy = new Local(
   {
     usernameField: 'email',
@@ -38,7 +38,7 @@ const localStrategy = new Local(
     try {
       var users = await usersService.filter('Email', email);
       L.info(users);
-      const user : User = users[0];
+      const user: User = users[0];
       if (!user) {
         return done(null, false, { message: 'Invalid email.' });
       }
@@ -46,7 +46,7 @@ const localStrategy = new Local(
       if (!validPassword) {
         return done(null, false, { message: 'Invalid credentials.' });
       }
-      L.info(''+ user.RoleID);
+      L.info('' + user.RoleID);
       return done(null, user);
     } catch (err) {
       L.info('error: ' + err);
@@ -54,6 +54,38 @@ const localStrategy = new Local(
     }
   }
 );
+
+const googleStrategy = new Google(
+  {
+    clientID: process.env.GOOGLE_CLIENT_ID || '',
+    clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
+    callbackURL: 'api/v1/auth/google/callback',
+    passReqToCallback: true, // Pass the entire request to callback
+  },
+  async (req : Request, accessToken: string, refreshToken: string, profile: any, done: any) => {
+    try {
+      L.info(req)
+      L.info(accessToken)
+      L.info(refreshToken)
+      L.info(profile)
+
+      const existingUser = await usersService.filter('GoogleID',profile.id);
+      const user = existingUser[0]
+      if (user) {
+        return done(null, user); // User already exists
+      }
+      // Handle bind email to existing account
+
+      done(null, user); 
+    } catch (error) {
+      console.error(error);
+      done(error, null);
+    }
+  }
+);
+if(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET){
+  passport.use(googleStrategy);
+}
 
 // Export
 

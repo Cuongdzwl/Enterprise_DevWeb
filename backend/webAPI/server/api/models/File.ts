@@ -5,8 +5,8 @@ export class File {
     ID?: number;
     Path: string;
     Url: string;
-    CreatedAt: Date;
-    UpdatedAt: Date;
+    CreatedAt?: Date;
+    UpdatedAt?: Date;
     ContributionID: number;
 
     Contribution?:Contribution;
