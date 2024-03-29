@@ -19,7 +19,7 @@ export class AuthController implements IAuthController {
   }
 
   updateProfile(req: Request, res: Response): void {
-    const id = Number.parseInt(res.locals.user.user.userID);
+    const id = Number.parseInt(res.locals.user.user.ID + '');
     try {
       UserService.update(id, req.body).then((r) => {
         if (r) res.status(201).json(r);
@@ -36,20 +36,6 @@ export class AuthController implements IAuthController {
     } catch (err) {
       res.status(400).json({ message: err });
     }
-  
-    const { email, password, phone } = req.body;
-    UserService.filter('Email', email).then((r) => {
-      r = r as User;
-      if (r) {
-        const salt = r.Salt
-        bcrypt.hash(password, salt)
-      }
-      else{
-        res.status(404).end()
-      }
-    });
-
-    res.json().end();
   }
 
 

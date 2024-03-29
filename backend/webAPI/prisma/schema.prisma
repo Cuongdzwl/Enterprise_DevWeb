@@ -99,6 +99,7 @@ model contributions {
   UserID       Int
   StatusID     Int
   LastEditByID Int?
+  ImageUrl     String?
   Files        files[]
   Status       contributionStatuses @relation(fields: [StatusID], references: [ID], onDelete: Cascade, onUpdate: NoAction)
   Comments     comments[]

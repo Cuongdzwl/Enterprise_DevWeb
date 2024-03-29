@@ -43,16 +43,12 @@ paths:
     get:
       tags:
         - Authentication
-      summary: Get user info
-      responses:
-        '200':
-          description: User Authenticated
-        '401':
-          description: Unauthorized
+      summary: Get user profile
+
     put:
       tags:
         - Authentication
-      summary: Update user info
+      summary: Update user profile
       requestBody:
        required: true
        content:
@@ -60,6 +56,11 @@ paths:
            schema:
              $ref: '#/components/schemas/User'
              type: object
+      responses:
+      '201':
+        description: Updated
+      '401':
+        description: Unauthorized    
   /auth/forgotPassword:
     post:
       tags:
@@ -1072,6 +1073,8 @@ components:
         UserID:
           type: integer
         StatusID:
+          type: integer
+        LastEditedByID:
           type: integer
       required:
         - Name

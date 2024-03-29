@@ -17,7 +17,7 @@ export class FacultiesController implements ISuperController {
     const depth = Number.parseInt(req.query.depth?.toString() ?? '');
     const event = req.query.event?.toString() == 'true' ? true : false;
     const user = req.query.user?.toString() == 'true' ? true : false;
-    
+
     try {
       FacultyService.byId(id, depth, event, user).then((r) => {
         if (r) res.json(r);
@@ -100,6 +100,7 @@ export class FacultiesController implements ISuperController {
       res.status(400).json({ error: error.message }).end();
     }
   }
+  async public() {}
 }
 
 export default new FacultiesController();

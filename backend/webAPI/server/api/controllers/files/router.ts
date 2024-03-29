@@ -4,9 +4,9 @@ import { authenticateToken,authorizeRole } from '../../middlewares/authenticatio
 
 export default express
   .Router()
-  .post('/upload',authenticateToken, controller.create)
-  .get('/',authenticateToken, controller.all)
-  .get('/:id',authenticateToken, controller.byId)
-  .delete('/:id',authenticateToken, controller.delete)
-  .put('/upload/:id',authenticateToken, controller.update);
+  .post('/upload',authenticateToken,authorizeRole("student"), controller.create)
+  .get('/',authenticateToken,authorizeRole("student,coordinator"), controller.all)
+  .get('/:id',authenticateToken,authorizeRole("student,coordinator,manager"), controller.byId)
+  .delete('/:id',authenticateToken,authorizeRole("student"), controller.delete)
+  .put('/upload/:id',authenticateToken,authorizeRole("student,coordinator"), controller.update);
   

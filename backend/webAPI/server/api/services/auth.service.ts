@@ -28,7 +28,7 @@ export class AuthService {
             reject(info);
           } else {
             const token = jwt.sign(
-              { id: user.ID },
+              { id: user.ID, roleID : user.RoleID, FacultyID: user.FacultyID},
               process.env.JWT_SECRET || 'default',
               { expiresIn: '1h' }
             );
