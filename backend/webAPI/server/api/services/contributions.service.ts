@@ -4,12 +4,16 @@ import L from '../../common/logger';
 import { PrismaClient } from '@prisma/client';
 import { ContributionExceptionMessage } from '../common/exception';
 import { ISuperService } from '../interfaces/ISuperService.interface';
+import { FileDTO } from '../models/DTO/File.DTO';
+import { FilesService } from './files.service';
 
 const prisma = new PrismaClient();
 const model = 'contributions';
 
+
 export class ContributionsService implements ISuperService<Contribution> {
-  all(depth?: number): Promise<any> {
+  private fileService = new FilesService();
+  async all(depth?: number): Promise<any> {
     var select: any = {
       ID: true,
       Name: true,
@@ -21,17 +25,72 @@ export class ContributionsService implements ISuperService<Contribution> {
       EventID: true,
       UserID: true,
       StatusID: true,
-      LastEditByID :  true
+      LastEditByID :  true,
+
     };
     if (depth == 1) {
       select.User =  {select: {ID: true, Name: true}}
       select.Event =  {select: {ID: true, Name: true}}
-      select.Status =  {select: {ID: true, Name: true}}
+      select.Files =  {select: {ID: true, Url: true}};
+      select.Status =  true;
+      select.Comments =  true;
     }
-    const contributions = prisma.contributions.findMany({select});
+    const contributions = await prisma.contributions.findMany({select});
     L.info(contributions, `fetch all ${model}(s)`);
+    return contributions.map(contribution => {
+      if (contribution.Files) {
+        try {
+          const filesAsDTOs = this.toFileDTOArray(contribution.Files || []);
+          const { textFiles, imageFiles } = this.classifyFiles(filesAsDTOs);
+        return {
+            ...contribution,
+            TextFiles: textFiles,
+            ImageFiles: imageFiles,
+        };
+        } catch (error) {
+          L.error(` failed: ${error}`);
+
+      return Promise.resolve({
+        error: ContributionExceptionMessage.INVALID,
+        message: ContributionExceptionMessage.BAD_REQUEST,
+      });
+        }
+        
+      }
+      return contribution;
+  });
     return Promise.resolve(contributions);
   }
+  toFileDTOArray(files: any[]): FileDTO[] {
+    return files.map(file => {
+      const url = file.Url || "default/url";
+      return new FileDTO({
+        ID: file.ID,
+        Url: url,
+        CreatedAt: file.CreatedAt || null,
+        UpdatedAt: file.UpdatedAt || null,
+        ContributionID: file.ContributionID,
+        Content: file.Content, 
+        UserID: file.UserID, 
+      });
+    });
+  }
+  classifyFiles(files: FileDTO[]) {
+    const textFiles: FileDTO[] = [];
+    const imageFiles: FileDTO[] = [];
+
+    files?.forEach(file => {
+      if (file.Url) {
+        if (file.Url.endsWith('.pdf') || file.Url.endsWith('.docx')) {
+            textFiles.push(file);
+        } else if (file.Url.endsWith('.png') || file.Url.endsWith('.jpeg') || file.Url.endsWith('.JPG')) {
+            imageFiles.push(file);
+        }
+    }
+    });
+
+    return { textFiles, imageFiles };
+}
 
   byId(id: number, depth?: number, comment?: boolean, file?: boolean): Promise<any> {
     L.info(`fetch ${model} with id ${id}`);
@@ -114,6 +173,27 @@ export class ContributionsService implements ISuperService<Contribution> {
     }
   }
 
+  async createFile(files: Array<{ Path : string}>, ContributionID: number): Promise<any> {
+    try {
+      L.info(`create ${model} with id ${ContributionID}`);
+      if(files){
+        const uploadedFiles = await Promise.all(files.map(async (filePath) => {
+          // const url = await this.fileService.uploadFileToBlob(filePath.Path);
+          const fileData = { Url: "", ContributionID: ContributionID , Path: filePath.Path};
+          return await this.fileService.create(fileData);
+      }));
+      }
+
+      return Promise.resolve();
+    } catch (error) {
+      L.error(`create ${model} failed: ${error}`);
+
+      return Promise.resolve({
+        error: ContributionExceptionMessage.INVALID,
+        message: ContributionExceptionMessage.BAD_REQUEST,
+      });
+    }
+  }
   delete(id: number): Promise<any> {
     try {
       L.info(`delete ${model} with id ${id}`);
@@ -130,6 +210,7 @@ export class ContributionsService implements ISuperService<Contribution> {
     }
   }
 
+  
   async update(id: number, contribution: Contribution): Promise<any> {
     const validations = await this.validateConstraints(contribution);
     if (!validations.isValid) {

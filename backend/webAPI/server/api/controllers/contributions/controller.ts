@@ -36,9 +36,10 @@ export class ContributionsController implements ISuperController {
           return;
         }
         try {
-            ContributionsService.create(req.body).then((r) =>
-                res.status(201).location(`/api/v1/contributions/${r.id}`).json(r)
-            );
+            const r = await ContributionsService.create(req.body)
+            const { contribution, files } = req.body;
+            await ContributionsService.createFile(files, r.ID)
+            res.status(201).location(`/api/v1/contributions/${r.id}`).json(r)
         } catch (error) {
             res.status(400).json({ error: error.message }).end();
         }
@@ -74,10 +75,10 @@ export class ContributionsController implements ISuperController {
           return;
         }
         try {
-            ContributionsService.update(id, req.body).then((r) => {
-                if (r) res.json(r);
-                else res.status(404).end();
-            });
+            const r = await ContributionsService.create(req.body)
+            const { contribution, files } = req.body;
+            await ContributionsService.createFile(files, r.ID)
+            res.status(201).location(`/api/v1/contributions/${r.id}`).json(r)
         } catch (error) {
             res.status(400).json({ error: error.message }).end();
         }
