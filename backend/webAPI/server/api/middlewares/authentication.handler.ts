@@ -41,7 +41,7 @@ export const authorizeFaculty =
   export const authorizeContribution =
   (require: number) =>
   (_: Request, res: Response, next: NextFunction) => {
-    if(res.locals.user.user.RoleID == 1 || 2 || 3) {
+    if(res.locals.user.user.RoleID) {
       next()
     }
     // Check if the contribution is belonging to the user

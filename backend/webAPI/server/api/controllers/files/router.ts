@@ -1,9 +1,12 @@
 import express from 'express';
 import controller from './controller';
+import { authenticateToken,authorizeRole } from '../../middlewares/authentication.handler';
+
 export default express
   .Router()
-  .post('/upload', controller.create)
-  .get('/', controller.all)
-  .get('/:id', controller.byId)
-  .delete('/:id', controller.delete)
-  .put('/upload/:id', controller.update);
+  .post('/upload',authenticateToken, controller.create)
+  .get('/',authenticateToken, controller.all)
+  .get('/:id',authenticateToken, controller.byId)
+  .delete('/:id',authenticateToken, controller.delete)
+  .put('/upload/:id',authenticateToken, controller.update);
+  
