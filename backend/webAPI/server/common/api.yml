@@ -64,6 +64,12 @@ paths:
     post:
       tags:
         - Authentication
+      parameters:
+        - in: query
+          name: email
+          schema:
+            type: string
+          description: Email to send the OTP
       summary: Forgot password
       responses:
         '200':
@@ -74,20 +80,105 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/User'
-  /auth/verifyOTP:
+  /auth/otp:
+    get:
+      tags:
+        - Authentication
+      summary: Get OTP
+      responses:
+        '200':
+          description: OTP sent
+        '404':
+          description: User Not Found
+        '401':
+          description: Unauthorized
+  /auth/verify:
     post:
       tags:
         - Authentication
       summary: Verify OTP
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                code:
+                  type: string
       responses:
         '501':
           description: Method not implemented
+        '200':
+          description: Sucessfully verified OTP
+        '400':
+          description: Bad Request
+  /auth/verify/phone:
+    post:
+      tags:
+        - Authentication
+      summary: Verify OTP for changing p hone number
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                code:
+                  type: string
+      responses:
+        '200':
+          description: Sucessfully verified OTP
+        '404':
+          description: User Not Found
+        '400':
+          description: Bad Request
+        '401':
+          description: Unauthorized
+  /auth/resetPassword:
+    post:
+      tags:
+        - Authentication
+      summary: Reset password
+      parameters:
+       - in: query
+         name: token
+         schema:
+           type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                newPassword:
+                  type: string
+      responses:
+        '200':
+          description: Password Reset Successfully
   /users:
     get:
       tags:
         - Users
       summary: Get all users
       parameters:
+        - in: query
+          name: depth
+          schema:
+            type: string
+          description: Search parameter
+        - in: query
+          name: filter
+          schema:
+            type: string
+          description: Filter by field parameter
+        - in: query
+          name: keyword
+          schema:
+            type: string
+          description: Keyword parameter
         - in: query
           name: depth
           schema:
@@ -230,6 +321,16 @@ paths:
           schema:
             type: number
           description: JSON response depth parameter
+        - in: query
+          name: event
+          schema:
+            type: boolean
+          description: Include Events
+        - in: query
+          name: user
+          schema:
+            type: boolean
+          description: Include Users
       responses:
         '200':
           description: A faculty
@@ -547,7 +648,7 @@ paths:
         - Events
       summary: Get an event by ID
       parameters:
-        - name: eventId
+        - name: id
           in: path
           required: true
           schema:
@@ -557,6 +658,11 @@ paths:
           schema:
             type: number
           description: JSON response depth parameter
+        - in: query
+          name: contribution
+          schema:
+            type: boolean
+          description: Include Contribution
       responses:
         '200':
           description: An event object
@@ -571,7 +677,7 @@ paths:
         - Events
       summary: Update an event
       parameters:
-        - name: eventId
+        - name: id
           in: path
           required: true
           schema:
@@ -592,7 +698,7 @@ paths:
         - Events
       summary: Delete an event
       parameters:
-        - name: eventId
+        - name: id
           in: path
           required: true
           schema:
@@ -625,47 +731,16 @@ paths:
     post:
       tags:
         - Contributions
-      summary: Create a new contribution with optional file paths
+      summary: Create a new contribution
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                Name:
-                  type: string
-                Content:
-                  type: string
-                IsPublic:
-                  type: boolean
-                IsApproved:
-                  type: boolean
-                EventID:
-                  type: integer
-                UserID:
-                  type: integer
-                StatusID:
-                  type: integer
-                files:
-                  type: array
-                  items:
-                    type: object
-                    properties:
-                      Path:
-                        type: string
-                        description: String path of the file
-              required:
-                - Name
-                - Content
-                - IsPublic
-                - IsApproved
-                - EventID
-                - UserID
-                - StatusID
+              $ref: '#/components/schemas/Contribution'
       responses:
         '201':
-          description: Contribution created with optional file paths
+          description: Contribution created
           content:
             application/json:
               schema:
@@ -686,6 +761,16 @@ paths:
           schema:
             type: number
           description: JSON response depth parameter
+        - in: query
+          name: comment
+          schema:
+            type: boolean
+          description: Inclues comments of a contribution
+        - in: query
+          name: file
+          schema:
+            type: boolean
+          description: Include files of a contribution
       responses:
         '200':
           description: A contribution
@@ -696,7 +781,7 @@ paths:
     put:
       tags:
         - Contributions
-      summary: Update a contribution and its files
+      summary: Update a contribution
       parameters:
         - name: id
           in: path
@@ -708,41 +793,10 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                Name:
-                  type: string
-                Content:
-                  type: string
-                IsPublic:
-                  type: boolean
-                IsApproved:
-                  type: boolean
-                EventID:
-                  type: integer
-                UserID:
-                  type: integer
-                StatusID:
-                  type: integer
-                files:
-                  type: array
-                  items:
-                    type: object
-                    properties:
-                      Path:
-                        type: string
-                        description: String path of the file
-              required:
-                - Name
-                - Content
-                - IsPublic
-                - IsApproved
-                - EventID
-                - UserID
-                - StatusID
+              $ref: '#/components/schemas/Contribution'
       responses:
         '200':
-          description: Contribution and its files updated
+          description: Contribution updated
           content:
             application/json:
               schema:
