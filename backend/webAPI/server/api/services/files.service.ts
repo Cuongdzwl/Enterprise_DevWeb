@@ -56,6 +56,11 @@ export class FilesService implements ISuperService<File> {
     const blockBlobClient = containerClient.getBlockBlobClient(blobName);
 
     await blockBlobClient.uploadFile(filePath);
+                L.info(filePath);
+                L.info(containerClient);
+                L.info(blobName);
+                L.info(blockBlobClient.url);
+
     return blockBlobClient.url;
 }
 async downloadBlobToFile(url: string, outputPath: string): Promise<void> {
@@ -117,19 +122,21 @@ async downloadBlobToFile(url: string, outputPath: string): Promise<void> {
   }
   // Delete
   delete(id: number): Promise<any> {
-    try {
-      L.info(`delete ${model} with id ${id}`);
-      const deletedFile = prisma.files.delete({
+    L.info(`delete ${model} with id ${id}`);
+    return prisma.files
+      .delete({
         where: { ID: id },
+      })
+      .then((r) => {
+        return Promise.resolve(r);
+      })
+      .catch((err) => {
+        L.error(`delete ${model} failed: ${err}`);
+        return Promise.resolve({
+          error: ExceptionMessage.INVALID,
+          message: ExceptionMessage.BAD_REQUEST,
+        });
       });
-      return Promise.resolve(deletedFile);
-    } catch (error) {
-      L.error(`delete ${model} failed: ${error}`);
-      return Promise.resolve({
-        error: ExceptionMessage.INVALID,
-        message: ExceptionMessage.BAD_REQUEST,
-      });
-    }
   }
   // Update
   async update(id: number, file: File): Promise<any> {

@@ -1,10 +1,11 @@
 import express from 'express';
 import controller from './controller';
-import { authenticateToken, authorizeFaculty } from '../../middlewares/authentication.handler';
+import { authenticateToken, authorizeRole } from '../../middlewares/authentication.handler';
 export default express
   .Router()
-  .post('/',authenticateToken, controller.create)
-  .get('/',authenticateToken, controller.all)
+  .post('/',authenticateToken,authorizeRole("admin"), controller.create)
+  .get('/',authenticateToken,authorizeRole("admin,manager"), controller.all)
+  .get('/public', controller.all)
   .get('/:id',authenticateToken, controller.byId)
-  .delete('/:id',authenticateToken, controller.delete)
-  .put('/:id',authenticateToken, controller.update);
+  .delete('/:id',authenticateToken,authorizeRole("admin"), controller.delete)
+  .put('/:id',authenticateToken,authorizeRole("admin"), controller.update);

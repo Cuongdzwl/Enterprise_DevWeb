@@ -13,11 +13,13 @@ export class FacultiesController implements ISuperController {
   }
 
   byId(req: Request, res: Response): void {
-    const id = Number.parseInt(req.params['id']);
+    var id = Number.parseInt(req.params['id']);
     const depth = Number.parseInt(req.query.depth?.toString() ?? '');
     const event = req.query.event?.toString() == 'true' ? true : false;
     const user = req.query.user?.toString() == 'true' ? true : false;
-    
+    if (!(res.locals.user.user.RoleID == 1 || 2)) {
+      id = res.locals.user.user.FacultyID;
+    }
     try {
       FacultyService.byId(id, depth, event, user).then((r) => {
         if (r) res.json(r);
@@ -100,6 +102,7 @@ export class FacultiesController implements ISuperController {
       res.status(400).json({ error: error.message }).end();
     }
   }
+  async public() {}
 }
 
 export default new FacultiesController();

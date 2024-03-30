@@ -6,9 +6,9 @@ import {
   NotificationExceptionMessage,
 } from '../common/exception';
 import { ISuperService } from '../interfaces/ISuperService.interface';
-import { Novu } from '@novu/node';
+import { IBulkEvents, Novu } from '@novu/node';
 import { NotificationSentThrough } from '../models/NotificationSentThrough';
-import { NotificationSentType } from '../models/NotificationSentType';   
+import { NotificationSentType } from '../models/NotificationSentType';
 import { User } from '../models/User';
 
 const novu = new Novu(process.env.NOVU_API_KEY as string);
@@ -20,26 +20,52 @@ export class NotificationService implements ISuperService<Notification> {
   private checkAPIKEY(): boolean {
     return process.env.NOVU_API_KEY ? true : false;
   }
-  bulkTrigger(
+  async bulkTrigger(
     user: User[],
     payload: any,
     type: NotificationSentType,
     through: NotificationSentThrough
-  ): void {
+  ): Promise<any> {
     if (!this.checkAPIKEY()) {
       throw new Error('NOVU_API_KEY is not set');
     }
-    user;
-    payload;
-    type;
-    through;
+    const events: IBulkEvents[] = [];
+    for (const u of user) {
+      let upayload = payload;
+      var sendType: any = {};
+      if (
+        through === NotificationSentThrough.SMS ||
+        (through === NotificationSentThrough.NewSMS && !u.Phone)
+      ) {
+        sendType.sms = 'true';
+      }
+      if (through === NotificationSentThrough.Email) {
+        sendType.email = 'true';
+      }
+      if (through === NotificationSentThrough.InApp) {
+        sendType.inapp = 'true';
+      }
+      upayload.sentType = sendType;
+      payload.Name = u.Name;
+      events.push({
+        name: type,
+        to: {
+          subscriberId: u.ID.toString(),
+          email:
+            through === NotificationSentThrough.Email ? u.Email : undefined,
+          phone: through === NotificationSentThrough.SMS ? u.Phone : undefined,
+        },
+        payload: upayload,
+      });
+    }
+    return Promise.resolve(novu.bulkTrigger(events));
   }
-  trigger(
+  async trigger(
     user: User,
     payload: any,
     type: NotificationSentType,
     through: NotificationSentThrough
-  ) {
+  ): Promise<any> {
     var to: any = {
       subscriberId: user.ID,
       email: through === NotificationSentThrough.Email ? user.Email : undefined,
@@ -52,35 +78,46 @@ export class NotificationService implements ISuperService<Notification> {
     if (user.NewPhone || through === NotificationSentThrough.NewSMS)
       to.phone = user.NewPhone;
 
-    var sendType : any = {}
-    if(through === NotificationSentThrough.SMS || through === NotificationSentThrough.NewSMS && !to.phone) {
-      sendType.sms = "true";
+    var sendType: any = {};
+    if (
+      through === NotificationSentThrough.SMS ||
+      (through === NotificationSentThrough.NewSMS && !to.phone)
+    ) {
+      sendType.sms = 'true';
     }
-    if(through === NotificationSentThrough.Email) {
-      sendType.email = "true";
+    if (through === NotificationSentThrough.Email) {
+      sendType.email = 'true';
     }
-    if(through === NotificationSentThrough.InApp) {
-      sendType.inapp = "true";
+    if (through === NotificationSentThrough.InApp) {
+      sendType.inapp = 'true';
     }
     payload.sentType = sendType;
-    L.info(to)
-    L.info(payload)
-    novu
-      .trigger(type as string, {
-        to,
-        payload: payload,
-      })
-      .then((_) => {
-        if (payload.SendAt){
-          // save to db
-        }
-      });
+    L.info(to);
+    L.info(payload);
+    Promise.resolve(
+      novu
+        .trigger(type as string, {
+          to,
+          payload: payload,
+        })
+        .then((_) => {
+          if (payload.SendAt) {
+            // save to db
+          }
+        })
+    );
   }
   cancel(transactionID: string): Promise<any> {
     return Promise.resolve(novu.events.cancel(transactionID));
   }
-  bulkCancel() {}
-  broadcast() {}
+  bulkCancel(transactionID: string[]) {
+    transactionID.forEach((element) => {
+      novu.events.cancel(element);
+    });
+  }
+  broadcast(payload: any, type: NotificationSentType) {
+    payload.sentType = type;
+  }
   all(): Promise<any> {
     const scheduledNotifications = prisma.scheduledNotifications.findMany();
     L.info(scheduledNotifications, `fetch all ${model}(s)`);
@@ -134,7 +171,7 @@ export class NotificationService implements ISuperService<Notification> {
 
       //   },
       // });
-      const createdNotification = null
+      const createdNotification = null;
       return Promise.resolve(createdNotification);
     } catch (error) {
       L.error(`create ${model} failed: ${error}`);
@@ -187,47 +224,47 @@ export class NotificationService implements ISuperService<Notification> {
   async validateConstraints(
     notification: Notification
   ): Promise<{ isValid: boolean; error?: string; message?: string }> {
-    notification
-  //   // Validate Content
-  //   if (!notification.Content || notification.Content.length > 1000) {
-  //     return {
-  //       isValid: false,
-  //       error: NotificationExceptionMessage.INVALID,
-  //       message:
-  //         'Notification content is invalid or too long, with a maximum of 1000 characters.',
-  //     };
-  //   }
+    notification;
+    //   // Validate Content
+    //   if (!notification.Content || notification.Content.length > 1000) {
+    //     return {
+    //       isValid: false,
+    //       error: NotificationExceptionMessage.INVALID,
+    //       message:
+    //         'Notification content is invalid or too long, with a maximum of 1000 characters.',
+    //     };
+    //   }
 
-  //   // Validate SendAt
-  //   if (!notification.SentAt || new Date(notification.SentAt) < new Date()) {
-  //     return {
-  //       isValid: false,
-  //       error: NotificationExceptionMessage.INVALID,
-  //       message: 'SendAt must be set to a time in the future.',
-  //     };
-  //   }
+    //   // Validate SendAt
+    //   if (!notification.SentAt || new Date(notification.SentAt) < new Date()) {
+    //     return {
+    //       isValid: false,
+    //       error: NotificationExceptionMessage.INVALID,
+    //       message: 'SendAt must be set to a time in the future.',
+    //     };
+    //   }
 
-  //   // Validate SendTo
-  //   if (!notification.SentTo) {
-  //     return {
-  //       isValid: false,
-  //       error: NotificationExceptionMessage.INVALID_NOTIFICATIONID,
-  //       message: 'SendTo cannot be empty.',
-  //     };
-  //   }
-  //   if (
-  //     !notification.FromTable ||
-  //     !/^[A-Za-z\s]{1,30}$/.test(notification.FromTable)
-  //   ) {
-  //     return {
-  //       isValid: false,
-  //       error: NotificationExceptionMessage.INVALID_NOTIFICATIONID,
-  //       message:
-  //         'FromTable is invalid, must not contain special characters, and have a maximum of 30 characters.',
-  //     };
-  //   }
+    //   // Validate SendTo
+    //   if (!notification.SentTo) {
+    //     return {
+    //       isValid: false,
+    //       error: NotificationExceptionMessage.INVALID_NOTIFICATIONID,
+    //       message: 'SendTo cannot be empty.',
+    //     };
+    //   }
+    //   if (
+    //     !notification.FromTable ||
+    //     !/^[A-Za-z\s]{1,30}$/.test(notification.FromTable)
+    //   ) {
+    //     return {
+    //       isValid: false,
+    //       error: NotificationExceptionMessage.INVALID_NOTIFICATIONID,
+    //       message:
+    //         'FromTable is invalid, must not contain special characters, and have a maximum of 30 characters.',
+    //     };
+    //   }
 
-  //   // If all validations pass
+    //   // If all validations pass
     return { isValid: true };
   }
 }

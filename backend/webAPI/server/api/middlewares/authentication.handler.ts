@@ -12,48 +12,24 @@ export const authorizeRole =
     rolemap.set('manager',2);
     rolemap.set('coordinator',3);
     rolemap.set('student',4);
-
-    var role : number = Number.parseInt(res.locals.user.user.RoleID + '')
-
-    L.info(role + '')
-    if (role === rolemap.get(require)) {  
-      return next();
-    } else {
+    try {
+      var role : number = Number.parseInt(res.locals.user.user.RoleID)
+    } catch (error) {
       return res.status(403).json({ message: 'Forbidden' }).end();
     }
+
+    const requiredRoles = require.split(',');
+    return requiredRoles.forEach(element => {
+      try{
+        if (role == rolemap.get(element))
+        {
+          return next();
+        }
+      }catch(_){
+        return res.status(403).json({ message: 'Forbidden' }).end();
+      }
+    });
   };
-
-
-export const authorizeFaculty =
-  (require: number) =>
-  (_: Request, res: Response, next: NextFunction) => {
-    if(res.locals.user.user.RoleID == 1 || 2 ) {
-      next()
-    }
-    if (res.locals.user.user.FacultyID == require) {  
-      return next();
-    } else {
-      return res.status(403).json({ message: 'Forbidden' }).end();
-    }
-  };
-
-
-  export const authorizeContribution =
-  (require: number) =>
-  (_: Request, res: Response, next: NextFunction) => {
-    if(res.locals.user.user.RoleID) {
-      next()
-    }
-    // Check if the contribution is belonging to the user
-    if (res.locals.user.user.FacultyID == require) {  
-      next();
-    } else {
-      return res.status(403).json({ message: 'Forbidden' }).end();
-    }
-    return;
-  };
-// JWT Authentication Middleware
-
 
 export const authenticateToken = (req: Request, res: Response, next: NextFunction) => {
     authStrategy.authenticate('jwt', { session: false }, (err: any, user: any, _: any) => {

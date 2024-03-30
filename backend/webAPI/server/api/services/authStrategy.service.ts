@@ -20,7 +20,6 @@ const jwtStrategy = new Jwt(jwtOptions, async (payload, done: any) => {
   try {
     const users = await usersService.filter('ID', payload.id);
     const user = users[0];
-
     if (!user) {
       return done(null, false); // User not found
     }
@@ -75,7 +74,7 @@ const googleStrategy = new Google(
         return done(null, user); // User already exists
       }
       // Handle bind email to existing account
-
+      
       done(null, user); 
     } catch (error) {
       console.error(error);
