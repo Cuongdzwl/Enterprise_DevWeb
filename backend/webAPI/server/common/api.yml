@@ -870,6 +870,30 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Contribution'
+  /contributions/{id}/download:
+    get:
+      tags:
+        - Contributions
+      summary: Download files for a contribution
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: The ID of the contribution to download files from.
+      responses:
+        '200':
+          description: File downloaded successfully
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: Contribution not found
+        '500':
+          description: Internal server error
   /comments:
     get:
       tags:

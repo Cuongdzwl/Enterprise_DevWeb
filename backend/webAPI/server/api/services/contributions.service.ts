@@ -6,10 +6,13 @@ import { ContributionExceptionMessage } from '../common/exception';
 import { ISuperService } from '../interfaces/ISuperService.interface';
 import { FileDTO } from '../models/DTO/File.DTO';
 import { FilesService } from './files.service';
+import path from 'path';
 
 const prisma = new PrismaClient();
 const model = 'contributions';
-
+const axios = require('axios');
+const JSZip = require('jszip');
+const { saveAs } = require('file-saver');
 
 export class ContributionsService implements ISuperService<Contribution> {
   private fileService = new FilesService();
@@ -92,7 +95,26 @@ export class ContributionsService implements ISuperService<Contribution> {
     return { textFiles, imageFiles };
 }
 
-  byId(id: number, depth?: number, comment?: boolean, file?: boolean): Promise<any> {
+async  downloadFilesAndZip(files: FileDTO[]) {
+  const zip = new JSZip();
+  for (const file of files) {
+    try {
+      const response = await axios.get(file.Url, { responseType: 'arraybuffer' });
+      const fileName = path.basename(new URL(file.Url as string).pathname);
+      L.info({fileName})
+      L.info({response  })
+      const fileData = Buffer.from(response.data);
+      zip.file(fileName, fileData);
+    } catch (error) {
+      console.error(`Failed to download file: ${file.Url}`, error);
+    }
+  }
+
+  const zipContent = await zip.generateAsync({ type: 'nodebuffer' });
+  return zipContent;
+  }
+
+  async byId(id: number, depth?: number, comment?: boolean, file?: boolean): Promise<any> {
     L.info(`fetch ${model} with id ${id}`);
     var select: any = {
       ID: true,
@@ -118,10 +140,24 @@ export class ContributionsService implements ISuperService<Contribution> {
     if(file == true)
       select.Files =  {select: {ID: true, Url: true}, where :{ ContributionID : id}};
 
-    const contribution = prisma.contributions.findUnique({
+    const contribution = await prisma.contributions.findUnique({
       select,
       where: { ID: id },
     });
+    try {
+      
+      if (contribution) {
+      const filesAsDTOs = this.toFileDTOArray(contribution.Files || []);
+      const { textFiles, imageFiles } = this.classifyFiles(filesAsDTOs);
+    return {
+        ...contribution,
+        TextFiles: textFiles,
+        ImageFiles: imageFiles,
+    };
+  }
+    } catch (error) {
+      L.error(` failed: ${error}`);
+    }
     return Promise.resolve(contribution);
   }
 

@@ -83,6 +83,27 @@ export class ContributionsController implements ISuperController {
             res.status(400).json({ error: error.message }).end();
         }
     }
+    async download(req: Request, res: Response): Promise <void> {
+        const id = Number.parseInt(req.params['id']);
+        try {
+            const files = await prisma.files.findMany({where : {ContributionID : id}});
+
+            if (files && files.length > 0) {
+              ContributionsService.downloadFilesAndZip(files).then(zipContent => {
+                res.setHeader('Content-Type', 'application/zip');
+                res.setHeader('Content-Disposition', `attachment; filename="download.zip"`);
+                res.send(zipContent);
+              }).catch(error => {
+                console.error(error);
+                res.status(500).send('Error creating zip file.');
+              });
+            } else {
+              res.status(404).send('No files found for this contribution.');
+            }
+        } catch (error) {
+            res.status(400).json({ error: error.message }).end();
+        }
+    }
 }
 
 export default new ContributionsController();

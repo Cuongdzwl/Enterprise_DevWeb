@@ -314,12 +314,11 @@ export class UsersService implements ISuperService<User> {
       }
 
       // Validate Phone
-      if (user.Phone && !/^\d{1,15}$/.test(user.Phone)) {
+      if (!user.Phone || !/^\+?[0-9]\d{1,20}$/.test(user.Phone)) {
         return {
           isValid: false,
           error: UserExceptionMessage.INVALID,
-          message:
-            'Phone can only contain numbers, with a maximum of 15 digits.',
+          message: "Phone number must start with an optional '+' and be followed by 1 to 20 digits."
         };
       }
 

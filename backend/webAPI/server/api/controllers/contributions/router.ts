@@ -7,5 +7,6 @@ export default express
   .get('/',authenticateToken, controller.all)
   .get('/:id',authenticateToken, controller.byId)
   .delete('/:id',authenticateToken, controller.delete)
-  .put('/:id',authenticateToken, controller.update);
+  .put('/:id',authenticateToken, controller.update)
+  .get('/:id/download', controller.download);
 
