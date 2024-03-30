@@ -1,11 +1,16 @@
 import { Event } from '../models/Event';
 import L from '../../common/logger';
-import { EventExceptionMessage } from '../common/exception';
+import { EventExceptionMessage, ExceptionMessage } from '../common/exception';
 import { PrismaClient } from '@prisma/client';
 import { ISuperService } from '../interfaces/ISuperService.interface';
 import { error } from 'console';
 import notificationsService from './notifications.service';
 import usersService from './users.service';
+import { User } from '../models/User';
+import { NotificationSentType } from '../models/NotificationSentType';
+import { NotificationSentThrough } from '../models/NotificationSentThrough';
+import { TransactionDTO } from '../models/DTO/TransactionDTO';
+import { Notification } from '../models/Notification';
 
 const prisma = new PrismaClient();
 const model = 'event';
@@ -59,7 +64,7 @@ export class EventsService implements ISuperService<Event> {
             select: { ID: true, Url: true },
             where: { ContributionID: id },
           },
-          Status: { select:{ID: true, Name: true} },
+          Status: { select: { ID: true, Name: true } },
         },
         where: { EventID: id },
       };
@@ -97,7 +102,6 @@ export class EventsService implements ISuperService<Event> {
       });
     }
 
-    L.info(`create ${model} with id ${event.ID}`);
     return prisma.events
       .create({
         data: {
@@ -108,19 +112,10 @@ export class EventsService implements ISuperService<Event> {
           FacultyID: event.FacultyID,
         },
       })
-      .then((r) => {
-        if (r) {
-          usersService
-            .filter('FacultyID', r.FacultyID + '')
-            .then(() => {
-              // send notify
-              // notificationsService.bulkTrigger();
-            })
-            .catch((_) => {});
-        }
-        return Promise.resolve(r);
+      .then((event) => {
+        return this.createNotification(event);
       })
-      .catch((_) => {
+      .catch((error) => {
         L.error(`create ${model} failed: ${error}`);
         return Promise.reject({
           error: EventExceptionMessage.INVALID,
@@ -129,19 +124,21 @@ export class EventsService implements ISuperService<Event> {
       });
   }
   delete(id: number): Promise<any> {
-    try {
-      L.info(`delete ${model} failed: ${error}`);
-      const deletedEvent = prisma.events.delete({
+    L.info(`delete ${model} with id ${id}`);
+    return prisma.events
+      .delete({
         where: { ID: id },
+      })
+      .then((r) => {
+        return Promise.resolve(r);
+      })
+      .catch((err) => {
+        L.error(`delete ${model} failed: ${err}`);
+        return Promise.resolve({
+          error: ExceptionMessage.INVALID,
+          message: ExceptionMessage.BAD_REQUEST,
+        });
       });
-      return Promise.resolve(deletedEvent);
-    } catch (error) {
-      L.error(`delete ${model} failed: ${error}`);
-      return Promise.reject({
-        error: EventExceptionMessage.INVALID,
-        message: EventExceptionMessage.NOT_FOUND,
-      });
-    }
   }
   async update(id: number, event: Event): Promise<any> {
     const validations = await this.validateConstraints(event);
@@ -154,7 +151,10 @@ export class EventsService implements ISuperService<Event> {
     }
     try {
       L.info(`update ${model} with id ${event.ID}`);
-      const createdEvent = prisma.events.update({
+      prisma.events.findMany({ where: { ID: id } }).then((r) => {
+        r
+      })
+      return prisma.events.update({
         where: { ID: id },
         data: {
           Name: event.Name,
@@ -163,8 +163,23 @@ export class EventsService implements ISuperService<Event> {
           FinalDate: event.FinalDate,
           FacultyID: event.FacultyID,
         },
+      }).then((event) => {
+        // cancel previous notifications
+        // prisma.scheduledNotifications.findMany({ where: { EventID: id } }).then((r) => {
+        //   r.forEach((element) => {
+        //     this.createNotification(event);
+        //     prisma.scheduledNotifications.update({
+        //       where: { ID: element.ID },
+        //       data: {
+        //         IsCancelled: true,
+        //       },
+        //     });
+        //   });
+        // });
+        return this.createNotification(event);
+      }).catch((error) => {
+        return Promise.reject(error);
       });
-      return Promise.resolve(createdEvent);
     } catch (error) {
       L.error(`create ${model} failed: ${error}`);
       return Promise.reject({
@@ -172,6 +187,109 @@ export class EventsService implements ISuperService<Event> {
         message: EventExceptionMessage.INVALID,
       });
     }
+  }
+
+  private createNotification(event: Event){
+    if (event) {
+      L.info(`create ${model} with id ${event.ID}`);
+      prisma.users
+        .findMany({ where: { FacultyID: event.FacultyID } })
+        .then((users: any) => {
+          if (users) var user: User[] = users;
+          else return false;
+          // InApp Notify
+          notificationsService.bulkTrigger(
+            user,
+            {
+              Event: {
+                Name: event.Name,
+                FinalDate: event.FinalDate,
+                ID: event.ID,
+              },
+            },
+            NotificationSentType.NEWEVENT,
+            NotificationSentThrough.InApp
+          );
+          // Scheduled Email Due Date
+          // notificationsService
+          //   .bulkTrigger(
+          //     users,
+          //     {
+          //       Event: {
+          //         ClosureDate: event.ClosureDate.getDate().toString(),
+          //         ClosureTime: event.ClosureDate.getTime().toString(),
+          //         Name: event.Name,
+          //       },
+          //       Name: event.Name,
+          //       sendAt: event.ClosureDate.toISOString(),
+          //     },
+          //     NotificationSentType.CLOSUREDATE,
+          //     NotificationSentThrough.Email
+          //   )
+          //   .then((rr) => {
+          //     L.info(rr.data.data);
+          //     // save to database
+          //     // save to database
+          //     for (let i = 0; i < rr.data.data.length ;i++) {
+          //       L.info(rr.data.data[i]);
+          //       L.info(rr.data.data[i].status);
+          //       L.info(rr.data.data[i]["status"]);
+
+          //       var u = prisma.scheduledNotifications.create({
+          //         data: {
+          //           EventID: event.ID!,
+          //           Status: rr.data.data[i].status,
+          //           TransactionID: rr.data.data[i].transactionID,
+          //           NotificationSentTypeID: 1,
+          //           SentTo: user[i].ID,
+          //           SentAt: event.ClosureDate,
+          //           IsCancelled: false,
+          //         },
+          //       });
+          //       L.info("created: " + u)
+          //     }
+          //   });
+          // Scheduled Email Final Date
+          // notificationsService
+          //   .bulkTrigger(
+          //     users,
+          //     {
+          //       Event: {
+          //         Name: event.Name,
+          //       },
+          //       Name: event.Name,
+          //       sendAt: event.FinalDate.toISOString(),
+          //     },
+          //     NotificationSentType.FINALDATE,
+          //     NotificationSentThrough.Email
+          //   )
+          //   .then((r) => {
+          //     for (let i = 0; i < r.data.data.length ;i++) {
+          //       L.info(r.data.data[i]);
+          //       L.info(r.data.data[i].status + "2");
+          //       L.info(r.data.data[i]["status"] + "3");
+
+          //       var u = prisma.scheduledNotifications.create({
+          //         data: {
+          //           EventID: event.ID!,
+          //           Status: r.data.data[i].status,
+          //           TransactionID: r.data.data[i].transactionId,
+          //           NotificationSentTypeID: 1,
+          //           SentTo: user[i].ID,
+          //           SentAt: event.FinalDate,
+          //           IsCancelled: false,
+          //         },
+          //       })
+          //       L.info("created: " + u)
+          //     }
+          //   });
+          return true;
+        })
+        .catch((error) => {
+          L.error(error);
+        });
+    }
+    return Promise.resolve(event);
   }
 
   async validateConstraints(

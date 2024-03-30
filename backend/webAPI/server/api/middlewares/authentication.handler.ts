@@ -31,38 +31,6 @@ export const authorizeRole =
     });
   };
 
-
-export const authorizeFaculty =
-  (require: number) =>
-  (_: Request, res: Response, next: NextFunction) => {
-    if(res.locals.user.user.RoleID == 1 || 2 ) {
-      next()
-    }
-    if (res.locals.user.user.FacultyID == require) {  
-      return next();
-    } else {
-      return res.status(403).json({ message: 'Forbidden' }).end();
-    }
-  };
-
-
-  export const authorizeContribution =
-  (require: number) =>
-  (_: Request, res: Response, next: NextFunction) => {
-    if(res.locals.user.user.RoleID) {
-      next()
-    }
-    // Check if the contribution is belonging to the user
-    if (res.locals.user.user.FacultyID == require) {  
-      next();
-    } else {
-      return res.status(403).json({ message: 'Forbidden' }).end();
-    }
-    return;
-  };
-// JWT Authentication Middleware
-
-
 export const authenticateToken = (req: Request, res: Response, next: NextFunction) => {
     authStrategy.authenticate('jwt', { session: false }, (err: any, user: any, _: any) => {
         if (err) {

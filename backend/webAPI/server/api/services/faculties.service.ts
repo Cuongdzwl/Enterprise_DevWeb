@@ -100,25 +100,21 @@ export class FacultiesService implements ISuperService<Faculty> {
   }
   // Delete
   delete(id: number): Promise<any> {
-    try {
-      L.info(`delete ${model} with id ${id}`);
-      return prisma.faculties
-        .delete({
-          where: { ID: id },
-        })
-        .then((deletedUser) => {
-          return Promise.resolve(deletedUser);
-        })
-        .catch((err) => {
-          return Promise.resolve(err);
+    L.info(`delete ${model} with id ${id}`);
+    return prisma.faculties
+      .delete({
+        where: { ID: id },
+      })
+      .then((r) => {
+        return Promise.resolve(r);
+      })
+      .catch((err) => {
+        L.error(`delete ${model} failed: ${err}`);
+        return Promise.resolve({
+          error: ExceptionMessage.INVALID,
+          message: ExceptionMessage.BAD_REQUEST,
         });
-    } catch (error) {
-      L.error(`delete ${model} failed: ${error}`);
-      return Promise.reject({
-        error: ExceptionMessage.INVALID,
-        message: ExceptionMessage.BAD_REQUEST,
       });
-    }
   }
   // Update
   update(id: number, faculty: Faculty): Promise<any> {
