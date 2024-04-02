@@ -121,12 +121,12 @@ async downloadBlobToFile(url: string, outputPath: string): Promise<void> {
 
   async createfile(file: Express.Multer.File, ContributionID: number): Promise<any> {
     const url = await this.uploadFileToBlob(file);
-    const stats = fs.statSync(file.path);
-    const fileSizeInBytes = stats.size;
-    const fileSizeInMegabytes = fileSizeInBytes / (1024*1024);
-    if (fileSizeInMegabytes > 5) {
-      return { isValid: false, error: FileExceptionMessage.INVALID, message: "File size exceeds 5 MB limit." };
-    }
+    // const stats = fs.statSync(file.path);
+    // const fileSizeInBytes = stats.size;
+    // const fileSizeInMegabytes = fileSizeInBytes / (1024*1024);
+    // if (fileSizeInMegabytes > 5) {
+    //   return { isValid: false, error: FileExceptionMessage.INVALID, message: "File size exceeds 5 MB limit." };
+    // }
     const createdFile = await prisma.files.create({
       data: {
         Url: url,
