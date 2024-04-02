@@ -11,13 +11,17 @@ import usersService from './users.service';
 import { User } from '../models/User';
 import { NotificationSentThrough } from '../models/NotificationSentThrough';
 import { NotificationSentType } from '../models/NotificationSentType';
+import path from 'path';
 
 const prisma = new PrismaClient();
 const model = 'contributions';
+const axios = require('axios');
+const JSZip = require('jszip');
+const { saveAs } = require('file-saver');
 
 export class ContributionsService implements ISuperService<Contribution> {
   private fileService = new FilesService();
-  async all(depth?: number): Promise<any> {
+  async all(depth?: number, isPublic?: boolean): Promise<any> {
     var select: any = {
       ID: true,
       Name: true,
@@ -38,8 +42,15 @@ export class ContributionsService implements ISuperService<Contribution> {
       select.Status = true;
       select.Comments = true;
     }
-    const contributions = await prisma.contributions.findMany({ select });
+    if(isPublic == true) {
+      var where: any =  { IsPublic: isPublic };
+    }else{
+      var where = undefined;
+    }
+    const contributions = await prisma.contributions.findMany({ select, where });
     L.info(contributions, `fetch all ${model}(s)`);
+    // return Promise.resolve(contributions);;
+
     return contributions.map((contribution) => {
       if (contribution.Files) {
         try {
@@ -52,16 +63,14 @@ export class ContributionsService implements ISuperService<Contribution> {
           };
         } catch (error) {
           L.error(` failed: ${error}`);
-
-          return Promise.resolve({
+          return Promise.reject({
             error: ContributionExceptionMessage.INVALID,
-            message: ContributionExceptionMessage.BAD_REQUEST,
+            message: ContributionExceptionMessage.BAD_REQUEST
           });
         }
       }
       return contribution;
     });
-    return Promise.resolve(contributions);
   }
   toFileDTOArray(files: any[]): FileDTO[] {
     return files.map((file) => {
@@ -98,12 +107,26 @@ export class ContributionsService implements ISuperService<Contribution> {
     return { textFiles, imageFiles };
   }
 
-  byId(
-    id: number,
-    depth?: number,
-    comment?: boolean,
-    file?: boolean
-  ): Promise<any> {
+async  downloadFilesAndZip(files: FileDTO[]) {
+  const zip = new JSZip();
+  for (const file of files) {
+    try {
+      const response = await axios.get(file.Url, { responseType: 'arraybuffer' });
+      const fileName = path.basename(new URL(file.Url as string).pathname);
+      L.info({fileName})
+      L.info({response  })
+      const fileData = Buffer.from(response.data);
+      zip.file(fileName, fileData);
+    } catch (error) {
+      console.error(`Failed to download file: ${file.Url}`, error);
+    }
+  }
+
+  const zipContent = await zip.generateAsync({ type: 'nodebuffer' });
+  return zipContent;
+  }
+
+  async byId(id: number, depth?: number, comment?: boolean, file?: boolean): Promise<any> {
     L.info(`fetch ${model} with id ${id}`);
     var select: any = {
       ID: true,
@@ -140,10 +163,24 @@ export class ContributionsService implements ISuperService<Contribution> {
         where: { ContributionID: id },
       };
 
-    const contribution = prisma.contributions.findUnique({
+    const contribution = await prisma.contributions.findUnique({
       select,
       where: { ID: id },
     });
+    try {
+      
+      if (contribution) {
+      const filesAsDTOs = this.toFileDTOArray(contribution.Files || []);
+      const { textFiles, imageFiles } = this.classifyFiles(filesAsDTOs);
+    return {
+        ...contribution,
+        TextFiles: textFiles,
+        ImageFiles: imageFiles,
+    };
+  }
+    } catch (error) {
+      L.error(` failed: ${error}`);
+    }
     return Promise.resolve(contribution);
   }
 
@@ -220,10 +257,7 @@ export class ContributionsService implements ISuperService<Contribution> {
               });
           });
 
-        return Promise.resolve({
-          success: success,
-          conotribution: contribution,
-        });
+        return Promise.resolve(contribution);
       })
       .catch((error) => {
         L.error(`create ${model} failed: ${error}`);
@@ -234,36 +268,6 @@ export class ContributionsService implements ISuperService<Contribution> {
       });
   }
 
-  async createFile(
-    files: Array<{ Path: string }>,
-    ContributionID: number
-  ): Promise<any> {
-    try {
-      L.info(`create ${model} with id ${ContributionID}`);
-      if (files) {
-        const uploadedFiles = await Promise.all(
-          files.map(async (filePath) => {
-            // const url = await this.fileService.uploadFileToBlob(filePath.Path);
-            const fileData = {
-              Url: '',
-              ContributionID: ContributionID,
-              Path: filePath.Path,
-            };
-            return await this.fileService.create(fileData);
-          })
-        );
-      }
-
-      return Promise.resolve();
-    } catch (error) {
-      L.error(`create ${model} failed: ${error}`);
-
-      return Promise.resolve({
-        error: ContributionExceptionMessage.INVALID,
-        message: ContributionExceptionMessage.BAD_REQUEST,
-      });
-    }
-  }
   delete(id: number): Promise<any> {
     L.info(`delete ${model} with id ${id}`);
     return prisma.contributions

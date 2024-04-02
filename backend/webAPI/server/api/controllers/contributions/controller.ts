@@ -3,6 +3,9 @@ import { Request, Response } from 'express';
 import { ISuperController } from '../../interfaces/ISuperController.interface';
 import { PrismaClient } from '@prisma/client';
 import L from '../../../common/logger';
+import FilesService from '../../services/files.service';
+import contributionsService from '../../services/contributions.service';
+import { Contribution } from '../../models/Contribution';
 
 const prisma = new PrismaClient();
 export class ContributionsController implements ISuperController {
@@ -31,26 +34,41 @@ export class ContributionsController implements ISuperController {
   }
 
   async create(req: Request, res: Response): Promise<void> {
-      L.info(req.body);
-    // const validations = await ContributionsService.validateConstraints(
-    //   req.body
-    // );
-    // if (!validations.isValid) {
-    //   res
-    //     .status(400)
-    //     .json({ error: validations.error, message: validations.message })
-    //     .end();
-    //   return;
-    // }
     try {
-      const r = await ContributionsService.create(req.body);
-      const { contribution, files } = req.body;
-      await ContributionsService.createFile(files, r.ID);
-      res.status(201).location(`/api/v1/contributions/${r.id}`).json(r);
+        const { Name, Content, IsPublic, IsApproved, EventID, UserID, StatusID,LastEditByID,CreatedAt,UpdatedAt } = req.body;
+        const contributionData = {
+          Name,
+          Content,
+          IsPublic: IsPublic === 'true',
+          IsApproved: IsApproved === 'true',
+          EventID: parseInt(EventID),
+          UserID: parseInt(UserID),
+          StatusID: parseInt(StatusID),
+          LastEditByID,
+          CreatedAt,
+          UpdatedAt
+        };
+        contributionsService.create(contributionData).then((createdContribution) => {
+          const filesObject = req.files as { [fieldname: string]: Express.Multer.File[] };
+          for (const fieldName in filesObject) {
+            if (Object.prototype.hasOwnProperty.call(filesObject, fieldName)) {
+              const files = filesObject[fieldName];
+              for (const file of files) {
+                L.info(`Processing file: ${file.originalname}`);
+                if (file && createdContribution.ID) {
+                  FilesService.createfile(file, createdContribution.ID);
+                }
+              }
+            }
+          }
+          res.status(201).json({ message: "Contribution and files created successfully" });
+        }).catch((_) => {
+          res.status(400).json({ message: "Created Failed" });
+        });
     } catch (error) {
-      res.status(400).json({ error: error.message }).end();
+        res.status(500).json({ error: error.message });
     }
-  }
+}
 
   delete(req: Request, res: Response): void {
     const id = Number.parseInt(req.params['id']);
@@ -64,51 +82,53 @@ export class ContributionsController implements ISuperController {
     }
   }
 
-  async update(req: Request, res: Response): Promise<void> {
-    const validations = await ContributionsService.validateConstraints(
-      req.body
-    );
-    if (!validations.isValid) {
-      res
-        .status(400)
-        .json({ error: validations.error, message: validations.message })
-        .end();
-      return;
+    async update(req: Request, res: Response): Promise <void> {
+        const validations = await ContributionsService.validateConstraints(req.body);
+        if(!validations.isValid){
+          res.status(400).json({error: validations.error, message : validations.message}).end();
+          return;
+        }
+        const id = Number.parseInt(req.params['id']);
+        if (!/^\d{1,20}$/.test(id.toString())) {
+          res.status(400).json({error: "Invalid Contribution ID", message : "Contribution ID must be a number with a maximum of 20 digits."}).end();
+          return;
+        }
+        const contributionExist = await prisma.contributions.findUnique({where : {ID : id}})
+        if(!contributionExist)
+        {
+          res.status(400).json({error: "Invalid Contribution ID", message : "Referenced Contribution does not exist."}).end();
+          return;
+        }
+        try {
+            const r = await ContributionsService.create(req.body)
+            const { contribution, files } = req.body;
+            await FilesService.createfile(files, r.ID)
+            res.status(201).location(`/api/v1/contributions/${r.id}`).json(r)
+        } catch (error) {
+            res.status(400).json({ error: error.message }).end();
+        }
     }
-    const id = Number.parseInt(req.params['id']);
-    if (!/^\d{1,20}$/.test(id.toString())) {
-      res
-        .status(400)
-        .json({
-          error: 'Invalid Contribution ID',
-          message:
-            'Contribution ID must be a number with a maximum of 20 digits.',
-        })
-        .end();
-      return;
+    async download(req: Request, res: Response): Promise <void> {
+        const id = Number.parseInt(req.params['id']);
+        try {
+            const files = await prisma.files.findMany({where : {ContributionID : id}});
+
+            if (files && files.length > 0) {
+              ContributionsService.downloadFilesAndZip(files).then(zipContent => {
+                res.setHeader('Content-Type', 'application/zip');
+                res.setHeader('Content-Disposition', `attachment; filename="download.zip"`);
+                res.send(zipContent);
+              }).catch(error => {
+                console.error(error);
+                res.status(500).send('Error creating zip file.');
+              });
+            } else {
+              res.status(404).send('No files found for this contribution.');
+            }
+        } catch (error) {
+            res.status(400).json({ error: error.message }).end();
+        }
     }
-    const contributionExist = await prisma.contributions.findUnique({
-      where: { ID: id },
-    });
-    if (!contributionExist) {
-      res
-        .status(400)
-        .json({
-          error: 'Invalid Contribution ID',
-          message: 'Referenced Contribution does not exist.',
-        })
-        .end();
-      return;
-    }
-    try {
-      const r = await ContributionsService.create(req.body);
-      const { contribution, files } = req.body;
-      await ContributionsService.createFile(files, r.ID);
-      res.status(201).location(`/api/v1/contributions/${r.id}`).json(r);
-    } catch (error) {
-      res.status(400).json({ error: error.message }).end();
-    }
-  }
 }
 
 export default new ContributionsController();

@@ -430,46 +430,43 @@ paths:
     post:
       tags:
         - Files
-      summary: Uploads a file by specifying its local file path along with ID and ContributionID
+      summary: Uploads a file and associates it with a contribution
       requestBody:
         required: true
         content:
-          application/json:
+          multipart/form-data:
             schema:
               type: object
-              required:
-                - Path
-                - ID
-                - ContributionID
               properties:
-                Path:
-                  type: string
-                  description: Local file path to be uploaded.
-                ID:
-                  type: integer
-                  description: The unique identifier for the file.
                 ContributionID:
                   type: integer
-                  description: The contribution identifier associated with the file.
+                  description: The contribution identifier to associate with the file.
+                file:
+                  type: string
+                  format: binary
+                  description: The file to upload.
+              required:
+                - ContributionID
+                - file
       responses:
         201:
-          description: File uploaded successfully.
+          description: File uploaded and associated successfully.
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  url:
-                    type: string
-                    description: URL of the uploaded file on Azure Blob Storage.
                   ID:
                     type: integer
-                    description: The unique identifier for the file returned.
+                    description: The unique identifier for the uploaded file.
+                  Url:
+                    type: string
+                    description: URL of the uploaded file on Azure Blob Storage.
                   ContributionID:
                     type: integer
-                    description: The contribution identifier associated with the file returned.
+                    description: The contribution identifier associated with the file.
         400:
-          description: Bad Request. Invalid input or missing fields.
+          description: Bad Request. Invalid input or missing required fields.
         500:
           description: Error uploading the file.
   /files/{id}:
@@ -732,36 +729,43 @@ paths:
     post:
       tags:
         - Contributions
-      summary: Create a new contribution with optional file paths
+      summary: Create a new contribution with optional file uploads.
       requestBody:
         required: true
         content:
-          application/json:
+          multipart/form-data:
             schema:
               type: object
               properties:
                 Name:
                   type: string
+                  description: The name of the contribution.
                 Content:
                   type: string
+                  description: The content of the contribution.
                 IsPublic:
                   type: boolean
+                  description: Whether the contribution is public.
                 IsApproved:
                   type: boolean
+                  description: Whether the contribution is approved.
                 EventID:
                   type: integer
+                  description: The event ID associated with the contribution.
                 UserID:
                   type: integer
+                  description: The user ID of the contributor.
                 StatusID:
                   type: integer
-                files:
-                  type: array
-                  items:
-                    type: object
-                    properties:
-                      Path:
-                        type: string
-                        description: String path of the file
+                  description: The status ID of the contribution.
+                filesPath:
+                  type: string
+                  format: binary
+                  description: The files to be uploaded.
+                file2:
+                  type: string
+                  format: binary
+                  description: The files to be uploaded.
               required:
                 - Name
                 - Content
@@ -770,13 +774,19 @@ paths:
                 - EventID
                 - UserID
                 - StatusID
+                - filesPath
+                - file2
       responses:
         '201':
-          description: Contribution created with optional file paths
+          description: Contribution created successfully with associated files.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Contribution'
+                $ref: '#/components/schemas/ContributionResponse'
+        '400':
+          description: Bad Request. Invalid input or missing required fields.
+        '500':
+          description: Server error.
   /contributions/{id}:
     get:
       tags:
@@ -871,6 +881,30 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Contribution'
+  /contributions/{id}/download:
+    get:
+      tags:
+        - Contributions
+      summary: Download files for a contribution
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: The ID of the contribution to download files from.
+      responses:
+        '200':
+          description: File downloaded successfully
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: Contribution not found
+        '500':
+          description: Internal server error
   /comments:
     get:
       tags:

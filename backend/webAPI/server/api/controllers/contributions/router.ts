@@ -1,11 +1,15 @@
 import express from 'express';
 import controller from './controller';
 import { authenticateToken, authorizeRole } from '../../middlewares/authentication.handler';
+import multer from 'multer';
+const upload = multer({ dest: 'uploads/' });
 export default express
+
   .Router()
-  .post('/',authenticateToken,authorizeRole("student"), controller.create)
-  .get('/',authenticateToken,authorizeRole("student"), controller.all)
-  .get('/:id',authenticateToken,authorizeRole("admin"), controller.byId)
-  .delete('/:id',authenticateToken,authorizeRole("student"), controller.delete)
-  .put('/:id',authenticateToken,authorizeRole("student,coordinator"), controller.update);
+  .post('/',upload.fields([{ name: 'filesPath', maxCount: 1 }, { name: 'file2', maxCount: 1 }]), controller.create)
+  .get('/', controller.all)
+  .get('/:id', controller.byId)
+  .delete('/:id', controller.delete)
+  .put('/:id', controller.update)
+  .get('/:id/download', controller.download);
 
