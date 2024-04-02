@@ -111,8 +111,41 @@ export class ContributionsController implements ISuperController {
   }
 
   async update(req: Request, res: Response): Promise<void> {
+    const {
+      Name,
+      Content,
+      IsPublic,
+      IsApproved,
+      EventID,
+      UserID,
+      StatusID,
+      LastEditByID,
+      CreatedAt,
+      UpdatedAt,
+    } = req.body;
+    console.log({ IsPublic, IsApproved });
+    let isPublic = true;
+    let isApproved = true;
+    if (IsPublic === 'false') {
+      isPublic = false;
+    }
+    if (IsApproved === 'false') {
+      isApproved = false;
+    }
+    const contributionData = {
+      Name,
+      Content,
+      IsPublic: isPublic,
+      IsApproved: isApproved,
+      EventID: parseInt(EventID),
+      UserID: parseInt(UserID),
+      StatusID: parseInt(StatusID),
+      LastEditByID,
+      CreatedAt,
+      UpdatedAt,
+    };
     const validations = await ContributionsService.validateConstraints(
-      req.body
+      contributionData
     );
     if (!validations.isValid) {
       res
@@ -147,10 +180,23 @@ export class ContributionsController implements ISuperController {
       return;
     }
     try {
-      const r = await ContributionsService.create(req.body);
-      const { contribution, files } = req.body;
-      await FilesService.createfile(files, r.ID);
-      res.status(201).location(`/api/v1/contributions/${r.id}`).json(r);
+      const filesObject = req.files as {
+        [fieldname: string]: Express.Multer.File[];
+      };
+      for (const fieldName in filesObject) {
+        if (Object.prototype.hasOwnProperty.call(filesObject, fieldName)) {
+          const files = filesObject[fieldName];
+          for (const file of files) {
+            L.info(`Processing file: ${file.originalname}`);
+            if (file && id) {
+              FilesService.createfile(file, id);
+            }
+          }
+        }
+      }
+      res
+        .status(201)
+        .json({ message: 'Contribution and files created successfully' });
     } catch (error) {
       res.status(400).json({ error: error.message }).end();
     }
