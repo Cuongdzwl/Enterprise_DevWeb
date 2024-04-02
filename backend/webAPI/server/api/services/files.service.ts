@@ -124,9 +124,9 @@ async downloadBlobToFile(url: string, outputPath: string): Promise<void> {
     const stats = fs.statSync(file.path);
     const fileSizeInBytes = stats.size;
     const fileSizeInMegabytes = fileSizeInBytes / (1024*1024);
-    // if (fileSizeInMegabytes > 5) {
-    //   return { isValid: false, error: FileExceptionMessage.INVALID, message: "File size exceeds 5 MB limit." };
-    // }
+    if (fileSizeInMegabytes > 5) {
+      return { isValid: false, error: FileExceptionMessage.INVALID, message: "File size exceeds 5 MB limit." };
+    }
     L.info(`create ${model} with id`)
     L.info(`Contribution: ${contributionID} | Url: ${url}`)
     
