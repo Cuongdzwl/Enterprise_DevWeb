@@ -59,9 +59,9 @@ export class ContributionsController implements ISuperController {
         };
         const createdContribution = await contributionsService.create(contributionData);
         const filesObject = req.files as { [fieldname: string]: Express.Multer.File[] };
-        if (!filesObject || Object.keys(filesObject).length === 0) {
-          res.status(400).send("No files uploaded.");
-        }
+        // if (!filesObject || Object.keys(filesObject).length === 0) {
+        //   res.status(400).send("No files uploaded.");
+        // }
         for (const fieldName in filesObject) {
           if (Object.prototype.hasOwnProperty.call(filesObject, fieldName)) {
             const files = filesObject[fieldName];
