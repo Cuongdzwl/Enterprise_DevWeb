@@ -185,13 +185,6 @@ async  downloadFilesAndZip(files: FileDTO[]) {
   }
 
   async create(contribution: Contribution): Promise<any> {
-    // const validations = await this.validateConstraints(contribution);
-    // if (!validations.isValid) {
-    //   return Promise.resolve({
-    //     error: validations.error,
-    //     message: validations.message,
-    //   });
-    // }
     try {
       L.info(`create ${model} with id ${contribution.ID}`);
       const createdContribution = prisma.contributions.create({
@@ -216,36 +209,6 @@ async  downloadFilesAndZip(files: FileDTO[]) {
     }
   }
 
-  async createFile(
-    files: Array<{ Path: string }>,
-    ContributionID: number
-  ): Promise<any> {
-    try {
-      L.info(`create ${model} with id ${ContributionID}`);
-      if (files) {
-        const uploadedFiles = await Promise.all(
-          files.map(async (filePath) => {
-            // const url = await this.fileService.uploadFileToBlob(filePath.Path);
-            const fileData = {
-              Url: '',
-              ContributionID: ContributionID,
-              Path: filePath.Path,
-            };
-            return await this.fileService.create(fileData);
-          })
-        );
-      }
-
-      return Promise.resolve();
-    } catch (error) {
-      L.error(`create ${model} failed: ${error}`);
-
-      return Promise.resolve({
-        error: ContributionExceptionMessage.INVALID,
-        message: ContributionExceptionMessage.BAD_REQUEST,
-      });
-    }
-  }
   delete(id: number): Promise<any> {
     L.info(`delete ${model} with id ${id}`);
     return prisma.contributions
