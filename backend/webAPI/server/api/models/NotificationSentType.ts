@@ -1,8 +1,8 @@
 export enum NotificationSentType {
   EMAILOTP = "email-otp",
   PHONEOTP = "phone-otp",
-  CLOSUREDATE = "due-date",
-  FINALDATE = "due-date",
+  CLOSUREDATE = "closure-date",
+  FINALDATE = "final-date",
   EMAILRESETPASSWORD = "password-reset",
   EMAILPASSWORD = 'email-password',
   NEWEVENT = "new-event",

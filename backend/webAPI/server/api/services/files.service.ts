@@ -49,15 +49,18 @@ export class FilesService implements ISuperService<File> {
     L.info(files, `fetch all ${model}(s)`);
     return Promise.resolve(files);
   }
-  async uploadFileToBlob(filePath: string): Promise<string> {
+  private async uploadFileToBlob(file: Express.Multer.File): Promise<string> {
     const blobServiceClient = BlobServiceClient.fromConnectionString(AZURE_STORAGE_CONNECTION_STRING);
     const containerClient = blobServiceClient.getContainerClient(containerName);
-    const blobName = `uploads/${Date.now()}-${path.basename(filePath)}`;
+    const blobName = `${Date.now()}-${file.originalname}`;
     const blockBlobClient = containerClient.getBlockBlobClient(blobName);
+    await blockBlobClient.uploadData(fs.readFileSync(file.path), {
+      blobHTTPHeaders: { blobContentType: file.mimetype }
+    });
+    // fs.unlinkSync(file.path);
 
-    await blockBlobClient.uploadFile(filePath);
     return blockBlobClient.url;
-}
+  }
 async downloadBlobToFile(url: string, outputPath: string): Promise<void> {
   try {
       const response = await axios({
@@ -79,7 +82,7 @@ async downloadBlobToFile(url: string, outputPath: string): Promise<void> {
     console.log(file.Path);
     const filePath = file.Path;
     try {
-      file.Url = await this.uploadFileToBlob(filePath);
+      // file.Url = await this.uploadFileToBlob(filePath);
     } catch (error) {
       return Promise.resolve({
         error: "Invalid File Path",
@@ -99,7 +102,7 @@ async downloadBlobToFile(url: string, outputPath: string): Promise<void> {
       L.info(`create ${model} with id ${file.ID}`);
       console.log(file.Path);
       const filePath = file.Path;
-      file.Url = await this.uploadFileToBlob(filePath);
+      // file.Url = await this.uploadFileToBlob(filePath);
       const createdFile = prisma.files.create({
         data: {
           Url: file.Url,
@@ -115,21 +118,41 @@ async downloadBlobToFile(url: string, outputPath: string): Promise<void> {
       });
     }
   }
+
+  async createfile(file: Express.Multer.File, ContributionID: number): Promise<any> {
+    const url = await this.uploadFileToBlob(file);
+    const stats = fs.statSync(file.path);
+    const fileSizeInBytes = stats.size;
+    const fileSizeInMegabytes = fileSizeInBytes / (1024*1024);
+    if (fileSizeInMegabytes > 5) {
+      return { isValid: false, error: FileExceptionMessage.INVALID, message: "File size exceeds 5 MB limit." };
+    }
+    const createdFile = await prisma.files.create({
+      data: {
+        Url: url,
+        ContributionID: ContributionID,
+      },
+    });
+
+    return createdFile;
+  }
   // Delete
   delete(id: number): Promise<any> {
-    try {
-      L.info(`delete ${model} with id ${id}`);
-      const deletedFile = prisma.files.delete({
+    L.info(`delete ${model} with id ${id}`);
+    return prisma.files
+      .delete({
         where: { ID: id },
+      })
+      .then((r) => {
+        return Promise.resolve(r);
+      })
+      .catch((err) => {
+        L.error(`delete ${model} failed: ${err}`);
+        return Promise.resolve({
+          error: ExceptionMessage.INVALID,
+          message: ExceptionMessage.BAD_REQUEST,
+        });
       });
-      return Promise.resolve(deletedFile);
-    } catch (error) {
-      L.error(`delete ${model} failed: ${error}`);
-      return Promise.resolve({
-        error: ExceptionMessage.INVALID,
-        message: ExceptionMessage.BAD_REQUEST,
-      });
-    }
   }
   // Update
   async update(id: number, file: File): Promise<any> {
@@ -137,7 +160,7 @@ async downloadBlobToFile(url: string, outputPath: string): Promise<void> {
     console.log(file.Path);
     const filePath = file.Path;
     try {
-      file.Url = await this.uploadFileToBlob(filePath);
+      // file.Url = await this.uploadFileToBlob(filePath);
     } catch (error) {
       return Promise.resolve({
         error: "Invalid File Path",
@@ -154,7 +177,7 @@ async downloadBlobToFile(url: string, outputPath: string): Promise<void> {
     }
     try {
       L.info(`update ${model} with id ${file.ID}`);
-      file.Url = await this.uploadFileToBlob(file.Path);
+      // file.Url = await this.uploadFileToBlob(file.Path);
       const updatedFile = prisma.files.update({
         where: { ID: id },
         data: {
@@ -172,12 +195,6 @@ async downloadBlobToFile(url: string, outputPath: string): Promise<void> {
     }
   }
     async validateConstraints(file: File): Promise<{isValid: boolean, error?: string, message?: string}> {
-    const stats = fs.statSync(file.Path);
-    const fileSizeInBytes = stats.size;
-    const fileSizeInMegabytes = fileSizeInBytes / (1024*1024);
-    if (fileSizeInMegabytes > 5) {
-      return { isValid: false, error: FileExceptionMessage.INVALID, message: "File size exceeds 5 MB limit." };
-    }
     // Validate URL
     if (!file.Url || file.Url.length > 3000) {
         return { isValid: false, error: FileExceptionMessage.INVALID, message: "File URL is invalid or too long, with a maximum of 3000 characters." };

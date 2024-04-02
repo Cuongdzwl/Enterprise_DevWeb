@@ -3,7 +3,7 @@ import { Role } from './../models/Role';
 import L from '../../common/logger';
 import { PrismaClient } from '@prisma/client';
 import { User } from '../models/User';
-import { UserExceptionMessage } from '../common/exception';
+import { ExceptionMessage, UserExceptionMessage } from '../common/exception';
 import NotificationService from './notifications.service';
 import { ISuperService } from '../interfaces/ISuperService.interface';
 import bcrypt from 'bcrypt';
@@ -148,29 +148,22 @@ export class UsersService implements ISuperService<User> {
   }
   // Delete
   delete(id: number): Promise<any> {
-    try {
-      L.info(`delete ${model} with id ${id}`);
-      return prisma.users
-        .delete({
-          where: { ID: id },
-        })
-        .then((r) => {
-          return Promise.resolve(r);
-        })
-        .catch((_) => {
-          return Promise.reject({
-            error: UserExceptionMessage.INVALID,
-            message: UserExceptionMessage.BAD_REQUEST,
-          });
+    L.info(`delete ${model} with id ${id}`);
+    return prisma.comments
+      .delete({
+        where: { ID: id },
+      })
+      .then((r) => {
+        return Promise.resolve(r);
+      })
+      .catch((err) => {
+        L.error(`delete ${model} failed: ${err}`);
+        return Promise.resolve({
+          error: ExceptionMessage.INVALID,
+          message: ExceptionMessage.BAD_REQUEST,
         });
-    } catch (error) {
-      L.error(`delete ${model} failed: ${error}`);
-
-      return Promise.reject({
-        error: UserExceptionMessage.INVALID,
-        message: UserExceptionMessage.BAD_REQUEST,
       });
-    }
+      
   }
   // Update
   async update(id: number, user: User, updateProfile?: boolean): Promise<any> {
@@ -314,12 +307,11 @@ export class UsersService implements ISuperService<User> {
       }
 
       // Validate Phone
-      if (user.Phone && !/^\d{1,15}$/.test(user.Phone)) {
+      if (!user.Phone || !/^\+?[0-9]\d{1,20}$/.test(user.Phone)) {
         return {
           isValid: false,
           error: UserExceptionMessage.INVALID,
-          message:
-            'Phone can only contain numbers, with a maximum of 15 digits.',
+          message: "Phone number must start with an optional '+' and be followed by 1 to 20 digits."
         };
       }
 

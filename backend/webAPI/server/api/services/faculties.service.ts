@@ -30,7 +30,12 @@ export class FacultiesService implements ISuperService<Faculty> {
     return Promise.resolve(faculties);
   }
   // Filter
-  byId(id: number, depth?: number,event? : boolean, user? : boolean): Promise<any> {
+  byId(
+    id: number,
+    depth?: number,
+    event?: boolean,
+    user?: boolean
+  ): Promise<any> {
     var select: any = {
       ID: true,
       Name: true,
@@ -43,11 +48,17 @@ export class FacultiesService implements ISuperService<Faculty> {
     if (depth == 1) {
     }
 
-    if(event == true){
-      select.Events = { select: { ID: true, Name: true }, where:{ FacultyID : id} };
+    if (event == true) {
+      select.Events = {
+        select: { ID: true, Name: true },
+        where: { FacultyID: id },
+      };
     }
-    if(user == true){
-      select.Users = { select: { ID: true, Name: true }, where:{ FacultyID : id} };
+    if (user == true) {
+      select.Users = {
+        select: { ID: true, Name: true },
+        where: { FacultyID: id },
+      };
     }
 
     L.info(`fetch ${model} with id ${id}`);
@@ -89,19 +100,21 @@ export class FacultiesService implements ISuperService<Faculty> {
   }
   // Delete
   delete(id: number): Promise<any> {
-    try {
-      L.info(`delete ${model} with id ${id}`);
-      const deletedUser = prisma.faculties.delete({
+    L.info(`delete ${model} with id ${id}`);
+    return prisma.faculties
+      .delete({
         where: { ID: id },
+      })
+      .then((r) => {
+        return Promise.resolve(r);
+      })
+      .catch((err) => {
+        L.error(`delete ${model} failed: ${err}`);
+        return Promise.resolve({
+          error: ExceptionMessage.INVALID,
+          message: ExceptionMessage.BAD_REQUEST,
+        });
       });
-      return Promise.resolve(deletedUser);
-    } catch (error) {
-      L.error(`delete ${model} failed: ${error}`);
-      return Promise.resolve({
-        error: ExceptionMessage.INVALID,
-        message: ExceptionMessage.BAD_REQUEST,
-      });
-    }
   }
   // Update
   update(id: number, faculty: Faculty): Promise<any> {
@@ -165,7 +178,7 @@ export class FacultiesService implements ISuperService<Faculty> {
     // Validate Uniquely Existing Fields
     const facultyNameExisted = await prisma.faculties.findFirst({
       where: {
-        Name: faculty.Name,  // Server only have 1 Marketing Manager
+        Name: faculty.Name, // Server only have 1 Marketing Manager
       },
     });
     if (facultyNameExisted) {

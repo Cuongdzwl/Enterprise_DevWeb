@@ -2,6 +2,7 @@ import FileService from '../../services/files.service';
 import { Request, Response } from 'express';
 import { BlobServiceClient } from '@azure/storage-blob';
 import { ISuperController } from 'server/api/interfaces/ISuperController.interface';
+import filesService from '../../services/files.service';
 
 export class FilesController implements ISuperController {
   update(req: Request, res: Response): void {
@@ -32,12 +33,21 @@ export class FilesController implements ISuperController {
 
   async create(req: Request, res: Response): Promise<void> { 
     try {
-      console.log(req.body);
-      FileService.create(req.body).then((r) =>
-        res.status(201).location(`/api/v1/users/${r.id}`).json(r));
+
+      const file = req.file;
+      console.log(req.file)
+      const { ContributionID } = req.body; 
+      const contributionIDNumber = parseInt(ContributionID, 10);
+      if (!file || !ContributionID) {
+        res.status(400).send("Missing file or ContributionID");
+        return;
+      }
+      const savedFile = await filesService.createfile(file, contributionIDNumber);
+
+      res.status(201).json(savedFile);
     } catch (error) {
       console.error(error);
-      res.status(500).send('Error uploading the file.');
+      res.status(500).send('Error uploading file.');
     }
   }
 }

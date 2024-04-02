@@ -4,10 +4,10 @@ import { authenticateToken,authorizeRole } from '../../middlewares/authenticatio
 export default express
   .Router()
   .post('/', controller.create)
-  .get('/', controller.all)
-  .get('/:id', controller.byId)
-  .delete('/:id', controller.delete)
-  .put('/:id', controller.update);
+  .get('/',authenticateToken,authorizeRole("admin"), controller.all)
+  .get('/:id',authenticateToken,authorizeRole("admin"), controller.byId)
+  .delete('/:id',authenticateToken,authorizeRole("admin"), controller.delete)
+  .put('/:id',authenticateToken,authorizeRole("admin"), controller.update);
 
 
   
