@@ -113,7 +113,7 @@ export class EventsService implements ISuperService<Event> {
         },
       })
       .then((event) => {
-        return this.createNotification(event);
+        return this.schedule(event);
       })
       .catch((error) => {
         L.error(`create ${model} failed: ${error}`);
@@ -176,7 +176,7 @@ export class EventsService implements ISuperService<Event> {
         //     });
         //   });
         // });
-        return this.createNotification(event);
+        return this.schedule(event);
       }).catch((error) => {
         return Promise.reject(error);
       });
@@ -189,7 +189,7 @@ export class EventsService implements ISuperService<Event> {
     }
   }
 
-  private createNotification(event: Event){
+  private schedule(event: Event){
     if (event) {
       L.info(`create ${model} with id ${event.ID}`);
       prisma.users
@@ -211,78 +211,43 @@ export class EventsService implements ISuperService<Event> {
             NotificationSentThrough.InApp
           );
           // Scheduled Email Due Date
-          // notificationsService
-          //   .bulkTrigger(
-          //     users,
-          //     {
-          //       Event: {
-          //         ClosureDate: event.ClosureDate.getDate().toString(),
-          //         ClosureTime: event.ClosureDate.getTime().toString(),
-          //         Name: event.Name,
-          //       },
-          //       Name: event.Name,
-          //       sendAt: event.ClosureDate.toISOString(),
-          //     },
-          //     NotificationSentType.CLOSUREDATE,
-          //     NotificationSentThrough.Email
-          //   )
-          //   .then((rr) => {
-          //     L.info(rr.data.data);
-          //     // save to database
-          //     // save to database
-          //     for (let i = 0; i < rr.data.data.length ;i++) {
-          //       L.info(rr.data.data[i]);
-          //       L.info(rr.data.data[i].status);
-          //       L.info(rr.data.data[i]["status"]);
-
-          //       var u = prisma.scheduledNotifications.create({
-          //         data: {
-          //           EventID: event.ID!,
-          //           Status: rr.data.data[i].status,
-          //           TransactionID: rr.data.data[i].transactionID,
-          //           NotificationSentTypeID: 1,
-          //           SentTo: user[i].ID,
-          //           SentAt: event.ClosureDate,
-          //           IsCancelled: false,
-          //         },
-          //       });
-          //       L.info("created: " + u)
-          //     }
-          //   });
+          notificationsService
+            .bulkTrigger(
+              users,
+              {
+                Event: {
+                  Name: event.Name,
+                  ID: event.ID,
+                  ClosureDate: event.ClosureDate.getDate().toString(),
+                  ClosureTime: event.ClosureDate.getTime().toString(),
+                },
+                Name: event.Name,
+                sendAt: event.ClosureDate.toISOString(),
+              },
+              NotificationSentType.CLOSUREDATE,
+              NotificationSentThrough.Email
+            )
+            .then((rr) => {
+              L.info(rr);
+            });
           // Scheduled Email Final Date
-          // notificationsService
-          //   .bulkTrigger(
-          //     users,
-          //     {
-          //       Event: {
-          //         Name: event.Name,
-          //       },
-          //       Name: event.Name,
-          //       sendAt: event.FinalDate.toISOString(),
-          //     },
-          //     NotificationSentType.FINALDATE,
-          //     NotificationSentThrough.Email
-          //   )
-          //   .then((r) => {
-          //     for (let i = 0; i < r.data.data.length ;i++) {
-          //       L.info(r.data.data[i]);
-          //       L.info(r.data.data[i].status + "2");
-          //       L.info(r.data.data[i]["status"] + "3");
-
-          //       var u = prisma.scheduledNotifications.create({
-          //         data: {
-          //           EventID: event.ID!,
-          //           Status: r.data.data[i].status,
-          //           TransactionID: r.data.data[i].transactionId,
-          //           NotificationSentTypeID: 1,
-          //           SentTo: user[i].ID,
-          //           SentAt: event.FinalDate,
-          //           IsCancelled: false,
-          //         },
-          //       })
-          //       L.info("created: " + u)
-          //     }
-          //   });
+          notificationsService
+            .bulkTrigger(
+              users,
+              {
+                Event: {
+                  ID: event.ID,
+                  Name: event.Name,
+                },
+                Name: event.Name,
+                sendAt: event.FinalDate.toISOString(),
+              },
+              NotificationSentType.FINALDATE,
+              NotificationSentThrough.Email
+            )
+            .then((r) => {
+              L.info(r);
+            });
           return true;
         })
         .catch((error) => {

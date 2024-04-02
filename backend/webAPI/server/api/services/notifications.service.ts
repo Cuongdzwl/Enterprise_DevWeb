@@ -46,7 +46,7 @@ export class NotificationService implements ISuperService<Notification> {
         sendType.inapp = 'true';
       }
       upayload.sentType = sendType;
-      payload.Name = u.Name;
+      upayload.Name = u.Name;
       events.push({
         name: type,
         to: {
@@ -57,8 +57,17 @@ export class NotificationService implements ISuperService<Notification> {
         },
         payload: upayload,
       });
+      if (upayload.SendAt) {
+        const data = await novu.events.bulkTrigger(events);
+        // this.create({});
+        L.info(data.data);
+        data;
+        return Promise.resolve({ success: true });
+      } else {
+        novu.events.bulkTrigger(events);
+        return Promise.resolve({ success: true });
+      }
     }
-    return Promise.resolve(novu.bulkTrigger(events));
   }
   async trigger(
     user: User,
@@ -66,54 +75,72 @@ export class NotificationService implements ISuperService<Notification> {
     type: NotificationSentType,
     through: NotificationSentThrough
   ): Promise<any> {
-    var to: any = {
-      subscriberId: user.ID,
-      email: through === NotificationSentThrough.Email ? user.Email : undefined,
-    };
+    try {
+      var to: any = {
+        subscriberId: user.ID,
+        email:
+          through === NotificationSentThrough.Email ? user.Email : undefined,
+      };
 
-    var phone: string | undefined = undefined;
-    //
-    if (user.Phone || through === NotificationSentThrough.SMS)
-      to.phone = user.Phone;
-    if (user.NewPhone || through === NotificationSentThrough.NewSMS)
-      to.phone = user.NewPhone;
+      var phone: string | undefined = undefined;
+      //
+      if (user.Phone || through === NotificationSentThrough.SMS)
+        to.phone = user.Phone;
+      if (user.NewPhone || through === NotificationSentThrough.NewSMS)
+        to.phone = user.NewPhone;
 
-    var sendType: any = {};
-    if (
-      through === NotificationSentThrough.SMS ||
-      (through === NotificationSentThrough.NewSMS && !to.phone)
-    ) {
-      sendType.sms = 'true';
+      var sendType: any = {};
+      if (
+        through === NotificationSentThrough.SMS ||
+        (through === NotificationSentThrough.NewSMS && !to.phone)
+      ) {
+        sendType.sms = 'true';
+      }
+      if (through === NotificationSentThrough.Email) {
+        sendType.email = 'true';
+      }
+      if (through === NotificationSentThrough.InApp) {
+        sendType.inapp = 'true';
+      }
+      payload.sentType = sendType;
+      L.info(to);
+      L.info(payload);
+      if (payload.sendAt) {
+        novu
+          .trigger(type as string, {
+            to,
+            payload: payload,
+          })
+          .then((r) => {
+            L.info(r.data);
+            // notification : Notification = {
+            //   NotificationSentTypeID: N,
+            //   EventID: notification.EventID || 0,
+            //   SentTo: notification.SentTo,
+            //   SentAt: notification.SentAt,
+            //   TransactionID: notification.TransactionID,
+            //   Acknowledged: notification.Acknowledged,
+            //   Status: notification.Status,
+            //   IsCancelled: notification.IsCancelled || false,
+            // };
+            // this.create()
+            return Promise.resolve({ success: true });
+          });
+      } else {
+        novu.trigger(type as string, { to, payload });
+        return Promise.resolve({ success: true });
+      }
+    } catch (error) {
+      Promise.reject({ success: false, error: error });
     }
-    if (through === NotificationSentThrough.Email) {
-      sendType.email = 'true';
-    }
-    if (through === NotificationSentThrough.InApp) {
-      sendType.inapp = 'true';
-    }
-    payload.sentType = sendType;
-    L.info(to);
-    L.info(payload);
-    Promise.resolve(
-      novu
-        .trigger(type as string, {
-          to,
-          payload: payload,
-        })
-        .then((_) => {
-          if (payload.SendAt) {
-            // save to db
-          }
-        })
-    );
   }
   cancel(transactionID: string): Promise<any> {
     return Promise.resolve(novu.events.cancel(transactionID));
   }
   bulkCancel(transactionID: string[]) {
-    transactionID.forEach((element) => {
-      novu.events.cancel(element);
-    });
+    for (const id of transactionID) {
+      novu.events.cancel(id);
+    }
   }
   broadcast(payload: any, type: NotificationSentType) {
     payload.sentType = type;
@@ -156,46 +183,43 @@ export class NotificationService implements ISuperService<Notification> {
   // Create
   create(notification: Notification): Promise<any> {
     // TODO: VALIDATE CONSTRAINTss
-    if (!this.validateConstraints(notification)) {
-      return Promise.resolve({
-        error: ExceptionMessage.INVALID,
-        message: ExceptionMessage.BAD_REQUEST,
+    L.info(`create ${model} with id ${notification.ID}`);
+    return prisma.scheduledNotifications
+      .create({
+        data: {
+          NotificationSentTypeID: notification.NotificationSentTypeID,
+          EventID: notification.EventID || 0,
+          SentTo: notification.SentTo,
+          SentAt: notification.SentAt,
+          TransactionID: notification.TransactionID,
+          Acknowledged: notification.Acknowledged,
+          Status: notification.Status,
+          IsCancelled: notification.IsCancelled || false,
+        },
+      })
+      .then((result) => {
+        return Promise.resolve(result);
+      })
+      .catch((err) => {
+        return Promise.reject(err);
       });
-    }
-    //
-    try {
-      // Validate Constraint
-      L.info(`create ${model} with id ${notification.ID}`);
-      // const createdNotification = prisma.scheduledNotifications.create({
-      //   data: {
-
-      //   },
-      // });
-      const createdNotification = null;
-      return Promise.resolve(createdNotification);
-    } catch (error) {
-      L.error(`create ${model} failed: ${error}`);
-      return Promise.resolve({
-        error: ExceptionMessage.INVALID,
-        message: ExceptionMessage.BAD_REQUEST,
-      });
-    }
   }
   // Delete
   delete(id: number): Promise<any> {
-    try {
-      L.info(`delete ${model} with id ${id}`);
-      const deletedNotification = prisma.scheduledNotifications.delete({
+    L.info(`delete ${model} with id ${id}`);
+    return prisma.scheduledNotifications
+      .delete({
         where: { ID: id },
+      })
+      .then((r) => {
+        return Promise.resolve(r);
+      })
+      .catch((_) => {
+        return Promise.resolve({
+          error: ExceptionMessage.INVALID,
+          message: ExceptionMessage.BAD_REQUEST,
+        });
       });
-      return Promise.resolve(deletedNotification);
-    } catch (error) {
-      L.error(`delete ${model} failed: ${error}`);
-      return Promise.resolve({
-        error: ExceptionMessage.INVALID,
-        message: ExceptionMessage.BAD_REQUEST,
-      });
-    }
   }
   // Update
   update(id: number, notification: Notification): Promise<any> {

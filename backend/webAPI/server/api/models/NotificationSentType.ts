@@ -8,5 +8,6 @@ export enum NotificationSentType {
   NEWEVENT = "new-event",
   CONTRIBUTIONINAPPEVENT = "contribution-in-app-event",
   COMMENTONCONTRIBUTION =  "comment-on-contribution",
+  NEWCONTRIBUTION = "new-contribution"
   
 }

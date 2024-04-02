@@ -149,7 +149,7 @@ export class UsersService implements ISuperService<User> {
   // Delete
   delete(id: number): Promise<any> {
     L.info(`delete ${model} with id ${id}`);
-    return prisma.comments
+    return prisma.users
       .delete({
         where: { ID: id },
       })

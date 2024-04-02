@@ -76,6 +76,7 @@ export class CommentsService implements ISuperService<Comment> {
     }
     try {
       L.info(`create ${model} with id ${comment.ID}`);
+      // Create Comment
       const createdComment = prisma.comments
         .create({
           data: {
@@ -85,20 +86,22 @@ export class CommentsService implements ISuperService<Comment> {
           },
         })
         .then(async (r) => {
-          const contribution = await contributionsService
+          // Fetch Commented Contribution
+          const contribution : Contribution | undefined= await contributionsService
             .byId(r.ContributionID)
             .then((contribution: Contribution) => {
-              if (r.UserID == contribution.UserID) return contribution;
-              return;
+              //
+              if (r.UserID == contribution.UserID) return undefined;
+              return contribution;
             })
             .catch((_) => {
-              return;
+              return undefined;
             });
-          if (await contribution) {
+          if (!contribution) {
             return r;
           }
 
-          userServices.byId(r.UserID).then((user: User) => {
+          userServices.byId(contribution.UserID).then((user: User) => {
             notificationsService.trigger(
               user,
               {
@@ -106,7 +109,7 @@ export class CommentsService implements ISuperService<Comment> {
                   Name: user.Name,
                 },
                 Contribution: {
-                  Name: contribution?.Name || 'Student',
+                  Name: contribution?.Name,
                 },
               },
               NotificationSentType.COMMENTONCONTRIBUTION,

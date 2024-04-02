@@ -6,6 +6,11 @@ import { ContributionExceptionMessage } from '../common/exception';
 import { ISuperService } from '../interfaces/ISuperService.interface';
 import { FileDTO } from '../models/DTO/File.DTO';
 import { FilesService } from './files.service';
+import notificationsService from './notifications.service';
+import usersService from './users.service';
+import { User } from '../models/User';
+import { NotificationSentThrough } from '../models/NotificationSentThrough';
+import { NotificationSentType } from '../models/NotificationSentType';
 
 const prisma = new PrismaClient();
 const model = 'contributions';
@@ -160,28 +165,73 @@ export class ContributionsService implements ISuperService<Contribution> {
     //     message: validations.message,
     //   });
     // }
-    try {
-      L.info(`create ${model} with id ${contribution.ID}`);
-      const createdContribution = prisma.contributions.create({
+    L.info(`create ${model} with id ${contribution.ID}`);
+    return prisma.contributions
+      .create({
         data: {
           Name: contribution.Name,
           Content: contribution.Content,
-          IsPublic: contribution.IsPublic,
-          IsApproved: contribution.IsApproved,
+          IsPublic: false,
+          IsApproved: false,
           EventID: contribution.EventID,
           UserID: contribution.UserID,
           StatusID: Status.PENDING as number,
         },
-      });
-      return Promise.resolve(createdContribution);
-    } catch (error) {
-      L.error(`create ${model} failed: ${error}`);
+      })
+      .then((contribution) => {
+        // Sent create success notification
+        // find faculty
+        var success = usersService
+          .byId(contribution.UserID)
+          .then((student: User) => {
+            return prisma.users
+              .findFirst({ where: { FacultyID: student.FacultyID, RoleID: 3 } })
+              .then((coordinator) => {
+                if (coordinator || coordinator == null) {
+                  // prepare notification
+                  var payload: any = {
+                    Contribution: {
+                      User: {
+                        Name: student.Name,
+                      },
+                      ID: contribution.ID,
+                      Name: contribution.Name,
+                    },
+                  };
+                  // sent
+                  notificationsService.trigger(
+                    coordinator as User,
+                    payload,
+                    NotificationSentType.NEWCONTRIBUTION,
+                    NotificationSentThrough.InApp
+                  );
+                  // log
+                  L.info('Sent Notification: ' + payload);
+                  // return success
+                  return Promise.resolve(true);
+                } else {
+                  L.error('Coordinator not found: ' + coordinator);
+                  return Promise.resolve(false);
+                }
+              })
+              .catch((e) => {
+                L.error(e);
+                return Promise.resolve(false);
+              });
+          });
 
-      return Promise.reject({
-        error: ContributionExceptionMessage.INVALID,
-        message: ContributionExceptionMessage.BAD_REQUEST,
+        return Promise.resolve({
+          success: success,
+          conotribution: contribution,
+        });
+      })
+      .catch((error) => {
+        L.error(`create ${model} failed: ${error}`);
+        return Promise.reject({
+          error: ContributionExceptionMessage.INVALID,
+          message: ContributionExceptionMessage.BAD_REQUEST,
+        });
       });
-    }
   }
 
   async createFile(
@@ -240,34 +290,34 @@ export class ContributionsService implements ISuperService<Contribution> {
         message: validations.message,
       });
     }
-    try {
-      if (!this.validateConstraints(contribution)) {
-        return Promise.resolve({
-          error: ContributionExceptionMessage.INVALID,
-          message: ContributionExceptionMessage.BAD_REQUEST,
-        });
-      }
-      L.info(`update ${model} with id ${contribution.ID}`);
-      const updatedContribution = prisma.contributions.update({
+    L.info(`update ${model} with id ${contribution.ID}`);
+    return prisma.contributions
+      .update({
         where: { ID: id },
         data: {
           Name: contribution.Name,
           Content: contribution.Content,
           IsPublic: contribution.IsPublic,
-          IsApproved: contribution.IsApproved,
+          IsApproved: contribution.StatusID === Status.ACCEPTED ? true : false,
           EventID: contribution.EventID,
           UserID: contribution.UserID,
           StatusID: contribution.StatusID,
         },
+      })
+      .then((updated) => {
+        if(!(updated.StatusID === contribution.StatusID)) {
+
+        }
+
+        return Promise.resolve(updated);
+      })
+      .catch((error) => {
+        L.error(`update ${model} failed: ${error}`);
+        return Promise.reject({
+          error: ContributionExceptionMessage.INVALID,
+          message: ContributionExceptionMessage.BAD_REQUEST,
+        });
       });
-      return Promise.resolve(updatedContribution);
-    } catch (error) {
-      L.error(`update ${model} failed: ${error}`);
-      return Promise.resolve({
-        error: ContributionExceptionMessage.INVALID,
-        message: ContributionExceptionMessage.BAD_REQUEST,
-      });
-    }
   }
 
   async validateConstraints(
