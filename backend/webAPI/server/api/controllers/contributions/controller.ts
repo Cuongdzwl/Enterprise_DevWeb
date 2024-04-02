@@ -48,19 +48,21 @@ export class ContributionsController implements ISuperController {
           UpdatedAt
         };
         const createdContribution = await contributionsService.create(contributionData);
-        const filesArray = req.files as Express.Multer.File[];
-        console.log(req.files)
-        console.log(filesArray)
-        filesArray.map(file => 
-          FilesService.createfile(file, createdContribution.ID))
-        if (filesArray.length === 0) {
-            res.status(400).send("Missing files");
-            return;
-        }
-        // if (!file || !createdContribution.ID) {
-        //   res.status(400).send("Missing file or ContributionID");
-        //   return;
+        // const filesArray = req.files as Express.Multer.File[];
+        const file = req.file;
+        console.log(req.file)
+        // console.log(filesArray)
+        // filesArray.map(file => 
+        //   FilesService.createfile(file, createdContribution.ID))
+        // if (filesArray.length === 0) {
+        //     res.status(400).send("Missing files");
+        //     return;
         // }
+        if (!file || !createdContribution.ID) {
+          res.status(400).send("Missing file or ContributionID");
+          return;
+        }
+        await FilesService.createfile(file, createdContribution.ID);
         //   for (const file of filesArray) {
         //     console.log(file);
         //     console.log(`File name: ${file.originalname}`);
