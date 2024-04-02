@@ -762,10 +762,10 @@ paths:
                   type: string
                   format: binary
                   description: The files to be uploaded.
-                # file2:
-                #   type: string
-                #   format: binary
-                #   description: The files to be uploaded.
+                file2:
+                  type: string
+                  format: binary
+                  description: The files to be uploaded.
               required:
                 - Name
                 - Content
@@ -775,7 +775,7 @@ paths:
                 - UserID
                 - StatusID
                 - filesPath
-                # - file2
+                - file2
       responses:
         '201':
           description: Contribution created successfully with associated files.

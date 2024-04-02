@@ -57,7 +57,7 @@ export class FilesService implements ISuperService<File> {
     await blockBlobClient.uploadData(fs.readFileSync(file.path), {
       blobHTTPHeaders: { blobContentType: file.mimetype }
     });
-    // fs.unlinkSync(file.path);
+    fs.unlinkSync(file.path);
 
     return blockBlobClient.url;
   }

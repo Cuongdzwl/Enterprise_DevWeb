@@ -38,7 +38,6 @@ export class ContributionsService implements ISuperService<Contribution> {
       select.Comments = true;
     }
     const contributions = await prisma.contributions.findMany({ select });
-    L.info(contributions, `fetch all ${model}(s)`);
     return contributions.map((contribution) => {
       if (contribution.Files) {
         try {
@@ -87,7 +86,8 @@ export class ContributionsService implements ISuperService<Contribution> {
         } else if (
           file.Url.endsWith('.png') ||
           file.Url.endsWith('.jpeg') ||
-          file.Url.endsWith('.JPG')
+          file.Url.endsWith('.JPG')  ||
+          file.Url.endsWith('.jpg')
         ) {
           imageFiles.push(file);
         }
