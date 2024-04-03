@@ -10,6 +10,6 @@ export default express
   .get('/', controller.all)
   .get('/:id', controller.byId)
   .delete('/:id', controller.delete)
-  .put('/:id', controller.update)
+  .put('/:id',upload.fields([{ name: 'filesPath', maxCount: 1 }, { name: 'file2', maxCount: 1 }]), controller.update)
   .get('/:id/download', controller.download);
 

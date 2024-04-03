@@ -866,7 +866,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ContributionResponse'
+                $ref: '#/components/schemas/Contribution
         '400':
           description: Bad Request. Invalid input or missing required fields.
         '500':
@@ -917,7 +917,7 @@ paths:
       requestBody:
         required: true
         content:
-          application/json:
+          multipart/form-data:
             schema:
               type: object
               properties:
@@ -935,14 +935,14 @@ paths:
                   type: integer
                 StatusID:
                   type: integer
-                files:
-                  type: array
-                  items:
-                    type: object
-                    properties:
-                      Path:
-                        type: string
-                        description: String path of the file
+                filesPath:
+                  type: string
+                  format: binary
+                  description: The files to be uploaded.
+                file2:
+                  type: string
+                  format: binary
+                  description: The files to be uploaded.
               required:
                 - Name
                 - Content
@@ -951,6 +951,8 @@ paths:
                 - EventID
                 - UserID
                 - StatusID
+                - filesPath
+                - file2
       responses:
         '200':
           description: Contribution and its files updated

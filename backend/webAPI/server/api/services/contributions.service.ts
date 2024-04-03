@@ -97,7 +97,8 @@ export class ContributionsService implements ISuperService<Contribution> {
         } else if (
           file.Url.endsWith('.png') ||
           file.Url.endsWith('.jpeg') ||
-          file.Url.endsWith('.JPG')
+          file.Url.endsWith('.JPG')  ||
+          file.Url.endsWith ('jpg')
         ) {
           imageFiles.push(file);
         }
@@ -127,7 +128,7 @@ async  downloadFilesAndZip(files: FileDTO[]) {
   }
 
   async byId(id: number, depth?: number, comment?: boolean, file?: boolean): Promise<any> {
-    L.info(`fetch ${model} with id ${id}`);
+    // L.info(`fetch ${model} with id ${id}`);
     var select: any = {
       ID: true,
       Name: true,
@@ -145,6 +146,7 @@ async  downloadFilesAndZip(files: FileDTO[]) {
       select.User = { select: { ID: true, Name: true } };
       select.Event = { select: { ID: true, Name: true,FinalDate: true, ClosureDate: true } };
       select.Status = { select: { ID: true, Name: true } };
+      select.Files = { select: { ID: true, Url: true } };
     }
 
     if (comment == true)
@@ -167,6 +169,7 @@ async  downloadFilesAndZip(files: FileDTO[]) {
       select,
       where: { ID: id },
     });
+    console.log(file)
     try {
       
       if (contribution) {
@@ -270,20 +273,30 @@ async  downloadFilesAndZip(files: FileDTO[]) {
 
   delete(id: number): Promise<any> {
     L.info(`delete ${model} with id ${id}`);
-    return prisma.contributions
-      .delete({
+    // First, attempt to delete related files to avoid foreign key constraint issues
+    return prisma.files.deleteMany({
+      where: {
+        ContributionID: id,
+      },
+    })
+    .then(() => {
+      // After successfully deleting files, delete the contribution
+      return prisma.contributions.delete({
         where: { ID: id },
-      })
-      .then((r) => {
-        return Promise.resolve(r);
-      })
-      .catch((err) => {
-        L.error(`delete ${model} failed: ${err}`);
-        return Promise.resolve({
-          error: ContributionExceptionMessage.INVALID,
-          message: ContributionExceptionMessage.BAD_REQUEST,
-        });
       });
+    })
+    .then((r) => {
+      // If both deletions are successful, resolve with the result of deleting the contribution
+      return Promise.resolve(r);
+    })
+    .catch((err) => {
+      // If an error occurs in either deletion step, log the error and resolve with an error object
+      L.error(`delete ${model} failed: ${err}`);
+      return Promise.resolve({
+        error: 'An error occurred while attempting to delete the contribution and/or its related files.',
+        message: 'Bad Request',
+      });
+    });
   }
 
   async update(id: number, contribution: Contribution): Promise<any> {
@@ -377,7 +390,7 @@ async  downloadFilesAndZip(files: FileDTO[]) {
     if (!userExists) {
       return {
         isValid: false,
-        error: ContributionExceptionMessage.INVALID_LASTEDITBYID,
+        error: ContributionExceptionMessage.INVALID_USERID,
         message: 'Referenced user does not exist.',
       };
     }
