@@ -4,12 +4,13 @@ import { PrismaClient } from '@prisma/client';
 import { ISuperService } from '../interfaces/ISuperService.interface';
 import { ExceptionMessage, FacultyExceptionMessage } from '../common/exception';
 import l from '../../common/logger';
+import { Report } from '../models/Report';
 
 const prisma = new PrismaClient();
 const model = 'faculties';
 
 export class FacultiesService implements ISuperService<Faculty> {
-  all(depth?: number, isPublic?: boolean): Promise<any> {
+  all(depth?: number,user?: boolean, isPublic?: boolean,publicEventId?: number): Promise<any> {
     var select: any = {
       ID: true,
       Name: true,
@@ -18,13 +19,23 @@ export class FacultiesService implements ISuperService<Faculty> {
       CreatedAt: true,
       UpdatedAt: true,
     };
-
+    // depth 1 is for public faculties
     if (depth == 1) {
-      select.Events = { select: { ID: true, Name: true } };
-      select.Users = { select: { ID: true, Name: true } };
+      select.Events = { select: { ID: true, Name: true ,Description : true } };
+      if(user == true)
+        select.Users = { select: { ID: true, Name: true } };
     }
-    if (isPublic) {
+    if (isPublic) { 
       var where: any = { IsEnabledGuest: true };
+      // depth 2 is for public events         
+      if(depth == 2)
+      if(publicEventId){
+        select.Events = {
+          select: { ID: true, Name: true ,Description : true ,CreatedAt : true, UpdatedAt : true, FacultyID : true
+          },
+          where: { FacultyID: publicEventId }
+        };
+      }
     } else {
       var where = undefined;
     }
@@ -153,6 +164,90 @@ export class FacultiesService implements ISuperService<Faculty> {
         error: ExceptionMessage.INVALID,
         message: ExceptionMessage.BAD_REQUEST,
       });
+}
+  }
+  async dashboard(facultyID: number, year: number){
+  // Validate input
+  if (!Number.isInteger(facultyID) || !Number.isInteger(year)) {
+    return "Invalid input: 'facultyID' and 'year' must be integers.";
+  }
+
+  try {
+    const contributionsOfFaculty = await prisma.contributions.count({
+      where: {
+        Event: {
+          FacultyID: facultyID,
+          CreatedAt: {
+            gte: new Date(year, 0, 1),
+            lte: new Date(year, 11, 31),
+          },
+        },
+      },
+    });
+
+const allContributions = await prisma.contributions.findMany({
+  where: {
+    Event: {
+      FacultyID: facultyID,
+      CreatedAt: {
+        gte: new Date(year, 0, 1),
+        lte: new Date(year, 11, 31),
+      },
+    },
+  },
+  include: {
+    Event: true, 
+    Comments: true, 
+  }
+});
+const contributionsException = allContributions.filter(contribution => {
+  if (contribution.Comments.length == 0) {
+    console.log(1)
+    const createdDate = new Date(contribution.CreatedAt);
+    const closureDate = new Date(contribution.Event.ClosureDate);
+    console.log(createdDate)
+    console.log(closureDate)
+    const limitDate = new Date(closureDate.setDate(closureDate.getDate() + 14));
+    console.log(limitDate)
+    return new Date() > limitDate;
+  }
+  return false;
+}).length;
+
+    const totalContributionsInYear = await prisma.contributions.count({
+      where: {
+        Event: {
+          CreatedAt: {
+            gte: new Date(year, 0, 1),
+            lte: new Date(year, 11, 31),
+          },
+        },
+      },
+    });
+
+    const contributionsFacultyAndByYear = totalContributionsInYear > 0
+      ? (contributionsOfFaculty / totalContributionsInYear * 100)
+      : 0;
+
+    const contributorsByFacultyAndYear = await prisma.users.count({
+      where: {
+        Contributions: {
+          some: {
+            Event: {
+              FacultyID: facultyID,
+              CreatedAt: {
+                gte: new Date(year, 0, 1),
+                lte: new Date(year, 11, 31),
+              },
+            },
+          },
+        },
+      },
+    });
+    return new Report(contributionsOfFaculty, contributionsException, contributionsFacultyAndByYear, contributorsByFacultyAndYear);
+  } catch (error) {
+    console.error("An error occurred: ", error);
+    return "An internal server error occurred.";
     }
   }
   async validateConstraints(

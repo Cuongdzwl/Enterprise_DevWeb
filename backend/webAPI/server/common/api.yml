@@ -306,6 +306,48 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Faculty'
+  /faculties/dashboard:
+    post:
+      tags:
+        - Faculties
+      summary: Get faculty dashboard statistics for a given year and faculty ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                facultyId:
+                  type: integer
+                  description: The ID of the faculty to get the dashboard statistics for.
+                year:
+                  type: integer
+                  description: The year to get the dashboard statistics for.
+              required:
+                - facultyId
+                - year
+      responses:
+        '200':
+          description: Faculty dashboard statistics successfully retrieved.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  totalContributions:
+                    type: integer
+                    description: The total number of contributions made to the faculty in the given year.
+                  totalEvents:
+                    type: integer
+                    description: The total number of events organized by the faculty in the given year.
+                  activeContributors:
+                    type: integer
+                    description: The number of active contributors in the faculty for the given year.
+        '400':
+          description: Invalid input
+        '404':
+          description: Faculty not found
   /faculties/{id}:
     get:
       tags:
@@ -584,6 +626,25 @@ paths:
       responses:
         '200':
           description: File deleted successfully
+  /files/{id}/download:
+    get:
+      tags:
+        - Files
+      summary: Download a file by ID as a zip
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: File downloaded successfully
+          content:
+            application/zip:
+              schema:
+                type: string
+                format: binary
   /files/upload/{id}:
     put:
       tags:

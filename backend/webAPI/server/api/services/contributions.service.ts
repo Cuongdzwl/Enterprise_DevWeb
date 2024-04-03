@@ -49,6 +49,7 @@ export class ContributionsService implements ISuperService<Contribution> {
     }
     const contributions = await prisma.contributions.findMany({ select, where });
     L.info(contributions, `fetch all ${model}(s)`);
+
     // return Promise.resolve(contributions);;
 
     return contributions.map((contribution) => {
@@ -127,7 +128,7 @@ async  downloadFilesAndZip(files: FileDTO[]) {
   return zipContent;
   }
 
-  async byId(id: number, depth?: number, comment?: boolean, file?: boolean): Promise<any> {
+  async byId(id: number, depth?: number, comment?: boolean, file?: boolean,): Promise<any> {
     // L.info(`fetch ${model} with id ${id}`);
     var select: any = {
       ID: true,

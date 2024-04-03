@@ -81,6 +81,7 @@ export class EventsService implements ISuperService<Event> {
         return Promise.reject(err);
       });
   }
+  
   filter(filter: string, key: string): Promise<any> {
     const events = prisma.events.findMany({
       where: {

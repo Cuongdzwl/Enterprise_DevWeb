@@ -8,6 +8,7 @@ export default express
   .post('/upload',upload.single('file'),  controller.create)
   .get('/', controller.all)
   .get('/:id', controller.byId)
+  .get('/:id/download', controller.download)
   .delete('/:id', controller.delete)
   .put('/upload/:id', controller.update);
   
