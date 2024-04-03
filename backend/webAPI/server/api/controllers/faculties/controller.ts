@@ -106,10 +106,21 @@ export class FacultiesController implements ISuperController {
   }
   async dashboard (req: Request, res: Response) : Promise<void> {
     try {
-      const { facultyId, year } = req.body;
-      // Validate input
+      var facultyId = Number.parseInt(req.params['id']);
+      const year = parseInt(req.query.year?.toString() ?? "");
+      L.info(`${facultyId}`)
+      L.info(`${year}`)
+      if (Number.isNaN(facultyId)) {
+        res.status(400).json({ error: 'Invalid facultyId provided.' }).end();
+        return;
+      }
+      // // Validate input
       if (!Number.isInteger(facultyId) || facultyId < 1) {
         res.status(400).json({ error: 'Invalid facultyId: must be an integer greater than 0.' }).end();
+        return;
+      }
+      if (!/^\d{1,20}$/.test(facultyId.toString())) {
+        res.status(400).json({ error: 'Faculty ID must be a number with a maximum of 20 digits.' }).end();
         return;
       }
   
@@ -117,12 +128,9 @@ export class FacultiesController implements ISuperController {
         res.status(400).json({ error: 'Invalid year: must be an integer greater than 0.' }).end();
         return;
       }
-      if (!facultyId || !year) {
-        res.status(400).json({ error: 'FacultyId and year are required.' });
-      }
 
       // Assuming facultiesService.getDashboardDataForFacultyYear has been implemented
-      const dashboardData = await facultiesService.dashboard(facultyId, year);
+      const dashboardData = await facultiesService.dashboard(1, 2024);
       if (!dashboardData) {
         res.status(404).json({ error: 'No dashboard data found for the provided faculty ID and year.' }).end();
         return;
@@ -131,7 +139,8 @@ export class FacultiesController implements ISuperController {
       res.json(dashboardData);
     } catch (error) {
       console.error("Dashboard error:", error);
-      res.status(500).json({ error: 'Internal Server Error' });
+      res.status(500).json({ error: 'Internal Server Error' }).end();
+      return;
     }
   }
   // async public() {}

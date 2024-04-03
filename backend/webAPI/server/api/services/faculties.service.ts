@@ -146,11 +146,10 @@ export class FacultiesService implements ISuperService<Faculty> {
   }
   async dashboard(facultyID: number, year: number){
   // Validate input
-  if (!Number.isInteger(facultyID) || !Number.isInteger(year)) {
-    return "Invalid input: 'facultyID' and 'year' must be integers.";
-  }
-
   try {
+    if (!Number.isInteger(facultyID) || !Number.isInteger(year)) {
+      return "Invalid input: 'facultyID' and 'year' must be integers.";
+    }  
     const contributionsOfFaculty = await prisma.contributions.count({
       where: {
         Event: {
@@ -180,13 +179,9 @@ const allContributions = await prisma.contributions.findMany({
 });
 const contributionsException = allContributions.filter(contribution => {
   if (contribution.Comments.length == 0) {
-    console.log(1)
     const createdDate = new Date(contribution.CreatedAt);
     const closureDate = new Date(contribution.Event.ClosureDate);
-    console.log(createdDate)
-    console.log(closureDate)
     const limitDate = new Date(closureDate.setDate(closureDate.getDate() + 14));
-    console.log(limitDate)
     return new Date() > limitDate;
   }
   return false;
