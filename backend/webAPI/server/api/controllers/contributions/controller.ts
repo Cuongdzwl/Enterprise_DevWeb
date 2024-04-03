@@ -186,6 +186,11 @@ export class ContributionsController implements ISuperController {
         [fieldname: string]: Express.Multer.File[];
       };
       let ContributionFile
+      if(filesObject===null){
+        res
+        .status(201)
+        .json({ message: 'Contribution and files updated successfully' });
+      }
       for (let i = 0; i < 2; i++) {
         ContributionFile = await prisma.files.findFirst({
           where: { ContributionID: id },

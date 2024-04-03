@@ -3,6 +3,7 @@ import { Request, Response } from 'express';
 import { ISuperController } from '../../interfaces/ISuperController.interface';
 import { PrismaClient } from '@prisma/client';
 import facultiesService from '../../services/faculties.service';
+import L from '../../../common/logger';
 
 const prisma = new PrismaClient();
 
@@ -103,11 +104,37 @@ export class FacultiesController implements ISuperController {
       res.status(400).json({ error: error.message }).end();
     }
   }
-  dashboard (req: Request, res: Response) : void {
-    const id = Number.parseInt(req.params['id']);
-    facultiesService.dashboard(id)
+  async dashboard (req: Request, res: Response) : Promise<void> {
+    try {
+      const { facultyId, year } = req.body;
+      // Validate input
+      if (!Number.isInteger(facultyId) || facultyId < 1) {
+        res.status(400).json({ error: 'Invalid facultyId: must be an integer greater than 0.' }).end();
+        return;
+      }
+  
+      if (!Number.isInteger(year) || year < 1) {
+        res.status(400).json({ error: 'Invalid year: must be an integer greater than 0.' }).end();
+        return;
+      }
+      if (!facultyId || !year) {
+        res.status(400).json({ error: 'FacultyId and year are required.' });
+      }
+
+      // Assuming facultiesService.getDashboardDataForFacultyYear has been implemented
+      const dashboardData = await facultiesService.dashboard(facultyId, year);
+      if (!dashboardData) {
+        res.status(404).json({ error: 'No dashboard data found for the provided faculty ID and year.' }).end();
+        return;
+      }
+
+      res.json(dashboardData);
+    } catch (error) {
+      console.error("Dashboard error:", error);
+      res.status(500).json({ error: 'Internal Server Error' });
+    }
   }
-  async public() {}
+  // async public() {}
 }
 
 export default new FacultiesController();
