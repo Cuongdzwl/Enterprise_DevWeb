@@ -3,6 +3,7 @@ import { PrismaClient } from '@prisma/client';
 import { File } from '../models/File';
 import { ExceptionMessage, FileExceptionMessage } from '../common/exception';
 import { ISuperService } from '../interfaces/ISuperService.interface';
+import { FileDTO } from '../models/DTO/File.DTO';
 import { BlobServiceClient } from '@azure/storage-blob';
 import * as path from 'path';
 import * as fs from 'fs';
@@ -13,6 +14,7 @@ import { promisify } from 'util';
 
 const prisma = new PrismaClient();
 const model = 'files';
+const JSZip = require('jszip');
 const pipeline = promisify(stream.pipeline);
 const archiver = require('archiver');
 
@@ -25,7 +27,8 @@ export class FilesService implements ISuperService<File> {
   }
   // Filter
   async byId(id: number): Promise<any> {
-    L.info(`fetch ${model} with id ${id}`);
+    const zip = new JSZip();
+    // L.info(`fetch ${model} with id ${id}`);
     const file = await prisma.files.findUnique({
       where: { ID: id },
     })
@@ -33,8 +36,6 @@ export class FilesService implements ISuperService<File> {
       L.error(`File with ID ${id} not found or does not have a URL`);
       return Promise.reject(`File with ID ${id} not found or does not have a URL`);
     }
-    const outputPath = `downloads/${file.ID}.pdf`;
-    await this.downloadBlobToFile(file.Url, outputPath);
     return Promise.resolve(file);
   }
 
@@ -61,19 +62,28 @@ export class FilesService implements ISuperService<File> {
 
     return blockBlobClient.url;
   }
-async downloadBlobToFile(url: string, outputPath: string): Promise<void> {
+async downloadBlobToFile(file: FileDTO) {
+  const zip = new JSZip();
   try {
-      const response = await axios({
-          method: 'GET',
-          url: url,
-          responseType: 'stream',
-      });
-      await pipeline(response.data, fs.createWriteStream(outputPath));
-      L.info(`Downloaded file from ${url} to ${outputPath}`);
+    if(!file.Url)
+    {
+      return null
+    }
+    const response = await axios.get(file.Url, { responseType: 'arraybuffer' });
+    const fileName = path.basename(new URL(file.Url).pathname);
+    L.info({ fileName });
+    L.info({ response });
+    const fileData = Buffer.from(response.data);
+    zip.file(fileName, fileData);
   } catch (error) {
-      L.error(`Error downloading file from ${url}: ${error}`);
-      throw error;
+    console.error(`Failed to download file: ${file.Url}`, error);
+    // Nếu việc tải xuống thất bại, bạn có thể quyết định làm gì tùy theo nhu cầu của bạn,
+    // ví dụ trả về null, throw một exception mới, hoặc handle lỗi theo cách khác
+    return null; // hoặc throw new Error('Failed to download file');
   }
+
+  const zipContent = await zip.generateAsync({ type: 'nodebuffer' });
+  return zipContent;
 }
 
   // Create

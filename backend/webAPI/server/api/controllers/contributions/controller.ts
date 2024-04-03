@@ -6,6 +6,7 @@ import L from '../../../common/logger';
 import FilesService from '../../services/files.service';
 import contributionsService from '../../services/contributions.service';
 import { Contribution } from '../../models/Contribution';
+import filesService from '../../services/files.service';
 
 const prisma = new PrismaClient();
 export class ContributionsController implements ISuperController {
@@ -179,10 +180,26 @@ export class ContributionsController implements ISuperController {
         .end();
       return;
     }
+    contributionsService.update(id, contributionData)
     try {
       const filesObject = req.files as {
         [fieldname: string]: Express.Multer.File[];
       };
+      let ContributionFile
+      if(filesObject===null){
+        res
+        .status(201)
+        .json({ message: 'Contribution and files updated successfully' });
+      }
+      for (let i = 0; i < 2; i++) {
+        ContributionFile = await prisma.files.findFirst({
+          where: { ContributionID: id },
+        });
+        if(ContributionFile?.ID){
+          await filesService.delete(ContributionFile.ID)
+        }
+        
+      }
       for (const fieldName in filesObject) {
         if (Object.prototype.hasOwnProperty.call(filesObject, fieldName)) {
           const files = filesObject[fieldName];
@@ -196,7 +213,7 @@ export class ContributionsController implements ISuperController {
       }
       res
         .status(201)
-        .json({ message: 'Contribution and files created successfully' });
+        .json({ message: 'Contribution and files updated successfully' });
     } catch (error) {
       res.status(400).json({ error: error.message }).end();
     }
