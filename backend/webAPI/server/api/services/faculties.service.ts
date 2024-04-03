@@ -9,7 +9,7 @@ const prisma = new PrismaClient();
 const model = 'faculties';
 
 export class FacultiesService implements ISuperService<Faculty> {
-  all(depth?: number): Promise<any> {
+  all(depth?: number, isPublic?: boolean): Promise<any> {
     var select: any = {
       ID: true,
       Name: true,
@@ -23,8 +23,14 @@ export class FacultiesService implements ISuperService<Faculty> {
       select.Events = { select: { ID: true, Name: true } };
       select.Users = { select: { ID: true, Name: true } };
     }
+    if (isPublic) {
+      var where: any = { IsEnabledGuest: true };
+    } else {
+      var where = undefined;
+    }
     const faculties = prisma.faculties.findMany({
       select,
+      where,
     });
     L.info(faculties, `fetch all ${model}(s)`);
     return Promise.resolve(faculties);
@@ -34,7 +40,8 @@ export class FacultiesService implements ISuperService<Faculty> {
     id: number,
     depth?: number,
     event?: boolean,
-    user?: boolean
+    user?: boolean,
+    isPublic?: boolean
   ): Promise<any> {
     var select: any = {
       ID: true,
@@ -46,12 +53,17 @@ export class FacultiesService implements ISuperService<Faculty> {
     };
 
     if (depth == 1) {
+
+    }
+    var where: any = { FacultyID: id };
+    if (isPublic) {
+      where.IsEnabledGuest = true;
     }
 
     if (event == true) {
       select.Events = {
         select: { ID: true, Name: true },
-        where: { FacultyID: id },
+        where,
       };
     }
     if (user == true) {

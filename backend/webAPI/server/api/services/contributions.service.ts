@@ -143,7 +143,7 @@ async  downloadFilesAndZip(files: FileDTO[]) {
     };
     if (depth == 1) {
       select.User = { select: { ID: true, Name: true } };
-      select.Event = { select: { ID: true, Name: true } };
+      select.Event = { select: { ID: true, Name: true,FinalDate: true, ClosureDate: true } };
       select.Status = { select: { ID: true, Name: true } };
     }
 

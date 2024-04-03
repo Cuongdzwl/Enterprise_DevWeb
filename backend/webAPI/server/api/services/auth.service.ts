@@ -44,12 +44,14 @@ export class AuthService {
       authStrategy.authenticate(
         'google',
         { session: false },
-        (err: any, user: User) => {
+        (err: any, user: User, info: any) => {
           if (err) {
             reject(err);
+          } else if (!user) {
+            reject(info);
           } else {
             const token = jwt.sign(
-              { id: user.ID },
+              { id: user.ID, roleID : user.RoleID, FacultyID: user.FacultyID},
               process.env.JWT_SECRET || 'default',
               { expiresIn: '1h' }
             );

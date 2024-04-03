@@ -15,7 +15,7 @@ import { Notification } from '../models/Notification';
 const prisma = new PrismaClient();
 const model = 'event';
 export class EventsService implements ISuperService<Event> {
-  all(depth?: number): Promise<any> {
+  all(depth?: number,isPublic?: boolean): Promise<any> {
     var select: any = {
       ID: true,
       Name: true,
@@ -29,6 +29,9 @@ export class EventsService implements ISuperService<Event> {
 
     if (depth == 1) {
       select.Faculty = { select: { ID: true, Name: true } };
+    }
+    if(isPublic){
+      
     }
     const events = prisma.events.findMany({
       select,

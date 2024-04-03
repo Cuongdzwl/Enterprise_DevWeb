@@ -2,6 +2,7 @@ import FacultyService from '../../services/faculties.service';
 import { Request, Response } from 'express';
 import { ISuperController } from '../../interfaces/ISuperController.interface';
 import { PrismaClient } from '@prisma/client';
+import  EventsService  from '../../services/events.service';
 
 const prisma = new PrismaClient();
 
@@ -11,8 +12,12 @@ export class FacultiesController implements ISuperController {
     const result = await FacultyService.all(depth);
     res.json(result);
   }
-
-  byId(req: Request, res: Response): void {
+  async guest(req: Request, res: Response): Promise<void> {
+    const depth = Number.parseInt(req.query.depth?.toString() ?? '');
+    const result = await FacultyService.all(depth, true);
+    res.json(result);
+  }
+  async guestById(req: Request, res: Response): Promise<void> {
     var id = Number.parseInt(req.params['id']);
     const depth = Number.parseInt(req.query.depth?.toString() ?? '');
     const event = req.query.event?.toString() == 'true' ? true : false;
@@ -21,7 +26,50 @@ export class FacultiesController implements ISuperController {
       id = res.locals.user.user.FacultyID;
     }
     try {
-      FacultyService.byId(id, depth, event, user).then((r) => {
+      await FacultyService.byId(id, depth, event, user, true).then((r) => {
+        if (r) res.json(r);
+        else res.status(404).end();
+      });
+    } catch (error) {
+      res.status(400).json({ error: error.message }).end();
+    }
+  }
+  async guestEvents(req: Request, res: Response): Promise<void> {
+      // check if faculty enable guest
+      const id = Number.parseInt(req.params['id']);
+      const depth = Number.parseInt(req.query.depth?.toString() ?? '');
+      const contribution: boolean =
+        req.query.contribution?.toString() == 'true' ? true : false;
+  
+      EventsService.byId(id, depth, contribution)
+        .then((r) => {
+          if (r) res.json(r);
+          else res.status(404).end();
+          return;
+        })
+        .catch((error) => {
+          res.status(400).json({ error: error }).end();
+        });
+  }
+
+  async guestEventContributions(req: Request, res: Response): Promise<void> {
+    var id = Number.parseInt(req.params['id']);
+    var eventid = Number.parseInt(req.params['eventid']);
+    const depth = Number.parseInt(req.query.depth?.toString() ?? '');
+    const result = await FacultyService.all(depth, true);
+    res.json(result);
+  }
+
+  async byId(req: Request, res: Response): Promise<void> {
+    var id = Number.parseInt(req.params['id']);
+    const depth = Number.parseInt(req.query.depth?.toString() ?? '');
+    const event = req.query.event?.toString() == 'true' ? true : false;
+    const user = req.query.user?.toString() == 'true' ? true : false;
+    if (!(res.locals.user.user.RoleID == 1 || 2)) {
+      id = res.locals.user.user.FacultyID;
+    }
+    try {
+      await FacultyService.byId(id, depth, event, user).then((r) => {
         if (r) res.json(r);
         else res.status(404).end();
       });

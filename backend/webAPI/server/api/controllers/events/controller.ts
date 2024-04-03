@@ -25,7 +25,7 @@ export class EventsController implements ISuperController {
       .then((r) => {
         if (r) res.json(r);
         else res.status(404).end();
-        return
+        return;
       })
       .catch((error) => {
         res.status(400).json({ error: error }).end();

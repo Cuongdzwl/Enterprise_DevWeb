@@ -37,6 +37,14 @@ export class AuthController implements IAuthController {
       res.status(400).json({ message: err });
     }
   }
+  // async google(req: Request, res: Response): Promise<void> {
+  //   try {
+  //     const { user, token } = await authService.google(req);
+  //     res.status(200).json({ user, token });
+  //   } catch (err) {
+  //     res.status(400).json({ message: err });
+  //   }
+  // }
 
 
   async forgotPassword(req: Request, res: Response): Promise<void> {

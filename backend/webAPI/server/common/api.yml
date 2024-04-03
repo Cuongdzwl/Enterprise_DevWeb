@@ -375,6 +375,90 @@ paths:
       responses:
         '204':
           description: Faculty deleted
+  /faculties/public:
+    get:
+      summary: Get all public faculties
+      operationId: getPublicFaculties
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Faculty'
+    parameters:
+      - in: query
+        name: controller.guest
+        schema:
+          type: string
+        description: The guest controller
+
+  /faculties/public/{id}:
+    get:
+      summary: Get a public faculty by ID
+      operationId: getPublicFacultyById
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: The ID of the faculty
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Faculty'
+
+  /faculties/public/{id}/events:
+    get:
+      summary: Get events of a public faculty
+      operationId: getPublicFacultyEvents
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: The ID of the faculty
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Event'
+
+  /faculties/public/{id}/events/{eventid}/contributions:
+    get:
+      summary: Get contribution of a guest in a public faculty event
+      operationId: getGuestEventContribution
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: The ID of the faculty
+        - in: path
+          name: eventid
+          schema:
+            type: string
+          required: true
+          description: The ID of the event
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Contribution'
   /events:
     get:
       tags:
@@ -803,6 +887,16 @@ paths:
           schema:
             type: number
           description: JSON response depth parameter
+        - in: file
+          name: file
+          schema:
+            type: boolean
+          description: JSON response file parameter
+        - in: comment
+          name: comment
+          schema:
+            type: boolean
+          description: JSON response comment parameter
       responses:
         '200':
           description: A contribution
