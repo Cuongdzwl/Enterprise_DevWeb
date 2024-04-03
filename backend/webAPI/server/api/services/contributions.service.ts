@@ -169,7 +169,6 @@ async  downloadFilesAndZip(files: FileDTO[]) {
       select,
       where: { ID: id },
     });
-    console.log(file)
     try {
       
       if (contribution) {
@@ -300,13 +299,6 @@ async  downloadFilesAndZip(files: FileDTO[]) {
   }
 
   async update(id: number, contribution: Contribution): Promise<any> {
-    const validations = await this.validateConstraints(contribution);
-    if (!validations.isValid) {
-      return Promise.resolve({
-        error: validations.error,
-        message: validations.message,
-      });
-    }
     L.info(`update ${model} with id ${contribution.ID}`);
     return prisma.contributions
       .update({
@@ -323,7 +315,7 @@ async  downloadFilesAndZip(files: FileDTO[]) {
       })
       .then((updated) => {
         if(!(updated.StatusID === contribution.StatusID)) {
-
+          //TODO NOTI
         }
 
         return Promise.resolve(updated);

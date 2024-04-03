@@ -113,8 +113,8 @@ export class NotificationService implements ISuperService<Notification> {
           })
           .then((r) => {
             L.info(r.data);
-            // notification : Notification = {
-            //   NotificationSentTypeID: N,
+            // var notification : Notification = {
+            //   NotificationSentTypeID: type.,
             //   EventID: notification.EventID || 0,
             //   SentTo: notification.SentTo,
             //   SentAt: notification.SentAt,
@@ -123,7 +123,7 @@ export class NotificationService implements ISuperService<Notification> {
             //   Status: notification.Status,
             //   IsCancelled: notification.IsCancelled || false,
             // };
-            // this.create()
+            // this.create(notification);
             return Promise.resolve({ success: true });
           });
       } else {

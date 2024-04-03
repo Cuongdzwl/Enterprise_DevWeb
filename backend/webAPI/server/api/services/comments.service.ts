@@ -81,7 +81,7 @@ export class CommentsService implements ISuperService<Comment> {
         .create({
           data: {
             Content: comment.Content,
-            ContributionID: comment.ContributionID,
+            ContributionID: Number(comment.ContributionID),
             UserID: comment.UserID,
           },
         })
@@ -193,13 +193,11 @@ export class CommentsService implements ISuperService<Comment> {
         isValid: false,
         error: CommentExceptionMessage.INVALID_CONTRIBUTIONID,
         message:
-          'Contribution ID must be a number with a maximum of 20 digits.',
+          'Contribution ID must be provided',
       };
     }
     if (
-      !/^\d{1,20}$/.test(comment.ContributionID.toString()) ||
-      !/^\d{1,20}$/.test(comment.UserID.toString())
-    ) {
+      !/^\d{1,20}$/.test(comment.ContributionID.toString())) {
       return {
         isValid: false,
         error: CommentExceptionMessage.INVALID_CONTRIBUTIONID,
@@ -207,46 +205,13 @@ export class CommentsService implements ISuperService<Comment> {
       };
     }
     const contributionExists = await prisma.contributions.findUnique({
-      where: { ID: comment.ContributionID },
+      where: { ID: Number(comment.ContributionID) },
     });
     if (!contributionExists) {
       return {
         isValid: false,
         error: CommentExceptionMessage.INVALID_CONTRIBUTIONID,
         message: 'Referenced Contribution does not exist.',
-      };
-    }
-    if (
-      comment.UserID === null ||
-      comment.UserID === undefined ||
-      !comment.UserID
-    ) {
-      return {
-        isValid: false,
-        error: CommentExceptionMessage.INVALID_CONTRIBUTIONID,
-        message: 'User ID must be a number with a maximum of 20 digits.',
-      };
-    }
-
-    if (
-      !/^\d{1,20}$/.test(comment.UserID.toString()) ||
-      !/^\d{1,20}$/.test(comment.UserID.toString())
-    ) {
-      return {
-        isValid: false,
-        error: CommentExceptionMessage.INVALID_CONTRIBUTIONID,
-        message: 'User ID must be numbers and not exceed 20 digits.',
-      };
-    }
-
-    const userExists = await prisma.users.findUnique({
-      where: { ID: comment.UserID },
-    });
-    if (!userExists) {
-      return {
-        isValid: false,
-        error: CommentExceptionMessage.INVALID_USERID,
-        message: 'Referenced User ID does not exist.',
       };
     }
 

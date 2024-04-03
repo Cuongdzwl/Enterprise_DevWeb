@@ -887,12 +887,12 @@ paths:
           schema:
             type: number
           description: JSON response depth parameter
-        - in: file
+        - in: query
           name: file
           schema:
             type: boolean
           description: JSON response file parameter
-        - in: comment
+        - in: query
           name: comment
           schema:
             type: boolean

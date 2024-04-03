@@ -123,7 +123,7 @@ export class ContributionsController implements ISuperController {
       CreatedAt,
       UpdatedAt,
     } = req.body;
-    console.log({ IsPublic, IsApproved });
+    console.log();
     let isPublic = true;
     let isApproved = true;
     if (IsPublic === 'false') {
@@ -144,6 +144,7 @@ export class ContributionsController implements ISuperController {
       CreatedAt,
       UpdatedAt,
     };
+    L.info(contributionData);
     const validations = await ContributionsService.validateConstraints(
       contributionData
     );

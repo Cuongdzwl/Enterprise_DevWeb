@@ -3,7 +3,6 @@ import L from '../../common/logger';
 import { EventExceptionMessage, ExceptionMessage } from '../common/exception';
 import { PrismaClient } from '@prisma/client';
 import { ISuperService } from '../interfaces/ISuperService.interface';
-import { error } from 'console';
 import notificationsService from './notifications.service';
 import usersService from './users.service';
 import { User } from '../models/User';
@@ -15,7 +14,7 @@ import { Notification } from '../models/Notification';
 const prisma = new PrismaClient();
 const model = 'event';
 export class EventsService implements ISuperService<Event> {
-  all(depth?: number,isPublic?: boolean): Promise<any> {
+  all(depth?: number): Promise<any> {
     var select: any = {
       ID: true,
       Name: true,
@@ -29,9 +28,6 @@ export class EventsService implements ISuperService<Event> {
 
     if (depth == 1) {
       select.Faculty = { select: { ID: true, Name: true } };
-    }
-    if(isPublic){
-      
     }
     const events = prisma.events.findMany({
       select,
@@ -65,7 +61,6 @@ export class EventsService implements ISuperService<Event> {
           StatusID: true,
           Files: {
             select: { ID: true, Url: true },
-            where: { ContributionID: id },
           },
           Status: { select: { ID: true, Name: true } },
         },
