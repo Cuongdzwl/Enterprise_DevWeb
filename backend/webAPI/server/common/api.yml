@@ -500,6 +500,25 @@ paths:
       responses:
         '200':
           description: File deleted successfully
+  /files/{id}/download:
+    get:
+      tags:
+        - Files
+      summary: Download a file by ID as a zip
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: File downloaded successfully
+          content:
+            application/zip:
+              schema:
+                type: string
+                format: binary
   /files/upload/{id}:
     put:
       tags:

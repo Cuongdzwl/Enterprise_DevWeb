@@ -30,6 +30,22 @@ export class FilesController implements ISuperController {
       else res.status(404).end();
     });
   }
+  async download(req: Request, res: Response): Promise<void>{
+    const id = Number.parseInt(req.params.id);
+    const file = await FileService.byId(id);
+    FileService.downloadBlobToFile(file).then((zipContent) => {
+        if (zipContent) {
+            res.setHeader('Content-Type', 'application/zip');
+            res.setHeader('Content-Disposition', 'attachment; filename="download.zip"');
+            res.send(zipContent);
+        } else {
+            res.status(404).send('File not found or failed to create zip');
+        }
+    }).catch(error => {
+        console.error(error);
+        res.status(500).send('Server error');
+    });
+  }
 
   async create(req: Request, res: Response): Promise<void> { 
     try {

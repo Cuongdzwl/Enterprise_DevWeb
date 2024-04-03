@@ -307,7 +307,7 @@ async  downloadFilesAndZip(files: FileDTO[]) {
         message: validations.message,
       });
     }
-    L.info(`update ${model} with id ${contribution.ID}`);
+    L.info(`update ${model} with id ${id}`);
     return prisma.contributions
       .update({
         where: { ID: id },
