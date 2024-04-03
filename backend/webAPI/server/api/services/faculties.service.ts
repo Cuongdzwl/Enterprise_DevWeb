@@ -4,6 +4,7 @@ import { PrismaClient } from '@prisma/client';
 import { ISuperService } from '../interfaces/ISuperService.interface';
 import { ExceptionMessage, FacultyExceptionMessage } from '../common/exception';
 import l from '../../common/logger';
+import { Report } from '../models/Report';
 
 const prisma = new PrismaClient();
 const model = 'faculties';
@@ -143,6 +144,36 @@ export class FacultiesService implements ISuperService<Faculty> {
       });
     }
   }
+  async dashboard(facultyID: number){
+    const currentYear = new Date().getFullYear();
+    let report :Report = {contributionsOfFaculty: 0,contributionsException: 0,contributionsFacultyAndByYear: 0,contributorsByFacultyAndYear: 0};
+    report.contributionsException = await prisma.contributions.count({where: {ID: facultyID},});
+    const contributionsByFacultyThisYear = await prisma.$queryRaw`
+    SELECT 
+      e.FacultyID, 
+      COUNT(*) as TotalContributions
+    FROM 
+      contributions AS c
+    JOIN events AS e ON c.EventID = e.ID
+    WHERE 
+      EXTRACT(YEAR FROM e.ClosureDate) = ${currentYear}
+    GROUP BY 
+      e.FacultyID;
+    `;
+    console.log(contributionsByFacultyThisYear)
+    report.contributionsException = await prisma.contributions.count({
+      where: {
+        Comments: {
+          none: {},
+        },
+        Event: {
+          ClosureDate: {
+            lt: new Date(new Date().setDate(new Date().getDate() - 14)),
+          },
+        },
+      },
+    });
+      }
   async validateConstraints(
     faculty: Faculty
   ): Promise<{ isValid: boolean; error?: string; message?: string }> {

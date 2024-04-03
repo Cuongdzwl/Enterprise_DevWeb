@@ -2,6 +2,7 @@ import FacultyService from '../../services/faculties.service';
 import { Request, Response } from 'express';
 import { ISuperController } from '../../interfaces/ISuperController.interface';
 import { PrismaClient } from '@prisma/client';
+import facultiesService from '../../services/faculties.service';
 
 const prisma = new PrismaClient();
 
@@ -101,6 +102,10 @@ export class FacultiesController implements ISuperController {
     } catch (error) {
       res.status(400).json({ error: error.message }).end();
     }
+  }
+  dashboard (req: Request, res: Response) : void {
+    const id = Number.parseInt(req.params['id']);
+    facultiesService.dashboard(id)
   }
   async public() {}
 }
