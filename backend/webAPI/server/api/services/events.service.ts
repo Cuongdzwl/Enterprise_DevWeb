@@ -11,6 +11,8 @@ import { NotificationSentType } from '../models/NotificationSentType';
 import { NotificationSentThrough } from '../models/NotificationSentThrough';
 import { TransactionDTO } from '../models/DTO/TransactionDTO';
 import { Notification } from '../models/Notification';
+import contributionsService from '../services/contributions.service';
+import { Contribution } from '../models/Contribution';
 
 const prisma = new PrismaClient();
 const model = 'event';
@@ -37,7 +39,7 @@ export class EventsService implements ISuperService<Event> {
     return Promise.resolve(events);
   }
 
-  byId(id: number, depth?: number, contribution?: boolean): Promise<any> {
+  async byId(id: number, depth?: number, contribution?: boolean): Promise<any> {
     L.info(id + '');
     var select: any = {
       ID: true,
@@ -48,40 +50,76 @@ export class EventsService implements ISuperService<Event> {
       CreatedAt: true,
       UpdatedAt: true,
       FacultyID: true,
-    };
-
-    if (depth == 1) {
-      select.Faculty = { select: { ID: true, Name: true } };
-    }
-    if (contribution == true) {
-      select.Contributions = {
+      Contributions: contribution ? {
         select: {
           ID: true,
           Name: true,
           Content: true,
           StatusID: true,
           Files: {
-            select: { ID: true, Url: true },
-            where: { ContributionID: id },
+            select: { ID: true, Url: true, CreatedAt: true, UpdatedAt: true, ContributionID: true },
           },
           Status: { select: { ID: true, Name: true } },
         },
-        where: { EventID: id },
-      };
-    }
+      } : undefined,
+    };
 
-    return prisma.events
-      .findUnique({
-        select,
-        where: { ID: id },
-      })
-      .then((r) => {
-        L.info(`fetch ${model} with id ${id}`);
-        return Promise.resolve(r);
-      })
-      .catch((err) => {
-        return Promise.reject(err);
-      });
+    if (depth == 1) {
+      select.Faculty = { select: { ID: true, Name: true } };
+    }
+    const event = await prisma.events
+    .findUnique({
+      select,
+      where: { ID: id },
+    })
+    if (contribution == true){
+      try {
+        const eventContributions = await prisma.events.findUnique({
+          select: {
+            ID: true,
+            Name: true,
+            Description: true,
+            ClosureDate: true,
+            FinalDate: true,
+            CreatedAt: true,
+            UpdatedAt: true,
+            FacultyID: true,
+            Contributions: {
+              select: {
+                ID: true,
+                Name: true,
+                Content: true,
+                StatusID: true,
+                Files: {
+                  select: { ID: true, Url: true, CreatedAt: true, UpdatedAt: true, ContributionID: true },
+                },
+              },
+            },
+          },
+          where: { ID: id },
+        });
+    
+        if (eventContributions && eventContributions.Contributions) {
+          const allFiles = eventContributions.Contributions.flatMap(contribution => contribution.Files);
+    
+          const filesAsDTOs = contributionsService.toFileDTOArray(allFiles);
+    
+          const { textFiles, imageFiles } = contributionsService.classifyFiles(filesAsDTOs);
+    
+          return {
+            ...event,
+            TextFiles: textFiles,
+            ImageFiles: imageFiles,
+          };
+        }
+        return event
+    } catch (error) {
+      L.error(`Failed to fetch event with id ${id}: ${error}`);
+      L.error(` failed: ${error}`); 
+    }
+  }
+  return event
+  
   }
   filter(filter: string, key: string): Promise<any> {
     const events = prisma.events.findMany({
@@ -123,8 +161,9 @@ export class EventsService implements ISuperService<Event> {
         });
       });
   }
-  delete(id: number): Promise<any> {
+  async delete(id: number): Promise<any> {
     L.info(`delete ${model} with id ${id}`);
+    await prisma.scheduledNotifications.deleteMany({where:{EventID: id}})
     return prisma.events
       .delete({
         where: { ID: id },
