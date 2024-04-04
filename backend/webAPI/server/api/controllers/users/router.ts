@@ -7,7 +7,7 @@ export default express
   .get('/', controller.all)
   .get('/:id',authenticateToken,authorizeRole("admin"), controller.byId)
   .delete('/:id',authenticateToken,authorizeRole("admin"), controller.delete)
-  .put('/:id',authenticateToken,authorizeRole("admin"), controller.update);
+  .put('/:id', controller.update);
 
 
   

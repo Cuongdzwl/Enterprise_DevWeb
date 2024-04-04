@@ -168,7 +168,7 @@ export class UsersService implements ISuperService<User> {
   // Update
   async update(id: number, user: User, updateProfile?: boolean): Promise<any> {
     L.info(`update ${model} with id ${id}`);
-
+    updateProfile
     const result = await prisma.users.findUnique({ where: { ID: id } });
 
     if (!result)
@@ -201,11 +201,23 @@ export class UsersService implements ISuperService<User> {
     if (updateProfile && updateProfile == true) {
       (data.RoleID = result.RoleID), (data.FacultyID = result.FacultyID);
     }
-    const updatedUser = await prisma.users.update({
-      where: { ID: id },
-      data,
-    });
-    return Promise.resolve(new UserDTO().map(updatedUser as User));
+    try {
+      const updatedUser = await prisma.users.update({
+          where: { ID: id },
+          data,
+      });
+      return Promise.resolve(new UserDTO().map(updatedUser as User));
+  } catch (error) {
+      if (error.code === 'P2002') {
+          // Handle unique constraint violation
+          return Promise.reject({
+              error: UserExceptionMessage.CONSTRAINT_VIOLATION,
+              message: 'A user with the provided email already exists.',
+          });
+      }
+      // Handle other errors
+      return Promise.reject(error);
+  }
   }
 
   async validateConstraints(
@@ -233,32 +245,36 @@ export class UsersService implements ISuperService<User> {
           };
         }
       }
-      // Validate Email
-      if (!user.Email || !/\S+@\S+\.\S+/.test(user.Email)) {
-        return {
-          isValid: false,
-          error: UserExceptionMessage.INVALID,
-          message:
-            "Email must contain '@' and cannot contain other special characters.",
-        };
-      }
 
+
+
+    
+      if(!user.ID){
+      // Validate Email
+        if (!user.Email || !/\S+@\S+\.\S+/.test(user.Email)) {
+          return {
+            isValid: false,
+            error: UserExceptionMessage.INVALID,
+            message:
+              "Email must contain '@' and cannot contain other special characters.",
+          };
+        }
       // Validate Uniquely Existing Fields
-      const userNameExisted = await prisma.users.findFirst({
-        where: {
-          Email: user.Email,  // Name Email only have 1 in server
-        },
-      });
-      if (userNameExisted) {
-        return {
-          isValid: false,
-          error: UserExceptionMessage.EMAIL_EXISTED,
-          message: `A ${userNameExisted} already exists.`,
-        };
+        const userNameExisted = await prisma.users.findFirst({
+          where: {
+            Email: user.Email,  // Name Email only have 1 in server
+          },
+        });
+        if (userNameExisted) {
+          return {
+            isValid: false,
+            error: UserExceptionMessage.EMAIL_EXISTED,
+            message: `A ${userNameExisted} already exists.`,
+          };
+        }
       }
-      
       // Validate Role ID
-      if(user.RoleID === null || user.RoleID === undefined || !user.FacultyID){
+      if(user.RoleID === null || user.RoleID === undefined || !user.RoleID||!Number.isInteger(user.RoleID)||typeof(user.RoleID) !== 'number'){
         return {
           isValid: false,
           error: UserExceptionMessage.INVALID_ROLEID,

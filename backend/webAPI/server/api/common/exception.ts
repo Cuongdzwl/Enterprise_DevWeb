@@ -13,6 +13,7 @@ export class UserExceptionMessage extends ExceptionMessage{
     public static readonly ROLE_ALREADY_ASSIGNED_IN_FACULTY: string = "Faculty have only one user with role Marketing Coordinator"
     public static readonly ROLE_ALREADY_ASSIGNED_IN_SEVER: string = "Server have only one user with role Marketing Manager"
     public static readonly  EMAIL_EXISTED: string = "Email already exists"
+    public static readonly CONSTRAINT_VIOLATION: string = "Information already exists"
    
     
 }
