@@ -99,19 +99,22 @@ export class EventsService implements ISuperService<Event> {
         });
     
         if (eventContributions && eventContributions.Contributions) {
-          const allFiles = eventContributions.Contributions.flatMap(contribution => contribution.Files);
+          const contributionsWithFiles = await Promise.all(eventContributions.Contributions.map(async (contribution) => {
+            const allFiles = contribution.Files;
+            const filesAsDTOs = contributionsService.toFileDTOArray(allFiles);
+            const { textFiles, imageFiles } = contributionsService.classifyFiles(filesAsDTOs);
     
-          const filesAsDTOs = contributionsService.toFileDTOArray(allFiles);
-    
-          const { textFiles, imageFiles } = contributionsService.classifyFiles(filesAsDTOs);
-    
-          return {
-            ...event,
-            TextFiles: textFiles,
-            ImageFiles: imageFiles,
-          };
-        }
-        return event
+            return {
+                ...contribution,
+                TextFiles: textFiles,
+                ImageFiles: imageFiles,
+            };
+        }));
+        return {
+          ...eventContributions,
+          Contributions: contributionsWithFiles,
+        };
+      }
     } catch (error) {
       L.error(`Failed to fetch event with id ${id}: ${error}`);
       L.error(` failed: ${error}`); 

@@ -32,7 +32,7 @@ export class UsersController implements ISuperController {
     }
   }
   async create(req: Request, res: Response): Promise<void> {
-    const validations = await UsersService.validateConstraints(req.body);
+    const validations = await UsersService.validateConstraints(req.body, false);
     if (!validations.isValid) {
       res
         .status(400)
@@ -64,7 +64,7 @@ export class UsersController implements ISuperController {
   }
 
   async update(req: Request, res: Response): Promise<void> {
-    const validations = await UsersService.validateConstraints(req.body);
+    const validations = await UsersService.validateConstraints(req.body, true);
     if (!validations.isValid) {
       res
         .status(400)
