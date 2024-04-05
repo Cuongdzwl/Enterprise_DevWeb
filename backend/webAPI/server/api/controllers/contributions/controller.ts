@@ -7,6 +7,7 @@ import FilesService from '../../services/files.service';
 import contributionsService from '../../services/contributions.service';
 import { Contribution } from '../../models/Contribution';
 import filesService from '../../services/files.service';
+import { Status } from '../../models/Status';
 
 const prisma = new PrismaClient();
 export class ContributionsController implements ISuperController {
@@ -36,42 +37,8 @@ export class ContributionsController implements ISuperController {
 
   async create(req: Request, res: Response): Promise<void> {
     try {
-      const {
-        Name,
-        Content,
-        IsPublic,
-        IsApproved,
-        EventID,
-        UserID,
-        StatusID,
-        LastEditByID,
-        CreatedAt,
-        UpdatedAt,
-      } = req.body;
-      console.log({ IsPublic, IsApproved });
-      let isPublic = true;
-      let isApproved = true;
-      if (IsPublic === 'false') {
-        isPublic = false;
-      }
-      if (IsApproved === 'false') {
-        isApproved = false;
-      }
-      const contributionData = {
-        Name,
-        Content,
-        IsPublic: isPublic,
-        IsApproved: isApproved,
-        EventID: parseInt(EventID),
-        UserID: parseInt(UserID),
-        StatusID: parseInt(StatusID),
-        LastEditByID,
-        CreatedAt,
-        UpdatedAt,
-      };
-
       contributionsService
-        .create(contributionData)
+        .create(req.body)
         .then((createdContribution) => {
           const filesObject = req.files as {
             [fieldname: string]: Express.Multer.File[];
@@ -91,7 +58,7 @@ export class ContributionsController implements ISuperController {
             .status(201)
             .json({ message: 'Contribution and files created successfully' });
         })
-        .catch((_) => {
+        .catch(() => {
           res.status(400).json({ message: 'Created Failed' });
         });
     } catch (error) {
@@ -102,6 +69,9 @@ export class ContributionsController implements ISuperController {
   delete(req: Request, res: Response): void {
     const id = Number.parseInt(req.params['id']);
     try {
+      // cancel notification
+      // delete notification
+      // delete contribution
       ContributionsService.delete(id).then((r) => {
         if (r) res.json(r);
         else res.status(404).end();
@@ -112,39 +82,7 @@ export class ContributionsController implements ISuperController {
   }
 
   async update(req: Request, res: Response): Promise<void> {
-    const {
-      Name,
-      Content,
-      IsPublic,
-      IsApproved,
-      EventID,
-      UserID,
-      StatusID,
-      LastEditByID,
-      CreatedAt,
-      UpdatedAt,
-    } = req.body;
-    console.log();
-    let isPublic = true;
-    let isApproved = true;
-    if (IsPublic === 'false') {
-      isPublic = false;
-    }
-    if (IsApproved === 'false') {
-      isApproved = false;
-    }
-    const contributionData = {
-      Name,
-      Content,
-      IsPublic: isPublic,
-      IsApproved: isApproved,
-      EventID: parseInt(EventID),
-      UserID: parseInt(UserID),
-      StatusID: parseInt(StatusID),
-      LastEditByID,
-      CreatedAt,
-      UpdatedAt,
-    };
+    // contribution.LastEditByID = Number(res.locals.user.user.ID);
     // L.info(contributionData);
     // const validations = await ContributionsService.validateConstraints(
     //   contributionData
@@ -156,7 +94,7 @@ export class ContributionsController implements ISuperController {
     //     .end();
     //   return;
     // }
-    const id = Number.parseInt(req.params['id']);
+    const id = Number.parseInt(req.params.id);
     if (!/^\d{1,20}$/.test(id.toString())) {
       res
         .status(400)
@@ -168,10 +106,11 @@ export class ContributionsController implements ISuperController {
         .end();
       return;
     }
-    const contributionExist = await prisma.contributions.findUnique({
+    const contributionFound = await prisma.contributions.findUnique({
       where: { ID: id },
     });
-    if (!contributionExist) {
+
+    if (!contributionFound) {
       res
         .status(400)
         .json({
@@ -181,17 +120,60 @@ export class ContributionsController implements ISuperController {
         .end();
       return;
     }
+    // var { ID, IsPublic, StatusID, Content, Name } = req.body;
+    // var contribution: any = {
+    //   IsPublic: IsPublic === 'true' ? true : false || Boolean(IsPublic),
+    //   StatusID : Number(StatusID),
+    //   Content,
+    //   Name,
+    // };
+    var contribution = req.body;
+    L.info(req.body);
+    L.info(id + '');
+    L.info(contribution);
+    L.info(contributionFound);
+    contribution.LastEditByID = Number(res.locals.user.user.ID + '');
+    try {
+      if (res.locals.user.user.RoleID === 4) {
+        // Student
+        contribution.IsApproved = false;
+        contribution.IsPublic = false;
+        contribution.StatusID = Status.PENDING;
+      } else if (res.locals.user.user.RoleID === 3) {
+        // Coordinator
+        //contribution.Content = contributionFound.Content as string;
+        // contribution.Name = contributionFound.Name as string;
+        if (contribution.StatusID == (Status.ACCEPTED as Number)) {
+          contribution.IsApproved = true;
+          contribution.IsPublic = req.body.IsPublic === 'true' ? true : false;
+        } else {
+          contribution.IsApproved = false;
+          contribution.IsPublic = false;
+        }
+
+      }
+    } catch (error) {
+      L.error(error);
+      res.status(400).json({ error: error.message }).end();
+      return 
+    }
+
+    L.info(contribution);
     contributionsService
-      .update(id, contributionData)
+      .update(id, contribution as Contribution)
       .then(async () => {
+        L.info(req.files);
         const filesObject = req.files as {
           [fieldname: string]: Express.Multer.File[];
         };
+        L.info(filesObject);
+
         let ContributionFile;
-        if (filesObject === null) {
+        if (Object.keys(filesObject).length === 0) {
           res
             .status(201)
             .json({ message: 'Contribution and files updated successfully' });
+          return;
         }
         for (let i = 0; i < 2; i++) {
           ContributionFile = await prisma.files.findFirst({
@@ -217,6 +199,7 @@ export class ContributionsController implements ISuperController {
           .json({ message: 'Contribution and files updated successfully' });
       })
       .catch((error) => {
+        L.error(error);
         return res.status(400).json({ error: error.message }).end();
       });
   }

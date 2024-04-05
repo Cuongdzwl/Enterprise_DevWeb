@@ -2,7 +2,7 @@ import FacultyService from '../../services/faculties.service';
 import { Request, Response } from 'express';
 import { ISuperController } from '../../interfaces/ISuperController.interface';
 import { PrismaClient } from '@prisma/client';
-import  EventsService  from '../../services/events.service';
+import EventsService from '../../services/events.service';
 import facultiesService from '../../services/faculties.service';
 import L from '../../../common/logger';
 
@@ -16,51 +16,45 @@ export class FacultiesController implements ISuperController {
   }
   async guest(req: Request, res: Response): Promise<void> {
     const depth = Number.parseInt(req.query.depth?.toString() ?? '');
-    const result = await FacultyService.all(depth, true);
+    const user = req.query.user?.toString() == 'true' ? true : false;
+    const result = await FacultyService.all(depth, user,true);
     res.json(result);
   }
   async guestById(req: Request, res: Response): Promise<void> {
-    var id = Number.parseInt(req.params['id']);
+    const id = Number.parseInt(req.params['id']);
     const depth = Number.parseInt(req.query.depth?.toString() ?? '');
-    const event = req.query.event?.toString() == 'true' ? true : false;
     const user = req.query.user?.toString() == 'true' ? true : false;
-    if (!(res.locals.user.user.RoleID == 1 || 2)) {
-      id = res.locals.user.user.FacultyID;
-    }
-    try {
-      await FacultyService.byId(id, depth, event, user, true).then((r) => {
+    const event = req.query.event?.toString() == 'true' ? true : false;
+    const contribution: boolean =
+      req.query.contribution?.toString() == 'true' ? true : false;
+    FacultyService.byId(id,2, event, user, true)
+      .then((r) => {
         if (r) res.json(r);
         else res.status(404).end();
+        return;
+      })
+      .catch((error) => {
+        res.status(400).json({ error: error }).end();
       });
-    } catch (error) {
-      res.status(400).json({ error: error.message }).end();
-    }
-  }
-  async guestEvents(req: Request, res: Response): Promise<void> {
-      // check if faculty enable guest
-      const id = Number.parseInt(req.params['id']);
-      const depth = Number.parseInt(req.query.depth?.toString() ?? '');
-      const user = req.query.user?.toString() == 'true' ? true : false;
-      const contribution: boolean =
-        req.query.contribution?.toString() == 'true' ? true : false;
-  
-      facultiesService.all(1,user)
-        .then((r) => {
-          if (r) res.json(r);
-          else res.status(404).end();
-          return;
-        })
-        .catch((error) => {
-          res.status(400).json({ error: error }).end();
-        });
   }
 
   async guestEventContributions(req: Request, res: Response): Promise<void> {
-    var id = Number.parseInt(req.params['id']);
-    var eventid = Number.parseInt(req.params['eventid']);
+    const id = Number.parseInt(req.params['id']);
     const depth = Number.parseInt(req.query.depth?.toString() ?? '');
-    const result = await FacultyService.all(depth, true);
-    res.json(result);
+    const user = req.query.user?.toString() == 'true' ? true : false;
+    const eventId = Number.parseInt(req.params['eventid']);
+    const contributionid = Number.parseInt(req.params['contributionid']);
+    const contribution: boolean =
+      req.query.contribution?.toString() == 'true' ? true : false;
+    FacultyService.byId(id,3,true,user,true,contributionid)
+      .then((r) => {
+        if (r) res.json(r);
+        else res.status(404).end();
+        return;
+      })
+      .catch((error) => {
+        res.status(400).json({ error: error }).end();
+      });
   }
 
   async byId(req: Request, res: Response): Promise<void> {
@@ -68,11 +62,12 @@ export class FacultiesController implements ISuperController {
     const depth = Number.parseInt(req.query.depth?.toString() ?? '');
     const event = req.query.event?.toString() == 'true' ? true : false;
     const user = req.query.user?.toString() == 'true' ? true : false;
+    // Authorize
     if (!(res.locals.user.user.RoleID == 1 || 2)) {
       id = res.locals.user.user.FacultyID;
     }
     try {
-      await FacultyService.byId(id, depth, event, user).then((r) => {
+      await FacultyService.byId(id, depth, event, user,false).then((r) => {
         if (r) res.json(r);
         else res.status(404).end();
       });
@@ -153,34 +148,62 @@ export class FacultiesController implements ISuperController {
       res.status(400).json({ error: error.message }).end();
     }
   }
-  async dashboard (req: Request, res: Response) : Promise<void> {
+  async dashboard(req: Request, res: Response): Promise<void> {
     try {
-      const { facultyId, year } = req.body;
-      // Validate input
+      var facultyId = Number.parseInt(req.params['id']);
+      const year = parseInt(req.query.year?.toString() ?? '');
+      L.info(`${facultyId}`);
+      L.info(`${year}`);
+      if (Number.isNaN(facultyId)) {
+        res.status(400).json({ error: 'Invalid facultyId provided.' }).end();
+        return;
+      }
+      // // Validate input
       if (!Number.isInteger(facultyId) || facultyId < 1) {
-        res.status(400).json({ error: 'Invalid facultyId: must be an integer greater than 0.' }).end();
+        res
+          .status(400)
+          .json({
+            error: 'Invalid facultyId: must be an integer greater than 0.',
+          })
+          .end();
         return;
       }
-  
+      if (!/^\d{1,20}$/.test(facultyId.toString())) {
+        res
+          .status(400)
+          .json({
+            error: 'Faculty ID must be a number with a maximum of 20 digits.',
+          })
+          .end();
+        return;
+      }
+
       if (!Number.isInteger(year) || year < 1) {
-        res.status(400).json({ error: 'Invalid year: must be an integer greater than 0.' }).end();
+        res
+          .status(400)
+          .json({ error: 'Invalid year: must be an integer greater than 0.' })
+          .end();
         return;
-      }
-      if (!facultyId || !year) {
-        res.status(400).json({ error: 'FacultyId and year are required.' });
       }
 
       // Assuming facultiesService.getDashboardDataForFacultyYear has been implemented
       const dashboardData = await facultiesService.dashboard(facultyId, year);
       if (!dashboardData) {
-        res.status(404).json({ error: 'No dashboard data found for the provided faculty ID and year.' }).end();
+        res
+          .status(404)
+          .json({
+            error:
+              'No dashboard data found for the provided faculty ID and year.',
+          })
+          .end();
         return;
       }
 
       res.json(dashboardData);
     } catch (error) {
-      console.error("Dashboard error:", error);
-      res.status(500).json({ error: 'Internal Server Error' });
+      console.error('Dashboard error:', error);
+      res.status(500).json({ error: 'Internal Server Error' }).end();
+      return;
     }
   }
   // async public() {}

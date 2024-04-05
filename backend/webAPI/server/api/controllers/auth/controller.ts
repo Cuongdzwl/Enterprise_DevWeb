@@ -60,7 +60,7 @@ export class AuthController implements IAuthController {
         }
       })
       .catch((err) => {
-        res.status(400).json('error: ' + err.message);
+        res.status(400).json(err);
       });
   }
 
@@ -120,8 +120,13 @@ export class AuthController implements IAuthController {
   async resetPassword(req: Request, res: Response): Promise<void> {
     const token: string = req.query.token?.toString() as string;
     const newPassword: string = req.body.newPassword;
+    const result = UserService.validatePassword(newPassword);
+    if(!result.isValid){
+      res.status(400).json({ error:result.error ,message: result.message }).end();
+      return;
+    }
     if (req.query.token == null) {
-      res.status(401).json({ message: 'Missing token' }).end();
+      res.status(400).json({ message: 'Missing token' }).end();
       return;
     }
     await authService

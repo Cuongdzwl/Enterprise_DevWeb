@@ -10,7 +10,7 @@ const prisma = new PrismaClient();
 const model = 'faculties';
 
 export class FacultiesService implements ISuperService<Faculty> {
-  all(depth?: number,user?: boolean, isPublic?: boolean,publicEventId?: number): Promise<any> {
+  all(depth?: number, user?: boolean, isPublic?: boolean): Promise<any> {
     var select: any = {
       ID: true,
       Name: true,
@@ -21,21 +21,12 @@ export class FacultiesService implements ISuperService<Faculty> {
     };
     // depth 1 is for public faculties
     if (depth == 1) {
-      select.Events = { select: { ID: true, Name: true ,Description : true } };
-      if(user == true)
-        select.Users = { select: { ID: true, Name: true } };
+      select.Events = { select: { ID: true, Name: true, Description: true } };
+      if (user == true) select.Users = { select: { ID: true, Name: true } };
     }
-    if (isPublic) { 
+    if (isPublic) {
       var where: any = { IsEnabledGuest: true };
-      // depth 2 is for public events         
-      if(depth == 2)
-      if(publicEventId){
-        select.Events = {
-          select: { ID: true, Name: true ,Description : true ,CreatedAt : true, UpdatedAt : true, FacultyID : true
-          },
-          where: { FacultyID: publicEventId }
-        };
-      }
+      // depth 2 is for public events
     } else {
       var where = undefined;
     }
@@ -47,12 +38,13 @@ export class FacultiesService implements ISuperService<Faculty> {
     return Promise.resolve(faculties);
   }
   // Filter
-  byId(
+  async byId(
     id: number,
     depth?: number,
     event?: boolean,
     user?: boolean,
-    isPublic?: boolean
+    isPublic?: boolean,
+    contributionid?: number
   ): Promise<any> {
     var select: any = {
       ID: true,
@@ -62,32 +54,103 @@ export class FacultiesService implements ISuperService<Faculty> {
       CreatedAt: true,
       UpdatedAt: true,
     };
-
-    if (depth == 1) {
-
-    }
-    var where: any = { FacultyID: id };
+    var where: any = { ID: id };
     if (isPublic) {
       where.IsEnabledGuest = true;
     }
-
-    if (event == true) {
-      select.Events = {
-        select: { ID: true, Name: true },
-        where,
-      };
+    if (depth == 1) {
+      if (user == true && isPublic == false) {
+        select.Users = {
+          select: { ID: true, Name: true },
+          where: { FacultyID: id },
+        };
+      }
+      if (event == true && isPublic == false) {
+        // Get detail public contribution
+        select.Events = {
+          select: {
+            ID: true,
+            Name: true,
+            Description: true,
+            CreatedAt: true,
+            UpdatedAt: true,
+            FacultyID: true,
+          },
+          where: { FacultyID: id },
+        };
+      }
     }
-    if (user == true) {
-      select.Users = {
-        select: { ID: true, Name: true },
-        where: { FacultyID: id },
-      };
+    if (depth == 2) {
+      // Get public contributions
+      if (isPublic && isPublic == true) {
+        L.info(`fetch public faculties events with id ${id}`);
+        const events = await prisma.events.findMany({
+          select: {
+            ID: true,
+          },
+          where: {
+            FacultyID: id,
+            Faculty: { IsEnabledGuest: true },
+          },
+        });
+
+        const eventIDs = events.map((event) => event.ID);
+
+        const contributions = prisma.contributions.findMany({
+          where: {
+            AND: [
+              { IsPublic: true },
+              {
+                EventID: {
+                  in: eventIDs,
+                },
+              },
+            ],
+          },
+        });
+        return Promise.resolve(contributions);
+      }
+    }
+    if (depth == 3) {
+      if (contributionid && isPublic && isPublic == true) {
+        L.info(`fetch public contribution with id ${contributionid}`);
+        const events = await prisma.events.findMany({
+          select: {
+            ID: true,
+          },
+          where: {
+            FacultyID: id,
+            Faculty: { IsEnabledGuest: true },
+          },
+        });
+
+        const eventIDs = events.map((event) => event.ID);
+
+        const contributions = prisma.contributions
+          .findMany({
+            where: {
+              AND: [
+                { ID: contributionid},
+                { IsPublic: true },
+                {
+                  EventID: {
+                    in: eventIDs,
+                  },
+                },
+              ],
+            },
+          })
+          .catch((error) => {
+            return Promise.reject(error);
+          });
+        return Promise.resolve(contributions);
+      }
     }
 
     L.info(`fetch ${model} with id ${id}`);
     const faculty = prisma.faculties.findUnique({
       select,
-      where: { ID: id },
+      where,
     });
     return Promise.resolve(faculty);
   }
@@ -164,90 +227,93 @@ export class FacultiesService implements ISuperService<Faculty> {
         error: ExceptionMessage.INVALID,
         message: ExceptionMessage.BAD_REQUEST,
       });
-}
+    }
   }
-  async dashboard(facultyID: number, year: number){
-  // Validate input
-  if (!Number.isInteger(facultyID) || !Number.isInteger(year)) {
-    return "Invalid input: 'facultyID' and 'year' must be integers.";
-  }
-
-  try {
-    const contributionsOfFaculty = await prisma.contributions.count({
-      where: {
-        Event: {
-          FacultyID: facultyID,
-          CreatedAt: {
-            gte: new Date(year, 0, 1),
-            lte: new Date(year, 11, 31),
+  async dashboard(facultyID: number, year: number) {
+    // Validate input
+    try {
+      if (!Number.isInteger(facultyID) || !Number.isInteger(year)) {
+        return "Invalid input: 'facultyID' and 'year' must be integers.";
+      }
+      const contributionsOfFaculty = await prisma.contributions.count({
+        where: {
+          Event: {
+            FacultyID: facultyID,
+            CreatedAt: {
+              gte: new Date(year, 0, 1),
+              lte: new Date(year, 11, 31),
+            },
           },
         },
-      },
-    });
+      });
 
-const allContributions = await prisma.contributions.findMany({
-  where: {
-    Event: {
-      FacultyID: facultyID,
-      CreatedAt: {
-        gte: new Date(year, 0, 1),
-        lte: new Date(year, 11, 31),
-      },
-    },
-  },
-  include: {
-    Event: true, 
-    Comments: true, 
-  }
-});
-const contributionsException = allContributions.filter(contribution => {
-  if (contribution.Comments.length == 0) {
-    console.log(1)
-    const createdDate = new Date(contribution.CreatedAt);
-    const closureDate = new Date(contribution.Event.ClosureDate);
-    console.log(createdDate)
-    console.log(closureDate)
-    const limitDate = new Date(closureDate.setDate(closureDate.getDate() + 14));
-    console.log(limitDate)
-    return new Date() > limitDate;
-  }
-  return false;
-}).length;
-
-    const totalContributionsInYear = await prisma.contributions.count({
-      where: {
-        Event: {
-          CreatedAt: {
-            gte: new Date(year, 0, 1),
-            lte: new Date(year, 11, 31),
+      const allContributions = await prisma.contributions.findMany({
+        where: {
+          Event: {
+            FacultyID: facultyID,
+            CreatedAt: {
+              gte: new Date(year, 0, 1),
+              lte: new Date(year, 11, 31),
+            },
           },
         },
-      },
-    });
+        include: {
+          Event: true,
+          Comments: true,
+        },
+      });
+      const contributionsException = allContributions.filter((contribution) => {
+        if (contribution.Comments.length == 0) {
+          const createdDate = new Date(contribution.CreatedAt);
+          const closureDate = new Date(contribution.Event.ClosureDate);
+          const limitDate = new Date(
+            closureDate.setDate(closureDate.getDate() + 14)
+          );
+          return new Date() > limitDate;
+        }
+        return false;
+      }).length;
 
-    const contributionsFacultyAndByYear = totalContributionsInYear > 0
-      ? (contributionsOfFaculty / totalContributionsInYear * 100)
-      : 0;
+      const totalContributionsInYear = await prisma.contributions.count({
+        where: {
+          Event: {
+            CreatedAt: {
+              gte: new Date(year, 0, 1),
+              lte: new Date(year, 11, 31),
+            },
+          },
+        },
+      });
 
-    const contributorsByFacultyAndYear = await prisma.users.count({
-      where: {
-        Contributions: {
-          some: {
-            Event: {
-              FacultyID: facultyID,
-              CreatedAt: {
-                gte: new Date(year, 0, 1),
-                lte: new Date(year, 11, 31),
+      const contributionsFacultyAndByYear =
+        totalContributionsInYear > 0
+          ? (contributionsOfFaculty / totalContributionsInYear) * 100
+          : 0;
+
+      const contributorsByFacultyAndYear = await prisma.users.count({
+        where: {
+          Contributions: {
+            some: {
+              Event: {
+                FacultyID: facultyID,
+                CreatedAt: {
+                  gte: new Date(year, 0, 1),
+                  lte: new Date(year, 11, 31),
+                },
               },
             },
           },
         },
-      },
-    });
-    return new Report(contributionsOfFaculty, contributionsException, contributionsFacultyAndByYear, contributorsByFacultyAndYear);
-  } catch (error) {
-    console.error("An error occurred: ", error);
-    return "An internal server error occurred.";
+      });
+      return new Report(
+        contributionsOfFaculty,
+        contributionsException,
+        contributionsFacultyAndByYear,
+        contributorsByFacultyAndYear
+      );
+    } catch (error) {
+      console.error('An error occurred: ', error);
+      return 'An internal server error occurred.';
     }
   }
   async validateConstraints(

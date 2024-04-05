@@ -61,7 +61,7 @@ export class AuthService {
       )(req);
     });
   }
-  async forgotPassword(email: string, origin: string): Promise<any> {
+  async forgotPassword(email: string, _: string): Promise<any> {
     const resolve: any = prisma.users
       .findUnique({ where: { Email: email } })
       .then((user) => {
@@ -88,7 +88,9 @@ export class AuthService {
             ResetPassword: token,
           },
         });
-        const resetLink = origin + '/auth/reset-password?token=' + token;
+        L.info("Updated User")
+        const site = process.env.SITE_DOMAIN || 'http://localhost:5173'
+        const resetLink = site + '/resetpassword?token=' + token;
         const securityEmail = 'cuongndgch211353@fpt.edu.vn';
         // Send email
         notificationsService.trigger(
@@ -99,10 +101,11 @@ export class AuthService {
         );
         return Promise.resolve({ isSuccess: true });
       })
-      .catch((_) => {
+      .catch((e) => {
         return Promise.reject({
           error: AuthExceptionMessage.BAD_REQUEST,
           message: ExceptionMessage.INVALID,
+          e:e
         });
       });
     return resolve;

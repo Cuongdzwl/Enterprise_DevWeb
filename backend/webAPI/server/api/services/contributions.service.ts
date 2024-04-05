@@ -213,8 +213,8 @@ async  downloadFilesAndZip(files: FileDTO[]) {
           Content: contribution.Content,
           IsPublic: false,
           IsApproved: false,
-          EventID: contribution.EventID,
-          UserID: contribution.UserID,
+          EventID: Number(contribution.EventID),
+          UserID: Number(contribution.UserID),
           StatusID: Status.PENDING as number,
         },
       })
@@ -300,18 +300,18 @@ async  downloadFilesAndZip(files: FileDTO[]) {
   }
 
   async update(id: number, contribution: Contribution): Promise<any> {
-    L.info(`update ${model} with id ${contribution.ID}`);
+    L.info(`update ${model} with id ${id}: `);
+    L.info(contribution);
     return prisma.contributions
       .update({
         where: { ID: id },
         data: {
           Name: contribution.Name,
           Content: contribution.Content,
-          IsPublic: contribution.IsPublic,
+          IsPublic: contribution.IsPublic === true ? true : false,
           IsApproved: contribution.StatusID === Status.ACCEPTED ? true : false,
-          EventID: contribution.EventID,
-          UserID: contribution.UserID,
-          StatusID: contribution.StatusID,
+          StatusID: Number(contribution.StatusID),
+          LastEditByID: contribution.LastEditByID,
         },
       })
       .then((updated) => {

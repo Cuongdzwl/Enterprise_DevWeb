@@ -5,7 +5,7 @@ export default express
   .Router()
   .post('/login', controller.login)
   .get('/user',authenticateToken, controller.profile)
-  .put('/user',authenticateToken, controller.updateProfile)
+  .patch('/user',authenticateToken, controller.updateProfile)
   .get('/logout',authenticateToken, controller.logout)
   .post('/forgotPassword', controller.forgotPassword)
   .post('/verify',authenticateToken, controller.verifyOTP)

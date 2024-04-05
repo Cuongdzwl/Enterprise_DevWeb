@@ -7,7 +7,7 @@ export default express
   .get('/',authenticateToken,authorizeRole("admin"), controller.all)
   .get('/:id',authenticateToken,authorizeRole("admin"), controller.byId)
   .delete('/:id',authenticateToken,authorizeRole("admin"), controller.delete)
-  .put('/:id',authenticateToken,authorizeRole("admin"), controller.update);
+  .patch('/:id',authenticateToken,authorizeRole("admin"), controller.update);
 
 
   

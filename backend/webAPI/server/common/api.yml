@@ -45,7 +45,7 @@ paths:
         - Authentication
       summary: Get user profile
 
-    put:
+    patch:
       tags:
         - Authentication
       summary: Update user profile
@@ -250,7 +250,7 @@ paths:
                 $ref: '#/components/schemas/User'
         '404':
           description: User not found
-    put:
+    patch:
       tags:
         - Users
       summary: Update a user
@@ -306,48 +306,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Faculty'
-  /faculties/dashboard:
-    post:
-      tags:
-        - Faculties
-      summary: Get faculty dashboard statistics for a given year and faculty ID
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                facultyId:
-                  type: integer
-                  description: The ID of the faculty to get the dashboard statistics for.
-                year:
-                  type: integer
-                  description: The year to get the dashboard statistics for.
-              required:
-                - facultyId
-                - year
-      responses:
-        '200':
-          description: Faculty dashboard statistics successfully retrieved.
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  totalContributions:
-                    type: integer
-                    description: The total number of contributions made to the faculty in the given year.
-                  totalEvents:
-                    type: integer
-                    description: The total number of events organized by the faculty in the given year.
-                  activeContributors:
-                    type: integer
-                    description: The number of active contributors in the faculty for the given year.
-        '400':
-          description: Invalid input
-        '404':
-          description: Faculty not found
   /faculties/{id}:
     get:
       tags:
@@ -380,7 +338,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Faculty'
+                $ref: '#/components/schemas/Contribution'
     put:
       tags:
         - Faculties
@@ -399,11 +357,11 @@ paths:
               $ref: '#/components/schemas/Faculty'
       responses:
         '200':
-          description: Faculty updated
+          description: OK
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Faculty'
+                $ref: '#/components/schemas/Contribution'
     delete:
       tags:
         - Faculties
@@ -417,10 +375,50 @@ paths:
       responses:
         '204':
           description: Faculty deleted
+  /faculties/{id}/dashboard:
+    get:
+      tags:
+        - Faculties
+      summary: Get faculty dashboard statistics for a given faculty ID and year
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: The ID of the faculty to get the dashboard statistics for.
+        - in: query
+          name: year
+          required: true
+          schema:
+            type: integer
+          description: The year to get the dashboard statistics for.
+      responses:
+        '200':
+          description: Faculty dashboard statistics successfully retrieved.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  totalContributions:
+                    type: integer
+                    description: The total number of contributions made to the faculty in the given year.
+                  totalEvents:
+                    type: integer
+                    description: The total number of events organized by the faculty in the given year.
+                  activeContributors:
+                    type: integer
+                    description: The number of active contributors in the faculty for the given year.
+        '400':
+          description: Invalid input
+        '404':
+          description: Faculty not found
   /faculties/public:
     get:
+      tags:
+      - Faculties
       summary: Get all public faculties
-      operationId: getPublicFaculties
       responses:
         '200':
           description: OK
@@ -428,17 +426,12 @@ paths:
             application/json:
               schema:
                 type: array
-                items:
-                  $ref: '#/components/schemas/Faculty'
-    parameters:
-      - in: query
-        name: controller.guest
-        schema:
-          type: string
-        description: The guest controller
+                $ref: '#/components/schemas/Faculty'
 
   /faculties/public/{id}:
     get:
+      tags:
+      - Faculties
       summary: Get a public faculty by ID
       operationId: getPublicFacultyById
       parameters:
@@ -454,52 +447,34 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Faculty'
-
-  /faculties/public/{id}/events:
-    get:
-      summary: Get events of a public faculty
-      operationId: getPublicFacultyEvents
-      parameters:
-        - in: path
-          name: id
-          schema:
-            type: string
-          required: true
-          description: The ID of the faculty
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
                 type: array
-                items:
-                  $ref: '#/components/schemas/Event'
-
-  /faculties/public/{id}/events/{eventid}/contributions:
+                $ref: '#/components/schemas/Contribution'
+  /faculties/public/{id}/contributions/{contributionid}:
     get:
+      tags:
+      - Faculties
       summary: Get contribution of a guest in a public faculty event
       operationId: getGuestEventContribution
       parameters:
         - in: path
           name: id
           schema:
-            type: string
+            type: number
           required: true
           description: The ID of the faculty
         - in: path
-          name: eventid
+          name: contributionid
           schema:
-            type: string
+            type: number
           required: true
-          description: The ID of the event
+          description: The ID of the contribution
       responses:
         '200':
           description: OK
           content:
             application/json:
               schema:
+                type: object
                 $ref: '#/components/schemas/Contribution'
   /events:
     get:
@@ -965,7 +940,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Contribution'
-    put:
+    patch:
       tags:
         - Contributions
       summary: Update a contribution and its files
@@ -990,10 +965,6 @@ paths:
                   type: boolean
                 IsApproved:
                   type: boolean
-                EventID:
-                  type: integer
-                UserID:
-                  type: integer
                 StatusID:
                   type: integer
                 filesPath:
@@ -1009,8 +980,6 @@ paths:
                 - Content
                 - IsPublic
                 - IsApproved
-                - EventID
-                - UserID
                 - StatusID
                 - filesPath
                 - file2
@@ -1158,6 +1127,26 @@ paths:
       responses:
         '204':
           description: Comment deleted
+  /status:
+    get:
+      tags:
+        - Status
+      summary: Get all statuses
+      responses:
+        '200':
+          description: A list of statuses
+          content:
+            application/json:
+              schema:
+                type: array
+  /status/{id}:
+    get:
+      tags:
+        - Status
+      summary: Get status
+      responses:
+        '200':
+          description: Status found
   /spec:
     get:
       tags:
