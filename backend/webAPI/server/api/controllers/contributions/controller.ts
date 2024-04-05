@@ -128,10 +128,6 @@ export class ContributionsController implements ISuperController {
     //   Name,
     // };
     var contribution = req.body;
-    L.info(req.body);
-    L.info(id + '');
-    L.info(contribution);
-    L.info(contributionFound);
     contribution.LastEditByID = Number(res.locals.user.user.ID + '');
     try {
       if (res.locals.user.user.RoleID === 4) {
@@ -139,6 +135,11 @@ export class ContributionsController implements ISuperController {
         contribution.IsApproved = false;
         contribution.IsPublic = false;
         contribution.StatusID = Status.PENDING;
+        // Block Other Student update other contribution
+        if (contributionFound.UserID !== res.locals.user.user.ID) {
+          res.status(403).json({ error: 'Forbidden' }).end();
+          return;
+        }
       } else if (res.locals.user.user.RoleID === 3) {
         // Coordinator
         //contribution.Content = contributionFound.Content as string;
@@ -150,12 +151,14 @@ export class ContributionsController implements ISuperController {
           contribution.IsApproved = false;
           contribution.IsPublic = false;
         }
-
+      } else {
+        res.status(403).json({ error: 'Forbidden' }).end();
+        return;
       }
     } catch (error) {
       L.error(error);
       res.status(400).json({ error: error.message }).end();
-      return 
+      return;
     }
 
     L.info(contribution);

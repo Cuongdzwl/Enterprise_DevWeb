@@ -21,8 +21,12 @@ paths:
               type: object
               properties:
                 email:
+                  required: true                
                   type: string
                 password:
+                  required: true
+                  type: string
+                FacultyID:
                   type: string
       responses:
         '200':
@@ -781,6 +785,11 @@ paths:
           schema:
             type: boolean
           description: Include Contribution
+        - in: query
+          name: isPublic
+          schema:
+            type: boolean
+          description: Show Public Contribution
       responses:
         '200':
           description: An event object

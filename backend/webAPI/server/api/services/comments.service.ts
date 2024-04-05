@@ -5,7 +5,7 @@ import { ISuperService } from '../interfaces/ISuperService.interface';
 import { CommentExceptionMessage, ExceptionMessage } from '../common/exception';
 import notificationsService from './notifications.service';
 import userServices from './users.service'; // Import the userServices module
-import { NotificationSentType } from '../models/NotificationSentType';
+import { NotificationSentTypeEnum } from '../models/NotificationSentType';
 import { NotificationSentThrough } from '../models/NotificationSentThrough';
 import { User } from '../models/User';
 import contributionsService from './contributions.service';
@@ -112,7 +112,7 @@ export class CommentsService implements ISuperService<Comment> {
                   Name: contribution?.Name,
                 },
               },
-              NotificationSentType.COMMENTONCONTRIBUTION,
+              NotificationSentTypeEnum.COMMENTONCONTRIBUTION,
               NotificationSentThrough.InApp
             );
           });

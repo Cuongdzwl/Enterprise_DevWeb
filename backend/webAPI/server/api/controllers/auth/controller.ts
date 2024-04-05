@@ -13,8 +13,7 @@ export class AuthController implements IAuthController {
     res.status(200).json({ message: 'Logged out' });
   }
   profile(_: Request, res: Response): void {
-    res
-      .status(200)
+      res.status(200)
       .json({ user: res.locals.user.user, message: 'User is authenticated' });
   }
 
@@ -29,8 +28,16 @@ export class AuthController implements IAuthController {
       res.status(400).json({ error: error.message }).end();
     }
   }
+
+
   async login(req: Request, res: Response): Promise<void> {
     try {
+      if(req.body.FacultyID){
+        if(!(typeof req.body.FacultyID === 'number')){
+          res.status(400).json({ error: 'FacultyID is not a number' }).end();
+          return;
+        }
+      }
       const { user, token } = await authService.login(req);
       res.status(200).json({ user, token });
     } catch (err) {

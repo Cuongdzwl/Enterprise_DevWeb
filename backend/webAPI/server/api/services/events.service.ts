@@ -6,7 +6,7 @@ import { ISuperService } from '../interfaces/ISuperService.interface';
 import notificationsService from './notifications.service';
 import usersService from './users.service';
 import { User } from '../models/User';
-import { NotificationSentType } from '../models/NotificationSentType';
+import { NotificationSentTypeEnum } from '../models/NotificationSentType';
 import { NotificationSentThrough } from '../models/NotificationSentThrough';
 import { TransactionDTO } from '../models/DTO/TransactionDTO';
 import { Notification } from '../models/Notification';
@@ -38,7 +38,12 @@ export class EventsService implements ISuperService<Event> {
     return Promise.resolve(events);
   }
 
-  async byId(id: number, depth?: number, contribution?: boolean): Promise<any> {
+  async byId(
+    id: number,
+    depth?: number,
+    contribution?: boolean,
+    isPublic?: boolean,
+  ): Promise<any> {
     L.info(id + '');
     var select: any = {
       ID: true,
@@ -49,29 +54,36 @@ export class EventsService implements ISuperService<Event> {
       CreatedAt: true,
       UpdatedAt: true,
       FacultyID: true,
-      Contributions: contribution ? {
-        select: {
-          ID: true,
-          Name: true,
-          Content: true,
-          StatusID: true,
-          Files: {
-            select: { ID: true, Url: true, CreatedAt: true, UpdatedAt: true, ContributionID: true },
-          },
-          Status: { select: { ID: true, Name: true } },
-        },
-      } : undefined,
+      Contributions: contribution
+        ? {
+            select: {
+              ID: true,
+              Name: true,
+              Content: true,
+              StatusID: true,
+              Files: {
+                select: {
+                  ID: true,
+                  Url: true,
+                  CreatedAt: true,
+                  UpdatedAt: true,
+                  ContributionID: true,
+                },
+              },
+              Status: { select: { ID: true, Name: true } },
+            },
+          }
+        : undefined,
     };
 
     if (depth == 1) {
       select.Faculty = { select: { ID: true, Name: true } };
     }
-    const event = await prisma.events
-    .findUnique({
+    const event = await prisma.events.findUnique({
       select,
       where: { ID: id },
-    })
-    if (contribution == true){
+    });
+    if (depth == 1 && contribution == true) {
       try {
         const eventContributions = await prisma.events.findUnique({
           select: {
@@ -90,37 +102,48 @@ export class EventsService implements ISuperService<Event> {
                 Content: true,
                 StatusID: true,
                 Files: {
-                  select: { ID: true, Url: true, CreatedAt: true, UpdatedAt: true, ContributionID: true },
+                  select: {
+                    ID: true,
+                    Url: true,
+                    CreatedAt: true,
+                    UpdatedAt: true,
+                    ContributionID: true,
+                  },
                 },
+              },
+              where: {
+                IsPublic: isPublic,
               },
             },
           },
           where: { ID: id },
         });
-    
+        //  Categorize file
         if (eventContributions && eventContributions.Contributions) {
-          const allFiles = eventContributions.Contributions.flatMap(contribution => contribution.Files);
-    
+          const allFiles = eventContributions.Contributions.flatMap(
+            (contribution) => contribution.Files
+          );
+
           const filesAsDTOs = contributionsService.toFileDTOArray(allFiles);
-    
-          const { textFiles, imageFiles } = contributionsService.classifyFiles(filesAsDTOs);
-    
+
+          const { textFiles, imageFiles } =
+            contributionsService.classifyFiles(filesAsDTOs);
+
           return {
             ...event,
             TextFiles: textFiles,
             ImageFiles: imageFiles,
           };
         }
-        return event
-    } catch (error) {
-      L.error(`Failed to fetch event with id ${id}: ${error}`);
-      L.error(` failed: ${error}`); 
+        return event;
+      } catch (error) {
+        L.error(`Failed to fetch event with id ${id}: ${error}`);
+        L.error(` failed: ${error}`);
+      }
     }
+    return event;
   }
-  return event
-  
-  }
-  
+
   filter(filter: string, key: string): Promise<any> {
     const events = prisma.events.findMany({
       where: {
@@ -139,7 +162,6 @@ export class EventsService implements ISuperService<Event> {
         message: validations.message,
       });
     }
-
     return prisma.events
       .create({
         data: {
@@ -163,7 +185,7 @@ export class EventsService implements ISuperService<Event> {
   }
   async delete(id: number): Promise<any> {
     L.info(`delete ${model} with id ${id}`);
-    await prisma.scheduledNotifications.deleteMany({where:{EventID: id}})
+    await prisma.scheduledNotifications.deleteMany({ where: { EventID: id } });
     return prisma.events
       .delete({
         where: { ID: id },
@@ -190,35 +212,50 @@ export class EventsService implements ISuperService<Event> {
     }
     try {
       L.info(`update ${model} with id ${event.ID}`);
-      prisma.events.findMany({ where: { ID: id } }).then((r) => {
-        r
-      })
-      return prisma.events.update({
-        where: { ID: id },
-        data: {
-          Name: event.Name,
-          Description: event.Description,
-          ClosureDate: event.ClosureDate,
-          FinalDate: event.FinalDate,
-          FacultyID: event.FacultyID,
-        },
-      }).then((event) => {
-        // cancel previous notifications
-        // prisma.scheduledNotifications.findMany({ where: { EventID: id } }).then((r) => {
-        //   r.forEach((element) => {
-        //     this.createNotification(event);
-        //     prisma.scheduledNotifications.update({
-        //       where: { ID: element.ID },
-        //       data: {
-        //         IsCancelled: true,
-        //       },
-        //     });
-        //   });
-        // });
-        return this.schedule(event);
-      }).catch((error) => {
-        return Promise.reject(error);
-      });
+      return prisma.events
+        .update({
+          where: { ID: id },
+          data: {
+            Name: event.Name,
+            Description: event.Description,
+            ClosureDate: event.ClosureDate,
+            FinalDate: event.FinalDate,
+            FacultyID: event.FacultyID,
+          },
+        })
+        .then((event) => {
+          // cancel previous notifications
+          prisma.scheduledNotifications
+            .findMany({
+              select: { TransactionID: true },
+              where: { EventID: id, IsCancelled: false },
+            })
+            .then(async (notifications) => {
+              if (notifications != null) {
+                L.info(`bulk cancel ${notifications.length} notifications`);
+                var transactions: string[] = notifications.map((n) =>
+                  n.TransactionID == null ? '' : n.TransactionID
+                );
+                L.info(transactions);
+                await notificationsService.bulkCancel(transactions);
+              }
+            })
+            .then(() => {
+              this.schedule(event);
+            })
+            .catch((e) => {
+              Promise.reject({
+                isSuccess: false,
+                error: e,
+                message: ExceptionMessage.BAD_REQUEST,
+              });
+            });
+
+          return Promise.resolve({ isSuccess: true });
+        })
+        .catch((error) => {
+          return Promise.reject(error);
+        });
     } catch (error) {
       L.error(`create ${model} failed: ${error}`);
       return Promise.reject({
@@ -228,7 +265,7 @@ export class EventsService implements ISuperService<Event> {
     }
   }
 
-  private schedule(event: Event){
+  private schedule(event: Event) {
     if (event) {
       L.info(`create ${model} with id ${event.ID}`);
       prisma.users
@@ -246,7 +283,7 @@ export class EventsService implements ISuperService<Event> {
                 ID: event.ID,
               },
             },
-            NotificationSentType.NEWEVENT,
+            NotificationSentTypeEnum.NEWEVENT,
             NotificationSentThrough.InApp
           );
           // Scheduled Email Due Date
@@ -257,13 +294,20 @@ export class EventsService implements ISuperService<Event> {
                 Event: {
                   Name: event.Name,
                   ID: event.ID,
-                  ClosureDate: event.ClosureDate.getDate().toString(),
-                  ClosureTime: event.ClosureDate.getTime().toString(),
+                  ClosureDate: event.ClosureDate.toLocaleDateString('en-US', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric',
+                  }),
+                  ClosureTime: event.ClosureDate.toLocaleTimeString('en-US', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  }),
                 },
                 Name: event.Name,
                 sendAt: event.ClosureDate.toISOString(),
               },
-              NotificationSentType.CLOSUREDATE,
+              NotificationSentTypeEnum.CLOSUREDATE,
               NotificationSentThrough.Email
             )
             .then((rr) => {
@@ -281,7 +325,7 @@ export class EventsService implements ISuperService<Event> {
                 Name: event.Name,
                 sendAt: event.FinalDate.toISOString(),
               },
-              NotificationSentType.FINALDATE,
+              NotificationSentTypeEnum.FINALDATE,
               NotificationSentThrough.Email
             )
             .then((r) => {

@@ -10,7 +10,7 @@ import notificationsService from './notifications.service';
 import usersService from './users.service';
 import { User } from '../models/User';
 import { NotificationSentThrough } from '../models/NotificationSentThrough';
-import { NotificationSentType } from '../models/NotificationSentType';
+import { NotificationSentTypeEnum } from '../models/NotificationSentType';
 import path from 'path';
 
 const prisma = new PrismaClient();
@@ -242,7 +242,7 @@ async  downloadFilesAndZip(files: FileDTO[]) {
                   notificationsService.trigger(
                     coordinator as User,
                     payload,
-                    NotificationSentType.NEWCONTRIBUTION,
+                    NotificationSentTypeEnum.NEWCONTRIBUTION,
                     NotificationSentThrough.InApp
                   );
                   // log

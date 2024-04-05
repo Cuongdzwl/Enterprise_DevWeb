@@ -1,4 +1,4 @@
-import { error } from 'console';
+import { Request , Response} from 'express';
 import { PrismaClient } from '@prisma/client';
 import utils from '../common/utils';
 import { UserDTO } from '../models/DTO/User.DTO';
@@ -10,13 +10,36 @@ import bcrypt from 'bcrypt';
 import usersService from './users.service';
 import { AuthExceptionMessage, ExceptionMessage } from '../common/exception';
 import notificationsService from './notifications.service';
-import { NotificationSentType } from '../models/NotificationSentType';
 import { NotificationSentThrough } from '../models/NotificationSentThrough';
+import { NotificationSentType, NotificationSentTypeEnum } from '../models/NotificationSentType'; // Import the correct file
 
 const prisma = new PrismaClient();
 const model = 'user';
 export class AuthService {
   async login(req: Request): Promise<any> {
+    if(req.body.FacultyID){
+      var foundInFaculty: boolean = await prisma.users.findUnique({
+        where: {
+          Email: req.body.email as string, // Add the Email property
+          FacultyID: req.body.FacultyID as number
+        }
+      }).then((r) => {
+        if (r) {
+          L.info(r);
+          return Promise.resolve(true);
+        }
+        return Promise.resolve(false);
+      }).catch((_) => {
+        return Promise.resolve(false);
+      });
+      L.info(foundInFaculty)
+      if(!foundInFaculty){
+        return Promise.reject({
+          error: AuthExceptionMessage.BAD_REQUEST,
+          message: AuthExceptionMessage.INVALID_USER_NOT_BELONG_TO_FACULTY,
+        });
+      }
+    }
     return new Promise((resolve, reject) => {
       authStrategy.authenticate(
         'local',
@@ -39,7 +62,7 @@ export class AuthService {
     });
   }
 
-  async google(req: Request): Promise<any> {
+  async google(req: any): Promise<any> {
     return new Promise((resolve, reject) => {
       authStrategy.authenticate(
         'google',
@@ -96,7 +119,7 @@ export class AuthService {
         notificationsService.trigger(
           user as User,
           { token, resetLink, securityEmail },
-          NotificationSentType.EMAILRESETPASSWORD,
+          NotificationSentTypeEnum.EMAILRESETPASSWORD, // Use the correct type
           NotificationSentThrough.Email
         );
         return Promise.resolve({ isSuccess: true });
@@ -151,7 +174,7 @@ export class AuthService {
       notificationsService.trigger(
         updateduser as User,
         { OTP: OTP },
-        NotificationSentType.EMAILOTP,
+        NotificationSentTypeEnum.EMAILOTP,
         NotificationSentThrough.Email
       );
     }
@@ -159,7 +182,7 @@ export class AuthService {
       notificationsService.trigger(
         updateduser as User,
         { OTP: OTP },
-        NotificationSentType.PHONEOTP,
+        NotificationSentTypeEnum.PHONEOTP,
         NotificationSentThrough.NewSMS
       );
     }

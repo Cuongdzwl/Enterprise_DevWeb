@@ -8,8 +8,9 @@ import {
 import { ISuperService } from '../interfaces/ISuperService.interface';
 import { IBulkEvents, Novu } from '@novu/node';
 import { NotificationSentThrough } from '../models/NotificationSentThrough';
-import { NotificationSentType } from '../models/NotificationSentType';
+import { NotificationSentTypeEnum } from '../models/NotificationSentType';
 import { User } from '../models/User';
+import { TransactionDTO } from '../models/DTO/TransactionDTO';
 
 const novu = new Novu(process.env.NOVU_API_KEY as string);
 
@@ -23,12 +24,13 @@ export class NotificationService implements ISuperService<Notification> {
   async bulkTrigger(
     user: User[],
     payload: any,
-    type: NotificationSentType,
+    type: NotificationSentTypeEnum,
     through: NotificationSentThrough
   ): Promise<any> {
     if (!this.checkAPIKEY()) {
       throw new Error('NOVU_API_KEY is not set');
     }
+    // Build the payload
     const events: IBulkEvents[] = [];
     for (const u of user) {
       let upayload = payload;
@@ -57,22 +59,80 @@ export class NotificationService implements ISuperService<Notification> {
         },
         payload: upayload,
       });
-      if (upayload.SendAt) {
-        const data = await novu.events.bulkTrigger(events);
+    }
+    // Send Payload
+    try {
+      if (events[0].payload.sendAtd) {
+        novu.events.bulkTrigger(events).then(async (r) => {
+          var data: TransactionDTO[] = r.data.data;
+          prisma.notificationSentTypes
+            .findFirstOrThrow({ where: { Name: type as string } })
+            .then((notiType) => {
+              for (let i = 0; i < user.length; i++) {
+                const u = user[i];
+                const d = data[i];
+                var notification: Notification = {
+                  NotificationSentTypeID: notiType.ID,
+                  EventID: payload.Event.ID,
+                  SentTo: u.ID,
+                  SentAt: payload.sendAt,
+                  TransactionID: d.transactionId,
+                  Acknowledged: d.acknowledged,
+                  Status: d.status,
+                  IsCancelled: false,
+                };
+                this.create(notification).catch((err) => {
+                  L.error(err);
+                });
+              }
+              L.info('Scheduled Notifications Created');
+              return Promise.resolve({ success: true });
+            })
+            .catch((_) => {
+              // Create new if doesn't exist
+              prisma.notificationSentTypes
+                .create({
+                  data: {
+                    Name: type as string,
+                  },
+                })
+                .then((notiType) => {
+                  for (let i = 0; i < user.length; i++) {
+                    const u = user[i];
+                    const d = data[i];
+                    var notification: Notification = {
+                      NotificationSentTypeID: notiType.ID,
+                      EventID: payload.Event.ID,
+                      SentTo: u.ID,
+                      SentAt: payload.sendAt,
+                      TransactionID: d['transactionId'],
+                      Acknowledged: d['acknowledged'],
+                      Status: d['status'],
+                      IsCancelled: false,
+                    };
+                    this.create(notification).catch((err) => {
+                      L.error(err);
+                    });
+                  }
+
+                  return Promise.resolve({ success: true });
+                });
+            });
+        });
         // this.create({});
-        L.info(data.data);
-        data;
         return Promise.resolve({ success: true });
       } else {
         novu.events.bulkTrigger(events);
         return Promise.resolve({ success: true });
       }
+    } catch (err) {
+      return Promise.resolve({ success: true , message: "Faculty Empty"});
     }
   }
   async trigger(
     user: User,
     payload: any,
-    type: NotificationSentType,
+    type: NotificationSentTypeEnum,
     through: NotificationSentThrough
   ): Promise<any> {
     try {
@@ -113,17 +173,45 @@ export class NotificationService implements ISuperService<Notification> {
           })
           .then((r) => {
             L.info(r.data);
-            // var notification : Notification = {
-            //   NotificationSentTypeID: type.,
-            //   EventID: notification.EventID || 0,
-            //   SentTo: notification.SentTo,
-            //   SentAt: notification.SentAt,
-            //   TransactionID: notification.TransactionID,
-            //   Acknowledged: notification.Acknowledged,
-            //   Status: notification.Status,
-            //   IsCancelled: notification.IsCancelled || false,
-            // };
-            // this.create(notification);
+
+            const data: TransactionDTO = r.data;
+            prisma.notificationSentTypes
+              .findFirstOrThrow({ where: { Name: type as string } })
+              .then((notiType) => {
+                var notification: Notification = {
+                  NotificationSentTypeID: notiType.ID,
+                  EventID: payload.EventID,
+                  SentTo: user.ID,
+                  SentAt: payload.sendAt,
+                  TransactionID: data.transactionId,
+                  Acknowledged: data.acknowledged,
+                  Status: data.status,
+                  IsCancelled: false,
+                };
+                this.create(notification);
+              })
+              .catch((_) => {
+                // Create new if doesn't exist
+                prisma.notificationSentTypes
+                  .create({
+                    data: {
+                      Name: type as string,
+                    },
+                  })
+                  .then((notiType) => {
+                    var notification: Notification = {
+                      NotificationSentTypeID: notiType.ID,
+                      EventID: payload.EventID,
+                      SentTo: user.ID,
+                      SentAt: payload.sendAt,
+                      TransactionID: data.transactionId,
+                      Acknowledged: data.acknowledged,
+                      Status: data.status,
+                      IsCancelled: false,
+                    };
+                    this.create(notification);
+                  });
+              });
             return Promise.resolve({ success: true });
           });
       } else {
@@ -134,16 +222,35 @@ export class NotificationService implements ISuperService<Notification> {
       Promise.reject({ success: false, error: error });
     }
   }
-  cancel(transactionID: string): Promise<any> {
-    return Promise.resolve(novu.events.cancel(transactionID));
-  }
-  bulkCancel(transactionID: string[]) {
-    for (const id of transactionID) {
-      novu.events.cancel(id);
+  async bulkCancel(transactions: string[]): Promise<any> {
+    var cancelled: string[] = [];
+    L.info(`Start mass cancelling....`);
+    for (const id of transactions) {
+      if (typeof id === 'string') {
+        novu.events
+          .cancel(id)
+          .then((_) => {
+            cancelled.push(id);
+            L.info(`Cancelled ${model} with transactionID ${id}`);
+          })
+          .catch((err) => {
+            L.error(err);
+          });
+      }
     }
-  }
-  broadcast(payload: any, type: NotificationSentType) {
-    payload.sentType = type;
+
+    prisma.scheduledNotifications
+      .updateMany({
+        where: { TransactionID: { in: cancelled } },
+        data: { IsCancelled: true },
+      })
+      .then((r) => {
+        L.info(r);
+      })
+      .catch((err) => {
+        L.error(err);
+      });
+    return Promise.resolve({ success: true });
   }
   all(): Promise<any> {
     const scheduledNotifications = prisma.scheduledNotifications.findMany();
@@ -183,12 +290,12 @@ export class NotificationService implements ISuperService<Notification> {
   // Create
   create(notification: Notification): Promise<any> {
     // TODO: VALIDATE CONSTRAINTss
-    L.info(`create ${model} with id ${notification.ID}`);
+    L.info(notification);
     return prisma.scheduledNotifications
       .create({
         data: {
           NotificationSentTypeID: notification.NotificationSentTypeID,
-          EventID: notification.EventID || 0,
+          EventID: notification.EventID,
           SentTo: notification.SentTo,
           SentAt: notification.SentAt,
           TransactionID: notification.TransactionID,
@@ -198,6 +305,7 @@ export class NotificationService implements ISuperService<Notification> {
         },
       })
       .then((result) => {
+        L.info(`create ${model} with id ${result.ID}`);
         return Promise.resolve(result);
       })
       .catch((err) => {

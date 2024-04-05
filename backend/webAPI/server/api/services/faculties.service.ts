@@ -97,6 +97,14 @@ export class FacultiesService implements ISuperService<Faculty> {
         const eventIDs = events.map((event) => event.ID);
 
         const contributions = prisma.contributions.findMany({
+          select: {
+            ID: true,
+            Name: true,
+            Content: true,
+            Event: { select: { ID: true, Name: true } },
+            User: { select: { ID: true, Name: true } },
+            Files: { select: { ID: true, Url: true } },
+          },
           where: {
             AND: [
               { IsPublic: true },
@@ -130,7 +138,7 @@ export class FacultiesService implements ISuperService<Faculty> {
           .findMany({
             where: {
               AND: [
-                { ID: contributionid},
+                { ID: contributionid },
                 { IsPublic: true },
                 {
                   EventID: {
@@ -167,13 +175,6 @@ export class FacultiesService implements ISuperService<Faculty> {
 
   // Create
   async create(faculty: Faculty): Promise<any> {
-    const validations = await this.validateConstraints(faculty);
-    if (!validations.isValid) {
-      return Promise.resolve({
-        error: validations.error,
-        message: validations.message,
-      });
-    }
     L.info(`create ${model}`);
     const created = prisma.faculties.create({
       data: {
@@ -204,30 +205,26 @@ export class FacultiesService implements ISuperService<Faculty> {
   }
   // Update
   update(id: number, faculty: Faculty): Promise<any> {
-    if (!this.validateConstraints(faculty)) {
-      return Promise.resolve({
-        error: ExceptionMessage.INVALID,
-        message: ExceptionMessage.BAD_REQUEST,
-      });
-    }
-    try {
-      L.info(`update ${model} with id ${faculty.ID}`);
-      const updatedFaculty = prisma.faculties.update({
+    L.info(`update ${model} with id ${faculty.ID}`);
+    return prisma.faculties
+      .update({
         where: { ID: id },
         data: {
           Name: faculty.Name,
           Description: faculty.Description,
           IsEnabledGuest: faculty.IsEnabledGuest,
         },
+      })
+      .then((r) => {
+        return Promise.resolve(r);
+      })
+      .catch((error) => {
+        L.error(`update ${model} failed: ${error}`);
+        return Promise.reject({
+          error: ExceptionMessage.INVALID,
+          message: ExceptionMessage.BAD_REQUEST,
+        });
       });
-      return Promise.resolve(updatedFaculty);
-    } catch (error) {
-      L.error(`update ${model} failed: ${error}`);
-      return Promise.resolve({
-        error: ExceptionMessage.INVALID,
-        message: ExceptionMessage.BAD_REQUEST,
-      });
-    }
   }
   async dashboard(facultyID: number, year: number) {
     // Validate input
@@ -349,17 +346,19 @@ export class FacultiesService implements ISuperService<Faculty> {
     }
 
     // Validate Uniquely Existing Fields
-    const facultyNameExisted = await prisma.faculties.findFirst({
-      where: {
-        Name: faculty.Name, // Server only have 1 Marketing Manager
-      },
-    });
-    if (facultyNameExisted) {
-      return {
-        isValid: false,
-        error: FacultyExceptionMessage.FACULTY_NAME_EXISTED,
-        message: `A ${faculty.Name} already exists.`,
-      };
+    if (!faculty.ID) {
+      const facultyNameExisted = await prisma.faculties.findFirst({
+        where: {
+          Name: faculty.Name, // Server only have 1 Marketing Manager
+        },
+      });
+      if (facultyNameExisted) {
+        return {
+          isValid: false,
+          error: FacultyExceptionMessage.FACULTY_NAME_EXISTED,
+          message: `A ${faculty.Name} already exists.`,
+        };
+      }
     }
     // If all validations pass
     return { isValid: true };
