@@ -130,7 +130,7 @@ export class FacultiesController implements ISuperController {
       }
 
       // Assuming facultiesService.getDashboardDataForFacultyYear has been implemented
-      const dashboardData = await facultiesService.dashboard(1, 2024);
+      const dashboardData = await facultiesService.dashboard(facultyId, year);
       if (!dashboardData) {
         res.status(404).json({ error: 'No dashboard data found for the provided faculty ID and year.' }).end();
         return;
