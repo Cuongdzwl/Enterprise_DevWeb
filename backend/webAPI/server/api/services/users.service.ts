@@ -167,16 +167,16 @@ export class UsersService implements ISuperService<User> {
   // Update
   async update(id: number, user: User, updateProfile?: boolean): Promise<any> {
     L.info(`update ${model} with id ${id}`);
-
-    return prisma.users
+    updateProfile;
+     prisma.users
       .findUnique({ where: { ID: id } })
       .then(async (result) => {
-        if (!result)
+        if (!result) {
           return Promise.reject({
-            error: UserExceptionMessage.INVALID,
-            message: UserExceptionMessage.BAD_REQUEST,
+            error: UserExceptionMessage.USER_NOT_FOUND,
+            message: 'Not Found',
           });
-
+        }
         if (user.Password) {
           var hashedPassword: string = utils.hashedPassword(
             user.Password,
@@ -201,11 +201,23 @@ export class UsersService implements ISuperService<User> {
         if (updateProfile && updateProfile == true) {
           (data.RoleID = result.RoleID), (data.FacultyID = result.FacultyID);
         }
-        const updatedUser = await prisma.users.update({
-          where: { ID: id },
-          data,
-        });
-        return Promise.resolve(new UserDTO().map(updatedUser as User));
+        try {
+          const updatedUser = await prisma.users.update({
+            where: { ID: id },
+            data,
+          });
+          return Promise.resolve(new UserDTO().map(updatedUser as User));
+        } catch (error) {
+          if (error.code === 'P2002') {
+            // Handle unique constraint violation
+            return Promise.reject({
+              error: UserExceptionMessage.CONSTRAINT_VIOLATION,
+              message: 'A user with the provided email already exists.',
+            });
+          }
+          // Handle other errors
+          return Promise.reject(error);
+        }
       });
   }
 
@@ -214,36 +226,63 @@ export class UsersService implements ISuperService<User> {
   ): Promise<{ isValid: boolean; error?: string; message?: string }> {
     user;
 
-    //     // Validate Name
-    //     if (!user.Name || !/^[A-Za-z\s]{1,15}$/.test(user.Name)) {
-    //       return {
-    //         isValid: false,
-    //         error: UserExceptionMessage.INVALID,
-    //         message:
-    //           'User name is invalid, cannot contain numbers or special characters, and must have a maximum of 15 characters.',
-    //       };
-    //     }
+    //  Validate Password
+    if (user.Password) {
+      if (!/(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}/.test(user.Password)) {
+        return {
+          isValid: false,
+          error: UserExceptionMessage.INVALID,
+          message:
+            'Password must be at least 8 characters long and contain both letters and numbers.',
+        };
+      }
+    }
 
-    //     //  Validate Password
-    //     if (user.Password) {
-    //       if (!/(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}/.test(user.Password)) {
-    //         return {
-    //           isValid: false,
-    //           error: UserExceptionMessage.INVALID,
-    //           message:
-    //             'Password must be at least 8 characters long and contain both letters and numbers.',
-    //         };
-    //       }
-    //     }
-    //     // Validate Email
-    //     if (!user.Email || !/\S+@\S+\.\S+/.test(user.Email)) {
-    //       return {
-    //         isValid: false,
-    //         error: UserExceptionMessage.INVALID,
-    //         message:
-    //           "Email must contain '@' and cannot contain other special characters.",
-    //       };
-    //     }
+    if (!user.ID) {
+      // Validate Email
+      if (!user.Email || !/\S+@\S+\.\S+/.test(user.Email)) {
+        return {
+          isValid: false,
+          error: UserExceptionMessage.INVALID,
+          message:
+            "Email must contain '@' and cannot contain other special characters.",
+        };
+      }
+      // Validate Uniquely Existing Fields
+      const userNameExisted = await prisma.users.findFirst({
+        where: {
+          Email: user.Email, // Name Email only have 1 in server
+        },
+      });
+      if (userNameExisted) {
+        return {
+          isValid: false,
+          error: UserExceptionMessage.EMAIL_EXISTED,
+          message: `A ${userNameExisted} already exists.`,
+        };
+      }
+    }
+    // Validate Role ID
+    if (
+      user.RoleID === null ||
+      user.RoleID === undefined ||
+      !user.RoleID ||
+      !Number.isInteger(user.RoleID) ||
+      typeof user.RoleID !== 'number'
+    ) {
+      return {
+        isValid: false,
+        error: UserExceptionMessage.INVALID_ROLEID,
+        message: 'Role ID must be a number with a maximum of 20 digits.',
+      };
+    }
+    if (!/^\d{1,20}$/.test(user.RoleID.toString())) {
+      return {
+        isValid: false,
+        error: UserExceptionMessage.INVALID_ROLEID,
+        message: 'Invalid Contribution ID format.',
+      };
+    }
 
     //     // Validate Uniquely Existing Fields
     //     const userNameExisted = await prisma.users.findFirst({
