@@ -5,10 +5,10 @@ import { upload } from '../../middlewares/uploadfile'
 
 export default express
   .Router()
-  .post('/upload',upload.single('file'),  controller.create)
-  .get('/', controller.all)
-  .get('/:id', controller.byId)
-  .get('/:id/download', controller.download)
-  .delete('/:id', controller.delete)
-  .put('/upload/:id', controller.update);
+  .post('/upload',authenticateToken,upload.single('file'),  controller.create)
+  .get('/',authenticateToken, controller.all)
+  .get('/:id',authenticateToken, controller.byId)
+  .get('/:id/download',authenticateToken, controller.download)
+  .delete('/:id',authenticateToken, controller.delete)
+  .put('/upload/:id',authenticateToken, controller.update);
   

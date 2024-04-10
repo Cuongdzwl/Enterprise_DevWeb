@@ -222,6 +222,12 @@ export class NotificationService implements ISuperService<Notification> {
       Promise.reject({ success: false, error: error });
     }
   }
+  cancel(transactionid : string): Promise<any>{
+    return novu.events.cancel(transactionid).then((r) => {
+      L.info(r);
+      return Promise.resolve({ success: true });
+    });
+  }
   async bulkCancel(transactions: string[]): Promise<any> {
     var cancelled: string[] = [];
     L.info(`Start mass cancelling....`);

@@ -63,7 +63,7 @@ export class FacultiesController implements ISuperController {
     const event = req.query.event?.toString() == 'true' ? true : false;
     const user = req.query.user?.toString() == 'true' ? true : false;
     // Authorize
-    if (!(res.locals.user.user.RoleID == 1 || 2)) {
+    if (!(res.locals.user.user.RoleID == 1 || res.locals.user.user.RoleID == 2)) {
       id = res.locals.user.user.FacultyID;
     }
     try {

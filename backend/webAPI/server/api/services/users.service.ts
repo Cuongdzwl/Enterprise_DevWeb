@@ -87,14 +87,6 @@ export class UsersService implements ISuperService<User> {
 
   // Create
   async create(user: User): Promise<any> {
-    const validations = await this.validateConstraints(user);
-    if (!validations.isValid) {
-      L.error(`create ${model} failed: invalid constraints`);
-      return Promise.resolve({
-        error: validations.error,
-        message: validations.message,
-      });
-    }
     try {
       L.info(`create ${model} with id ${user.ID}`);
 
@@ -126,23 +118,19 @@ export class UsersService implements ISuperService<User> {
         if (!(faculty == null)) {
           fName = faculty.Name;
         }
+      }
+      const payload: any = {
+        Faculty: { Name: fName },
+        Name: user.Name,
+        Password: password,
+      };
+      NotificationService.trigger(
+        createdUser as User,
+        payload,
+        NotificationSentTypeEnum.EMAILPASSWORD,
+        NotificationSentThrough.Email
+      );
 
-        const payload: any = {
-          Faculty: { Name: fName },
-          Name: user.Name,
-          Password: password,
-        };
-        NotificationService.trigger(
-          createdUser as User,
-          payload,
-          NotificationSentTypeEnum.EMAILPASSWORD,
-          NotificationSentThrough.Email
-        );
-      } else
-        return Promise.reject({
-          error: UserExceptionMessage.INVALID,
-          message: UserExceptionMessage.INVALID_FACULTYID,
-        });
       return Promise.resolve(createdUser);
     } catch (error) {
       L.error(`create ${model} failed: ${error}`);
@@ -172,15 +160,16 @@ export class UsersService implements ISuperService<User> {
   }
   // Update
   async update(id: number, user: User, updateProfile?: boolean): Promise<any> {
-    L.info(`update ${model} with id ${id}`);
-    updateProfile;
-    prisma.users.findUnique({ where: { ID: id } }).then(async (result) => {
+    L.info(`updating ${model} with id ${id}`);
+    // find user
+    return prisma.users.findUnique({ where: { ID: id } }).then(async (result) => {
       if (!result) {
         return Promise.reject({
           error: UserExceptionMessage.USER_NOT_FOUND,
           message: 'Not Found',
         });
       }
+      // hashed password
       if (user.Password) {
         var hashedPassword: string = utils.hashedPassword(
           user.Password,
@@ -189,8 +178,7 @@ export class UsersService implements ISuperService<User> {
       } else {
         hashedPassword = result.Password;
       }
-      L.info(result);
-      L.info(user);
+      // Update
       var data: any = {
         Name: user.Name,
         Password: hashedPassword,
@@ -200,33 +188,37 @@ export class UsersService implements ISuperService<User> {
         RoleID: user.RoleID,
         FacultyID: user.FacultyID,
       };
-      L.info(data);
-      L.info(result.ID + ' updated');
+      // updateProfile
       if (updateProfile && updateProfile == true) {
         (data.RoleID = result.RoleID), (data.FacultyID = result.FacultyID);
       }
-      try {
-        const updatedUser = await prisma.users.update({
+      return prisma.users
+        .update({
           where: { ID: id },
           data,
+        })
+        .then((updatedUser) => {
+          L.info(`updated ${model} with id ${id} : ${updatedUser}`);
+          return Promise.resolve(new UserDTO().map(updatedUser as User));
+        })
+        .catch((error) => {
+          L.info(`updated ${model} error: ${error}`);
+          if (error.code === 'P2002') {
+            // Handle unique constraint violation
+            return Promise.reject({
+              error: UserExceptionMessage.CONSTRAINT_VIOLATION,
+              message: 'A user with the provided email already exists.',
+            });
+          }
+          // Handle other errors
+          return Promise.reject(error);
         });
-        return Promise.resolve(new UserDTO().map(updatedUser as User));
-      } catch (error) {
-        if (error.code === 'P2002') {
-          // Handle unique constraint violation
-          return Promise.reject({
-            error: UserExceptionMessage.CONSTRAINT_VIOLATION,
-            message: 'A user with the provided email already exists.',
-          });
-        }
-        // Handle other errors
-        return Promise.reject(error);
-      }
     });
   }
 
   async validateConstraints(
-    user: User
+    user: User,
+    update: boolean
   ): Promise<{ isValid: boolean; error?: string; message?: string }> {
     user;
 
@@ -241,9 +233,8 @@ export class UsersService implements ISuperService<User> {
         };
       }
     }
-
-    if (!user.ID) {
-      console.log(user.Email);
+    console.log(user.ID);
+    if (!update) {
       // Validate Email
       if (!user.Email || !/\S+@\S+\.\S+/.test(user.Email)) {
         return {
@@ -263,7 +254,7 @@ export class UsersService implements ISuperService<User> {
         return {
           isValid: false,
           error: UserExceptionMessage.EMAIL_EXISTED,
-          message: `A ${userNameExisted} already exists.`,
+          message: `A ${userNameExisted.Email} already exists.`,
         };
       }
     }
@@ -288,36 +279,21 @@ export class UsersService implements ISuperService<User> {
         message: 'Invalid Contribution ID format.',
       };
     }
-
-    // Validate Uniquely Existing Fields
-    const userNameExisted = await prisma.users.findFirst({
-      where: {
-        Email: user.Email, // Name Email only have 1 in server
-      },
-    });
-    if (userNameExisted) {
-      return {
-        isValid: false,
-        error: UserExceptionMessage.EMAIL_EXISTED,
-        message: `A ${userNameExisted} already exists.`,
-      };
-    }
-
-    // Validate Role ID
-    if (user.RoleID === null || user.RoleID === undefined || !user.FacultyID) {
-      return {
-        isValid: false,
-        error: UserExceptionMessage.INVALID_ROLEID,
-        message: 'Role ID must be a number with a maximum of 20 digits.',
-      };
-    }
-    if (!/^\d{1,20}$/.test(user.RoleID.toString())) {
-      return {
-        isValid: false,
-        error: UserExceptionMessage.INVALID_ROLEID,
-        message: 'Invalid Contribution ID format.',
-      };
-    }
+    //     // Validate Role ID
+    //     if(user.RoleID === null || user.RoleID === undefined || !user.FacultyID){
+    //       return {
+    //         isValid: false,
+    //         error: UserExceptionMessage.INVALID_ROLEID,
+    //         message: 'Role ID must be a number with a maximum of 20 digits.',
+    //       };
+    //     }
+    //     if (!/^\d{1,20}$/.test(user.RoleID.toString())) {
+    //       return {
+    //         isValid: false,
+    //         error: UserExceptionMessage.INVALID_ROLEID,
+    //         message: 'Invalid Contribution ID format.',
+    //       };
+    //     }
 
     const roleExists = await prisma.roles.findUnique({
       where: { ID: user.RoleID },
@@ -341,35 +317,40 @@ export class UsersService implements ISuperService<User> {
         message: 'Faculty ID must be a number with a maximum of 20 digits.',
       };
     }
-    const facultyexists = await prisma.faculties.findUnique({
-      where: { ID: user.FacultyID },
-    });
-    if (!facultyexists) {
-      return {
-        isValid: false,
-        error: UserExceptionMessage.INVALID_FACULTYID,
-        message: 'Referenced Faculty does not exist.',
-      };
+    if (user.FacultyID) {
+      const facultyexists = await prisma.faculties.findUnique({
+        where: { ID: user.FacultyID },
+      });
+      if (!facultyexists) {
+        return {
+          isValid: false,
+          error: UserExceptionMessage.INVALID_FACULTYID,
+          message: 'Referenced Faculty does not exist.',
+        };
+      }
     }
-
-    // Validate Phone
-    if (!user.Phone || !/^\+?[0-9]\d{1,20}$/.test(user.Phone)) {
-      return {
-        isValid: false,
-        error: UserExceptionMessage.INVALID,
-        message:
-          "Phone number must start with an optional '+' and be followed by 1 to 20 digits.",
-      };
+    if (user.Phone) {
+      // Validate Phone
+      if (!user.Phone || !/^\+?[0-9]\d{1,20}$/.test(user.Phone)) {
+        return {
+          isValid: false,
+          error: UserExceptionMessage.INVALID,
+          message:
+            "Phone number must start with an optional '+' and be followed by 1 to 20 digits.",
+        };
+      }
     }
 
     // Validate Address
-    if (user.Address && user.Address.length > 300) {
-      return {
-        isValid: false,
-        error: UserExceptionMessage.INVALID,
-        message:
-          'Address cannot be longer than 300 characters and cannot contain special characters.',
-      };
+    if (user.Address) {
+      if (user.Address && user.Address.length > 300) {
+        return {
+          isValid: false,
+          error: UserExceptionMessage.INVALID,
+          message:
+            'Address cannot be longer than 300 characters and cannot contain special characters.',
+        };
+      }
     }
 
     //validate role name and relationship

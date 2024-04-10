@@ -3,8 +3,8 @@ import UserService from '../../services/users.service';
 import { Request, Response } from 'express';
 import authService from '../../services/auth.service';
 import { UserDTO } from 'server/api/models/DTO/User.DTO';
-import { User } from '../../models/User'
-import L from '../../../common/logger'
+import { User } from '../../models/User';
+import L from '../../../common/logger';
 import * as bcrypt from 'bcrypt';
 
 export class AuthController implements IAuthController {
@@ -13,14 +13,14 @@ export class AuthController implements IAuthController {
     res.status(200).json({ message: 'Logged out' });
   }
   profile(_: Request, res: Response): void {
-      res.status(200)
-      .json({ user: res.locals.user.user, message: 'User is authenticated' });
+    res.status(200).json({ user: res.locals.user.user });
   }
 
   updateProfile(req: Request, res: Response): void {
     const id = Number.parseInt(res.locals.user.user.ID + '');
     try {
       UserService.update(id, req.body).then((r) => {
+        L.info(r);
         if (r) res.status(201).json(r);
         else res.status(404).end();
       });
@@ -29,11 +29,27 @@ export class AuthController implements IAuthController {
     }
   }
 
+  changePassword(req: Request, res: Response): void {
+    const id = res.locals.user.user.ID;
+    const oldPassword = req.body.oldPassword;
+    const newPassword = req.body.newPassword;
+    L.info(newPassword);
+    authService
+      .changePassword(id, oldPassword, newPassword)
+      .then((r) => {
+        if (r) res.status(201).json({ message: 'Password changed' });
+        else res.status(404).end();
+      })
+      .catch((err) => {
+        L.error(err);
+        res.status(400).json(err).end();
+      });
+  }
 
   async login(req: Request, res: Response): Promise<void> {
     try {
-      if(req.body.FacultyID){
-        if(!(typeof req.body.FacultyID === 'number')){
+      if (req.body.FacultyID) {
+        if (!(typeof req.body.FacultyID === 'number')) {
           res.status(400).json({ error: 'FacultyID is not a number' }).end();
           return;
         }
@@ -52,7 +68,6 @@ export class AuthController implements IAuthController {
   //     res.status(400).json({ message: err });
   //   }
   // }
-
 
   async forgotPassword(req: Request, res: Response): Promise<void> {
     const email = req.query.email?.toString();
@@ -94,7 +109,7 @@ export class AuthController implements IAuthController {
 
   async sendOTP(_: Request, res: Response): Promise<void> {
     await authService
-      .sendOTP(res.locals.user.user.ID,res.locals.user.user.NewPhone)
+      .sendOTP(res.locals.user.user.ID, res.locals.user.user.NewPhone)
       .then((r) => {
         if (r) return res.status(200).json({ message: 'OTP sent' });
         else return res.status(400).json({ message: 'OTP not sent' });
@@ -105,7 +120,7 @@ export class AuthController implements IAuthController {
   }
 
   async verifyPhone(req: Request, res: Response): Promise<void> {
-    const code :string = req.body.code?.toString() || '';
+    const code: string = req.body.code?.toString() || '';
     const otpRegex = /^\d{6}$/;
     const check = otpRegex.test(code);
 
@@ -128,8 +143,11 @@ export class AuthController implements IAuthController {
     const token: string = req.query.token?.toString() as string;
     const newPassword: string = req.body.newPassword;
     const result = UserService.validatePassword(newPassword);
-    if(!result.isValid){
-      res.status(400).json({ error:result.error ,message: result.message }).end();
+    if (!result.isValid) {
+      res
+        .status(400)
+        .json({ error: result.error, message: result.message })
+        .end();
       return;
     }
     if (req.query.token == null) {

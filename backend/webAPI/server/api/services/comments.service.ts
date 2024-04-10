@@ -82,25 +82,26 @@ export class CommentsService implements ISuperService<Comment> {
           data: {
             Content: comment.Content,
             ContributionID: Number(comment.ContributionID),
-            UserID: comment.UserID,
+            UserID: Number(comment.UserID),
           },
         })
         .then(async (r) => {
           // Fetch Commented Contribution
-          const contribution : Contribution | undefined= await contributionsService
-            .byId(r.ContributionID)
-            .then((contribution: Contribution) => {
-              //
-              if (r.UserID == contribution.UserID) return undefined;
-              return contribution;
-            })
-            .catch((_) => {
-              return undefined;
-            });
+          const contribution: Contribution | undefined =
+            await contributionsService
+              .byId(r.ContributionID)
+              .then((contribution: Contribution) => {
+                // Check if the user is commenting on their own contribution
+                if (r.UserID == contribution.UserID) return undefined;
+                return contribution;
+              })
+              .catch((_) => {
+                return undefined;
+              });
           if (!contribution) {
             return r;
           }
-
+          // Send comment to contribution owner
           userServices.byId(contribution.UserID).then((user: User) => {
             notificationsService.trigger(
               user,
@@ -192,12 +193,10 @@ export class CommentsService implements ISuperService<Comment> {
       return {
         isValid: false,
         error: CommentExceptionMessage.INVALID_CONTRIBUTIONID,
-        message:
-          'Contribution ID must be provided',
+        message: 'Contribution ID must be provided',
       };
     }
-    if (
-      !/^\d{1,20}$/.test(comment.ContributionID.toString())) {
+    if (!/^\d{1,20}$/.test(comment.ContributionID.toString())) {
       return {
         isValid: false,
         error: CommentExceptionMessage.INVALID_CONTRIBUTIONID,

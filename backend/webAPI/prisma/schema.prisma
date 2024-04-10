@@ -81,7 +81,7 @@
     Url            String
     CreatedAt      DateTime?      @default(now())
     UpdatedAt      DateTime?      @default(now()) @updatedAt
-    Contribution   contributions? @relation(fields: [ContributionID], references: [ID], onDelete: Cascade, onUpdate: NoAction)
+    Contribution   contributions? @relation(fields: [ContributionID], references: [ID], onDelete: NoAction, onUpdate: NoAction)
     ContributionID Int
   }
 

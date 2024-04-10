@@ -11,7 +11,7 @@ const prisma = new PrismaClient();
 export class EventsController implements ISuperController {
   async all(req: Request, res: Response): Promise<void> {
 
-    if(res.locals.user.user.RoleID == 4 || 3){
+    if(res.locals.user.user.RoleID === 4 ||res.locals.user.user.RoleID === 3){
       const result = await eventsService.filter("FacultyID", res.locals.user.user.FacultyID as string);
       res.status(200).json(result);
       return;

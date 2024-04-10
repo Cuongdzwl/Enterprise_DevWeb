@@ -42,7 +42,7 @@ export class EventsService implements ISuperService<Event> {
     id: number,
     depth?: number,
     contribution?: boolean,
-    isPublic?: boolean,
+    isPublic?: boolean
   ): Promise<any> {
     L.info(id + '');
     var select: any = {
@@ -110,6 +110,7 @@ export class EventsService implements ISuperService<Event> {
                     ContributionID: true,
                   },
                 },
+                Status: { select: { ID: true, Name: true } },
               },
               where: {
                 IsPublic: isPublic,
@@ -120,22 +121,25 @@ export class EventsService implements ISuperService<Event> {
         });
         //  Categorize file
         if (eventContributions && eventContributions.Contributions) {
-          const allFiles = eventContributions.Contributions.flatMap(
-            (contribution) => contribution.Files
+          const contributionsWithFiles = await Promise.all(
+            eventContributions.Contributions.map(async (contribution) => {
+              const allFiles = contribution.Files;
+              const filesAsDTOs = contributionsService.toFileDTOArray(allFiles);
+              const { textFiles, imageFiles } =
+                contributionsService.classifyFiles(filesAsDTOs);
+
+              return {
+                ...contribution,
+                TextFiles: textFiles,
+                ImageFiles: imageFiles,
+              };
+            })
           );
-
-          const filesAsDTOs = contributionsService.toFileDTOArray(allFiles);
-
-          const { textFiles, imageFiles } =
-            contributionsService.classifyFiles(filesAsDTOs);
-
           return {
-            ...event,
-            TextFiles: textFiles,
-            ImageFiles: imageFiles,
+            ...eventContributions,
+            Contributions: contributionsWithFiles,
           };
         }
-        return event;
       } catch (error) {
         L.error(`Failed to fetch event with id ${id}: ${error}`);
         L.error(` failed: ${error}`);
@@ -149,6 +153,8 @@ export class EventsService implements ISuperService<Event> {
       where: {
         [filter]: key,
       },
+    }).catch((error) => {
+      L.error(`Failed to fetch events: ${error}`);
     });
     L.info(events, `fetch all ${model}(s)`);
     return Promise.resolve(events);

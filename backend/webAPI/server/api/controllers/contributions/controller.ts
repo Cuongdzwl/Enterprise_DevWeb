@@ -203,7 +203,7 @@ export class ContributionsController implements ISuperController {
       })
       .catch((error) => {
         L.error(error);
-        return res.status(400).json({ error: error.message }).end();
+        return res.status(400).json(error).end();
       });
   }
   async download(req: Request, res: Response): Promise<void> {

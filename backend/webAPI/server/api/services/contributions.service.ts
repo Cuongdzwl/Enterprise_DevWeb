@@ -42,12 +42,15 @@ export class ContributionsService implements ISuperService<Contribution> {
       select.Status = true;
       select.Comments = true;
     }
-    if(isPublic == true) {
-      var where: any =  { IsPublic: isPublic };
-    }else{
+    if (isPublic == true) {
+      var where: any = { IsPublic: isPublic };
+    } else {
       var where = undefined;
     }
-    const contributions = await prisma.contributions.findMany({ select, where });
+    const contributions = await prisma.contributions.findMany({
+      select,
+      where,
+    });
     L.info(contributions, `fetch all ${model}(s)`);
 
     // return Promise.resolve(contributions);;
@@ -66,7 +69,7 @@ export class ContributionsService implements ISuperService<Contribution> {
           L.error(` failed: ${error}`);
           return Promise.reject({
             error: ContributionExceptionMessage.INVALID,
-            message: ContributionExceptionMessage.BAD_REQUEST
+            message: ContributionExceptionMessage.BAD_REQUEST,
           });
         }
       }
@@ -98,8 +101,8 @@ export class ContributionsService implements ISuperService<Contribution> {
         } else if (
           file.Url.endsWith('.png') ||
           file.Url.endsWith('.jpeg') ||
-          file.Url.endsWith('.JPG')  ||
-          file.Url.endsWith ('jpg')
+          file.Url.endsWith('.JPG') ||
+          file.Url.endsWith('jpg')
         ) {
           imageFiles.push(file);
         }
@@ -109,26 +112,33 @@ export class ContributionsService implements ISuperService<Contribution> {
     return { textFiles, imageFiles };
   }
 
-async  downloadFilesAndZip(files: FileDTO[]) {
-  const zip = new JSZip();
-  for (const file of files) {
-    try {
-      const response = await axios.get(file.Url, { responseType: 'arraybuffer' });
-      const fileName = path.basename(new URL(file.Url as string).pathname);
-      L.info({fileName})
-      L.info({response  })
-      const fileData = Buffer.from(response.data);
-      zip.file(fileName, fileData);
-    } catch (error) {
-      console.error(`Failed to download file: ${file.Url}`, error);
+  async downloadFilesAndZip(files: FileDTO[]) {
+    const zip = new JSZip();
+    for (const file of files) {
+      try {
+        const response = await axios.get(file.Url, {
+          responseType: 'arraybuffer',
+        });
+        const fileName = path.basename(new URL(file.Url as string).pathname);
+        L.info({ fileName });
+        L.info({ response });
+        const fileData = Buffer.from(response.data);
+        zip.file(fileName, fileData);
+      } catch (error) {
+        console.error(`Failed to download file: ${file.Url}`, error);
+      }
     }
+
+    const zipContent = await zip.generateAsync({ type: 'nodebuffer' });
+    return zipContent;
   }
 
-  const zipContent = await zip.generateAsync({ type: 'nodebuffer' });
-  return zipContent;
-  }
-
-  async byId(id: number, depth?: number, comment?: boolean, file?: boolean,): Promise<any> {
+  async byId(
+    id: number,
+    depth?: number,
+    comment?: boolean,
+    file?: boolean
+  ): Promise<any> {
     // L.info(`fetch ${model} with id ${id}`);
     var select: any = {
       ID: true,
@@ -145,7 +155,9 @@ async  downloadFilesAndZip(files: FileDTO[]) {
     };
     if (depth == 1) {
       select.User = { select: { ID: true, Name: true } };
-      select.Event = { select: { ID: true, Name: true,FinalDate: true, ClosureDate: true } };
+      select.Event = {
+        select: { ID: true, Name: true, FinalDate: true, ClosureDate: true },
+      };
       select.Status = { select: { ID: true, Name: true } };
       select.Files = { select: { ID: true, Url: true } };
     }
@@ -171,16 +183,15 @@ async  downloadFilesAndZip(files: FileDTO[]) {
       where: { ID: id },
     });
     try {
-      
       if (contribution) {
-      const filesAsDTOs = this.toFileDTOArray(contribution.Files || []);
-      const { textFiles, imageFiles } = this.classifyFiles(filesAsDTOs);
-    return {
-        ...contribution,
-        TextFiles: textFiles,
-        ImageFiles: imageFiles,
-    };
-  }
+        const filesAsDTOs = this.toFileDTOArray(contribution.Files || []);
+        const { textFiles, imageFiles } = this.classifyFiles(filesAsDTOs);
+        return {
+          ...contribution,
+          TextFiles: textFiles,
+          ImageFiles: imageFiles,
+        };
+      }
     } catch (error) {
       L.error(` failed: ${error}`);
     }
@@ -224,40 +235,8 @@ async  downloadFilesAndZip(files: FileDTO[]) {
         var success = usersService
           .byId(contribution.UserID)
           .then((student: User) => {
-            return prisma.users
-              .findFirst({ where: { FacultyID: student.FacultyID, RoleID: 3 } })
-              .then((coordinator) => {
-                if (coordinator || coordinator == null) {
-                  // prepare notification
-                  var payload: any = {
-                    Contribution: {
-                      User: {
-                        Name: student.Name,
-                      },
-                      ID: contribution.ID,
-                      Name: contribution.Name,
-                    },
-                  };
-                  // sent
-                  notificationsService.trigger(
-                    coordinator as User,
-                    payload,
-                    NotificationSentTypeEnum.NEWCONTRIBUTION,
-                    NotificationSentThrough.InApp
-                  );
-                  // log
-                  L.info('Sent Notification: ' + payload);
-                  // return success
-                  return Promise.resolve(true);
-                } else {
-                  L.error('Coordinator not found: ' + coordinator);
-                  return Promise.resolve(false);
-                }
-              })
-              .catch((e) => {
-                L.error(e);
-                return Promise.resolve(false);
-              });
+            // Send notify to coordinator
+            return this.notifyCoordinator(student, contribution);
           });
 
         return Promise.resolve(contribution);
@@ -271,63 +250,159 @@ async  downloadFilesAndZip(files: FileDTO[]) {
       });
   }
 
+  private notifyCoordinator(student: any, contribution: any) {
+    return prisma.users
+      .findFirst({ where: { FacultyID: student.FacultyID, RoleID: 3 } })
+      .then((coordinator) => {
+        if (coordinator || coordinator == null) {
+          // prepare notification
+          var payload: any = {
+            Contribution: {
+              User: {
+                Name: student.Name,
+              },
+              ID: contribution.ID,
+              Name: contribution.Name,
+            },
+          };
+          // sent
+          notificationsService.trigger(
+            coordinator as User,
+            payload,
+            NotificationSentTypeEnum.NEWCONTRIBUTION,
+            NotificationSentThrough.InApp
+          );
+          // log
+          L.info('Sent Notification: ' + payload);
+          // return success
+          return Promise.resolve(true);
+        } else {
+          L.error('Coordinator not found: ' + coordinator);
+          return Promise.resolve(false);
+        }
+      })
+      .catch((e) => {
+        L.error(e);
+        return Promise.resolve(false);
+      });
+  }
   delete(id: number): Promise<any> {
     L.info(`delete ${model} with id ${id}`);
     // First, attempt to delete related files to avoid foreign key constraint issues
-    return prisma.files.deleteMany({
-      where: {
-        ContributionID: id,
-      },
-    })
-    .then(() => {
-      // After successfully deleting files, delete the contribution
-      return prisma.contributions.delete({
-        where: { ID: id },
+    return prisma.files
+      .deleteMany({
+        where: {
+          ContributionID: id,
+        },
+      })
+      .then(() => {
+        // After successfully deleting files, delete the contribution
+        return prisma.contributions.delete({
+          where: { ID: id },
+        });
+      })
+      .then((r) => {
+        // If both deletions are successful, resolve with the result of deleting the contribution
+        return Promise.resolve(r);
+      })
+      .catch((err) => {
+        // If an error occurs in either deletion step, log the error and resolve with an error object
+        L.error(`delete ${model} failed: ${err}`);
+        return Promise.resolve({
+          error:
+            'An error occurred while attempting to delete the contribution and/or its related files.',
+          message: 'Bad Request',
+        });
       });
-    })
-    .then((r) => {
-      // If both deletions are successful, resolve with the result of deleting the contribution
-      return Promise.resolve(r);
-    })
-    .catch((err) => {
-      // If an error occurs in either deletion step, log the error and resolve with an error object
-      L.error(`delete ${model} failed: ${err}`);
-      return Promise.resolve({
-        error: 'An error occurred while attempting to delete the contribution and/or its related files.',
-        message: 'Bad Request',
-      });
-    });
   }
 
   async update(id: number, contribution: Contribution): Promise<any> {
     L.info(`update ${model} with id ${id}: `);
-    L.info(contribution);
-    return prisma.contributions
-      .update({
-        where: { ID: id },
-        data: {
-          Name: contribution.Name,
-          Content: contribution.Content,
-          IsPublic: contribution.IsPublic === true ? true : false,
-          IsApproved: contribution.StatusID === Status.ACCEPTED ? true : false,
-          StatusID: Number(contribution.StatusID),
-          LastEditByID: contribution.LastEditByID,
-        },
-      })
-      .then((updated) => {
-        if(!(updated.StatusID === contribution.StatusID)) {
-          //TODO NOTI
-        }
 
-        return Promise.resolve(updated);
-      })
-      .catch((error) => {
-        L.error(`update ${model} failed: ${error}`);
+    const current = await prisma.contributions
+      .findUnique({ where: { ID: id } })
+      .catch((err) => {
+        L.error(`update ${model} failed: ${err}`);
         return Promise.reject({
           error: ContributionExceptionMessage.INVALID,
           message: ContributionExceptionMessage.BAD_REQUEST,
         });
       });
+
+    if (current) {
+      return prisma.contributions
+        .update({
+          where: { ID: id },
+          data: {
+            Name: contribution.Name,
+            Content: contribution.Content,
+            IsPublic: contribution.IsPublic === true ? true : false,
+            IsApproved:
+              contribution.StatusID === Status.ACCEPTED ? true : false,
+            StatusID: Number(contribution.StatusID),
+            LastEditByID: contribution.LastEditByID,
+          },
+        })
+        .then((updated) => {
+          // Handle notify to teacher when resubmit
+          if(!(current.LastEditByID === updated.LastEditByID)){
+            //TODO:
+            // notificationsService.trigger(
+            //   usersService.byId(updated.LastEditByID),
+            //   {
+            //     Contribution: {
+            //       User: {
+            //         Name: updated.User.Name,
+            //       },
+            //       ID: updated.ID,
+            //       Name: updated.Name,
+            //     },
+            //   },
+            //   NotificationSentTypeEnum.RESUBMITCONTRIBUTION,
+            //   NotificationSentThrough.InApp
+            // )
+          }
+
+          // Handle Status update
+          if (
+            !(updated.StatusID === current.StatusID && updated.StatusID != 1)
+          ) {
+            var Contribution: any = {
+              Name: current.Name,
+              IsApproved: updated.StatusID == Status.ACCEPTED ? true : false,
+            };
+            if (!(updated.IsPublic === current.IsPublic)) {
+              Contribution.IsPublic = updated.IsPublic;
+            }
+            //fetch user
+            usersService.byId(current.UserID).then((_) => {
+              // Send notification to user
+              // notificationsService.trigger(
+              //   user,
+              //   {
+              //     Contribution,
+              //   },
+              //   NotificationSentTypeEnum.CONTRIBUTIONINAPPEVENT,
+              //   NotificationSentThrough.InApp
+              // );
+            });
+            // Send notification to user
+          }
+
+          return Promise.resolve(updated);
+        })
+        .catch((error) => {
+          L.error(`update ${model} failed: ${error}`);
+          return Promise.reject({
+            error: ContributionExceptionMessage.INVALID,
+            message: ContributionExceptionMessage.BAD_REQUEST,
+          });
+        });
+    }
+    return Promise.reject({
+      error: ContributionExceptionMessage.INVALID,
+      message: ContributionExceptionMessage.BAD_REQUEST,
+    });
   }
 
   async validateConstraints(

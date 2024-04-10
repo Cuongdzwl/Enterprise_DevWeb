@@ -48,7 +48,12 @@ paths:
       tags:
         - Authentication
       summary: Get user profile
+      responses:
+        '200':
+          description: User profile
 
+        '401':
+          description: Unauthorized
     patch:
       tags:
         - Authentication
@@ -58,14 +63,38 @@ paths:
        content:
          application/json:
            schema:
-             $ref: '#/components/schemas/User'
              type: object
+             properties:
+               Password:
+               type: string
+             $ref: '#/components/schemas/User'
       responses:
       '201':
         description: Updated
       '401':
         description: Unauthorized    
-  /auth/forgotPassword:
+  /auth/password/change:
+    post:
+      tags:
+        - Authentication
+      summary: Change password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                oldPassword:
+                  type: string
+                newPassword:
+                  type: string
+      responses:
+        '201':
+          description: Password changed
+        '401':
+          description: Unauthorized
+  /auth/password/forgot:
     post:
       tags:
         - Authentication
@@ -141,7 +170,7 @@ paths:
           description: Bad Request
         '401':
           description: Unauthorized
-  /auth/resetPassword:
+  /auth/password/reset:
     post:
       tags:
         - Authentication
