@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "Website API Server",
   "main": "dist/index.js",
+  
+  
+  
   "scripts": {
     "start": "node dist/index.js",
     "compile": "ts-node build.ts && tsc",
@@ -11,7 +14,11 @@
     "lint": "eslint -c .eslintrc.js \"{server, test}/**/*.{js,ts,tsx}\" --quiet",
     "lint:fix": "eslint -c .eslintrc.js \"{server, test}/**/*.{js,ts,tsx}\" --quiet --fix",
     "test": "mocha -r ts-node/register test/**/*.ts --exit",
-    "test:debug": "mocha -r ts-node/register --inspect-brk test/**/*.ts --exit"
+    "test:debug": "mocha -r ts-node/register --inspect-brk test/**/*.ts --exit",
+    "seed": "prisma db seed"
+  },
+  "prisma": {
+    "seed": "node prisma/seed.js"
   },
   "dependencies": {
     "@azure/storage-blob": "^12.17.0",
@@ -74,4 +81,5 @@
     "typescript": "^4.6.2"
   },
   "author": "CUONGDZ"
+  
 }
