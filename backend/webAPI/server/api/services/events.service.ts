@@ -165,7 +165,16 @@ export class EventsService implements ISuperService<Event> {
       });
   }
   async delete(id: number): Promise<any> {
+    try {
     L.info(`delete ${model} with id ${id}`);
+    L.info(`delete ${model} with id ${id}`);
+    const contributions = await prisma.contributions.findMany({
+      where: { EventID: id },
+    });
+    for (const contribution of contributions) {
+      console.log(contribution.ID)
+      await contributionsService.delete(contribution.ID)
+    }
     await prisma.scheduledNotifications.deleteMany({where:{EventID: id}})
     return prisma.events
       .delete({
@@ -174,13 +183,14 @@ export class EventsService implements ISuperService<Event> {
       .then((r) => {
         return Promise.resolve(r);
       })
-      .catch((err) => {
-        L.error(`delete ${model} failed: ${err}`);
+    }
+    catch (error) {
+        L.error(`delete ${model} failed: ${error}`);
         return Promise.resolve({
           error: ExceptionMessage.INVALID,
           message: ExceptionMessage.BAD_REQUEST,
         });
-      });
+      }
   }
   async update(id: number, event: Event): Promise<any> {
     const validations = await this.validateConstraints(event);

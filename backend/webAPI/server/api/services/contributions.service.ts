@@ -271,26 +271,27 @@ async  downloadFilesAndZip(files: FileDTO[]) {
       });
   }
 
-  delete(id: number): Promise<any> {
-    L.info(`delete ${model} with id ${id}`);
-    // First, attempt to delete related files to avoid foreign key constraint issues
-    return prisma.files.deleteMany({
-      where: {
-        ContributionID: id,
-      },
-    })
-    .then(() => {
-      // After successfully deleting files, delete the contribution
+  async delete(id: number): Promise<any> {
+    try {
+      L.info(`delete ${model} with id ${id}`);
+      const files = await prisma.files.findMany({
+        where: { ContributionID: id },
+      });
+      for (const file of files) {
+        console.log(file.ID)
+        await this.fileService.delete(file.ID)
+      }
+
+    } catch (error) {
+      
+    }
       return prisma.contributions.delete({
         where: { ID: id },
-      });
-    })
+      })
     .then((r) => {
-      // If both deletions are successful, resolve with the result of deleting the contribution
       return Promise.resolve(r);
     })
     .catch((err) => {
-      // If an error occurs in either deletion step, log the error and resolve with an error object
       L.error(`delete ${model} failed: ${err}`);
       return Promise.resolve({
         error: 'An error occurred while attempting to delete the contribution and/or its related files.',
