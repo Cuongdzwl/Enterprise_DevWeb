@@ -308,7 +308,7 @@ export class ContributionsService implements ISuperService<Contribution> {
       .catch((err) => {
         // If an error occurs in either deletion step, log the error and resolve with an error object
         L.error(`delete ${model} failed: ${err}`);
-        return Promise.resolve({
+        return Promise.reject({
           error:
             'An error occurred while attempting to delete the contribution and/or its related files.',
           message: 'Bad Request',

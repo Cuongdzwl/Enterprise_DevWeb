@@ -12,6 +12,7 @@ import { UserDTO } from '../models/DTO/User.DTO';
 import { NotificationSentThrough } from '../models/NotificationSentThrough';
 import { NotificationSentTypeEnum } from '../models/NotificationSentType';
 import { Faculty } from '../models/Faculty';
+import contributionsService from '../services/contributions.service';
 
 const prisma = new PrismaClient();
 const model = 'user';
@@ -141,8 +142,15 @@ export class UsersService implements ISuperService<User> {
     }
   }
   // Delete
-  delete(id: number): Promise<any> {
+  async delete(id: number): Promise<any> {
     L.info(`delete ${model} with id ${id}`);
+    const contributions = await prisma.contributions.findMany({
+      where: { UserID: id },
+    });
+    for (const contribution of contributions) {
+      console.log(contribution.ID)
+      await contributionsService.delete(contribution.ID)
+    }
     return prisma.users
       .delete({
         where: { ID: id },
