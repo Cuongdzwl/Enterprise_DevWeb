@@ -317,6 +317,7 @@ export class ContributionsService implements ISuperService<Contribution> {
   }
 
   async update(id: number, contribution: Contribution): Promise<any> {
+    
     L.info(`update ${model} with id ${id}: `);
 
     const current = await prisma.contributions
@@ -330,6 +331,20 @@ export class ContributionsService implements ISuperService<Contribution> {
       });
 
     if (current) {
+      // validate time
+
+      const isBefore : boolean = await prisma.events.findUnique({ where: { ID: current.EventID } }).then((event) => {
+        if (!event) return false;
+        if (event.FinalDate) {
+          if (new Date(event.FinalDate) < new Date()){
+            L.info("User tried to updated the contribution after final date")
+            return false;
+          }
+        }
+        return true
+      })
+
+
       return prisma.contributions
         .update({
           where: { ID: id },
@@ -348,7 +363,7 @@ export class ContributionsService implements ISuperService<Contribution> {
           if(!(current.LastEditByID === updated.LastEditByID)){
             //TODO:
             // notificationsService.trigger(
-            //   usersService.byId(updated.LastEditByID),
+            //   { ID: updated.LastEditByID } as User,
             //   {
             //     Contribution: {
             //       User: {
@@ -375,16 +390,18 @@ export class ContributionsService implements ISuperService<Contribution> {
               Contribution.IsPublic = updated.IsPublic;
             }
             //fetch user
-            usersService.byId(current.UserID).then((_) => {
+            usersService.byId(current.UserID).then((user) => {
               // Send notification to user
-              // notificationsService.trigger(
-              //   user,
-              //   {
-              //     Contribution,
-              //   },
-              //   NotificationSentTypeEnum.CONTRIBUTIONINAPPEVENT,
-              //   NotificationSentThrough.InApp
-              // );
+              notificationsService.trigger(
+                user,
+                {
+                  Contribution,
+                },
+                NotificationSentTypeEnum.CONTRIBUTIONINAPPEVENT,
+                NotificationSentThrough.InApp
+              );
+            }).catch((error) => {
+              L.error(error);
             });
             // Send notification to user
           }

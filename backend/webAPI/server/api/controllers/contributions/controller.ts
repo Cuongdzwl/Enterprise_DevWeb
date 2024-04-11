@@ -8,6 +8,7 @@ import contributionsService from '../../services/contributions.service';
 import { Contribution } from '../../models/Contribution';
 import filesService from '../../services/files.service';
 import { Status } from '../../models/Status';
+import { FileDTO } from '../../models/DTO/File.DTO';
 
 const prisma = new PrismaClient();
 export class ContributionsController implements ISuperController {
@@ -36,6 +37,39 @@ export class ContributionsController implements ISuperController {
   }
 
   async create(req: Request, res: Response): Promise<void> {
+    const { Name, Content, IsPublic, IsApproved, EventID, UserID, StatusID,LastEditByID,CreatedAt,UpdatedAt } = req.body;
+    console.log({IsPublic, IsApproved})
+    let isPublic = true;
+    let isApproved = true;
+    if(IsPublic==="false"){
+      isPublic = false;
+    }
+    if(IsApproved==="false")
+    {
+      isApproved = false;
+    } 
+    const contributionData = {
+      Name,
+      Content,
+      IsPublic: isPublic,
+      IsApproved: isApproved,
+      EventID: parseInt(EventID),
+      UserID: parseInt(UserID),
+      StatusID: parseInt(StatusID),
+      LastEditByID,
+      CreatedAt,
+      UpdatedAt
+    };
+        const validations = await ContributionsService.validateConstraints(
+          contributionData
+    );
+    if (!validations.isValid) {
+      res
+        .status(400)
+        .json({ error: validations.error, message: validations.message })
+        .end();
+      return;
+    }
     try {
       contributionsService
         .create(req.body)
@@ -48,6 +82,7 @@ export class ContributionsController implements ISuperController {
               const files = filesObject[fieldName];
               for (const file of files) {
                 L.info(`Processing file: ${file.originalname}`);
+                L.info(`Contribution ID: ${createdContribution.ID}`);
                 if (file && createdContribution.ID) {
                   FilesService.createfile(file, createdContribution.ID);
                 }
@@ -170,7 +205,28 @@ export class ContributionsController implements ISuperController {
           [fieldname: string]: Express.Multer.File[];
         };
         L.info(filesObject);
-
+        let textFiles: Express.Multer.File[] = [];
+        let imageFiles: Express.Multer.File[] = [];
+        for (const fieldName in filesObject) {
+          if (Object.prototype.hasOwnProperty.call(filesObject, fieldName)) {
+            const files = filesObject[fieldName];
+            for (const file of files) {
+              file.originalname.endsWith
+              if (file.originalname) {
+                if (file.originalname.endsWith('.pdf') || file.originalname.endsWith('.docx')) {
+                  textFiles.push(file);
+                } else if (
+                  file.originalname.endsWith('.png') ||
+                  file.originalname.endsWith('.jpeg') ||
+                  file.originalname.endsWith('.JPG')  ||
+                  file.originalname.endsWith ('jpg')
+                ) {
+                  imageFiles.push(file);
+                }
+              }
+            }
+          }
+        }
         let ContributionFile;
         if (Object.keys(filesObject).length === 0) {
           res
@@ -178,14 +234,51 @@ export class ContributionsController implements ISuperController {
             .json({ message: 'Contribution and files updated successfully' });
           return;
         }
-        for (let i = 0; i < 2; i++) {
-          ContributionFile = await prisma.files.findFirst({
-            where: { ContributionID: id },
-          });
-          if (ContributionFile?.ID) {
-            await filesService.delete(ContributionFile.ID);
+        console.log({ textFiles, imageFiles })
+
+        if (imageFiles.length >= 1)
+          {
+            console.log("detele text")
+            const texts = await prisma.files.findMany({
+              where: {
+                ContributionID : id
+              }
+            })
+            for (let i = 0; i < texts.length; i++)
+              {
+                if(texts[i].Url.endsWith('.pdf') || texts[i].Url.endsWith('.docx'))
+                  {
+                    await prisma.files.delete({
+                      where: {
+                        ID : texts[i]?.ID
+                      }
+                    })
+                  }
+              }
           }
-        }
+        if (textFiles.length >= 1)
+          {
+            console.log("detele image")
+            const images = await prisma.files.findMany({
+              where: {
+                ContributionID : id
+              }
+            })
+            for (let i = 0; i < images.length; i++)
+              {
+                if(                   images[i]?.Url.endsWith('.png') ||
+                images[i]?.Url.endsWith('.jpeg') ||
+                images[i]?.Url.endsWith('.JPG')  ||
+                images[i]?.Url.endsWith ('jpg'))
+                  {
+                    await prisma.files.delete({
+                      where: {
+                        ID : images[i]?.ID
+                      }
+                    })
+                  }
+              }
+          }
         for (const fieldName in filesObject) {
           if (Object.prototype.hasOwnProperty.call(filesObject, fieldName)) {
             const files = filesObject[fieldName];
