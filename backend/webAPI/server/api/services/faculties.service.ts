@@ -4,7 +4,7 @@ import { PrismaClient } from '@prisma/client';
 import { ISuperService } from '../interfaces/ISuperService.interface';
 import { ExceptionMessage, FacultyExceptionMessage } from '../common/exception';
 import l from '../../common/logger';
-import { Report } from '../models/Report';
+import { DashBoard } from '../models/DashBoard';
 
 const prisma = new PrismaClient();
 const model = 'faculties';
@@ -233,7 +233,7 @@ export class FacultiesService implements ISuperService<Faculty> {
       if (!Number.isInteger(facultyID) || !Number.isInteger(startYear) || !Number.isInteger(endYear)) {
         return "Invalid input: 'facultyID' and 'year' must be integers.";
       }
-      let yearlyData :  Report[] =[];
+      let yearlyData :  DashBoard[] =[];
       const allContributions = await prisma.faculties.findMany({
         where: {
           CreatedAt: {
@@ -311,7 +311,7 @@ export class FacultiesService implements ISuperService<Faculty> {
           },
         },
       });
-      yearlyData.push(new Report(
+      yearlyData.push(new DashBoard(
         faculty.ID,
         faculty.Name,
         year,

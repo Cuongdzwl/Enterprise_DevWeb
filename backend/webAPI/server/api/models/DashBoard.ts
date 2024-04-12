@@ -1,4 +1,4 @@
-export class Report {
+export class DashBoard {
     facultyID: number;
     facultyName: string;
     year: number;
