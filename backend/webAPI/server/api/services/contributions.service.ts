@@ -426,7 +426,7 @@ export class ContributionsService implements ISuperService<Contribution> {
     contribution: Contribution
   ): Promise<{ isValid: boolean; error?: string; message?: string }> {
     // Validate Name
-    if (!contribution.Name || !/^[A-Za-z\s]{1,15}$/.test(contribution.Name)) {
+    if (!contribution.Name || !/^[A-Za-z\s]{1,50}$/.test(contribution.Name)) {
       return {
         isValid: false,
         error: ContributionExceptionMessage.INVALID,

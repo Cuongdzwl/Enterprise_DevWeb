@@ -91,7 +91,7 @@ export class RolesService implements ISuperService<Role> {
   }
   async validateConstraints(role: Role, update: boolean): Promise<{isValid: boolean, error?: string, message?: string}> {
     // Validate Content
-    if (!role.Name || !/^[A-Za-z\s]{1,15}$/.test(role.Name)) {
+    if (!role.Name || !/^[A-Za-z\s]{1,50}$/.test(role.Name)) {
         return {
           isValid: false,
           error: ExceptionMessage.INVALID,
