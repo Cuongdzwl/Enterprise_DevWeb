@@ -10,5 +10,5 @@ export default express
   .get('/:id',authenticateToken, controller.byId)
   .get('/:id/download',authenticateToken, controller.download)
   .delete('/:id',authenticateToken, controller.delete)
-  .put('/upload/:id',authenticateToken, controller.update);
+  .put('/upload/:id',upload.single('file'),authenticateToken, controller.update);
   
