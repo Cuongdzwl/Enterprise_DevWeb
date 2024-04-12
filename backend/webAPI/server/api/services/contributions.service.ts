@@ -209,13 +209,6 @@ export class ContributionsService implements ISuperService<Contribution> {
   }
 
   async create(contribution: Contribution): Promise<any> {
-    // const validations = await this.validateConstraints(contribution);
-    // if (!validations.isValid) {
-    //   return Promise.resolve({
-    //     error: validations.error,
-    //     message: validations.message,
-    //   });
-    // }
     L.info(`create ${model} with id ${contribution.ID}`);
     return prisma.contributions
       .create({
@@ -236,7 +229,14 @@ export class ContributionsService implements ISuperService<Contribution> {
           .byId(contribution.UserID)
           .then((student: User) => {
             // Send notify to coordinator
-            return this.notifyCoordinator(student, contribution);
+            this.notifyCoordinator(student, contribution).catch((e) => {
+              L.error(e);
+            });
+            return Promise.resolve(true);
+          })
+          .catch((error) => {
+            L.error(error);
+            return Promise.resolve(false);
           });
 
         return Promise.resolve(contribution);
@@ -266,14 +266,18 @@ export class ContributionsService implements ISuperService<Contribution> {
             },
           };
           // sent
-          notificationsService.trigger(
-            coordinator as User,
-            payload,
-            NotificationSentTypeEnum.NEWCONTRIBUTION,
-            NotificationSentThrough.InApp
-          );
+          notificationsService
+            .trigger(
+              coordinator as User,
+              payload,
+              NotificationSentTypeEnum.NEWCONTRIBUTION,
+              NotificationSentThrough.InApp
+            )
+            .catch((error) => {
+              L.error(error);
+            });
           // log
-          L.info('Sent Notification: ' + payload);
+          L.info(`Sent Notification: ${payload}`);
           // return success
           return Promise.resolve(true);
         } else {
@@ -299,6 +303,8 @@ export class ContributionsService implements ISuperService<Contribution> {
         // After successfully deleting files, delete the contribution
         return prisma.contributions.delete({
           where: { ID: id },
+        }).catch((e) => {
+          L.error(e);
         });
       })
       .then((r) => {
@@ -317,190 +323,274 @@ export class ContributionsService implements ISuperService<Contribution> {
   }
 
   async update(id: number, contribution: Contribution): Promise<any> {
-    
     L.info(`update ${model} with id ${id}: `);
 
     const current = await prisma.contributions
       .findUnique({ where: { ID: id } })
       .catch((err) => {
-        L.error(`update ${model} failed: ${err}`);
-        return Promise.reject({
-          error: ContributionExceptionMessage.INVALID,
-          message: ContributionExceptionMessage.BAD_REQUEST,
-        });
+        L.error(`fetch ${model} failed: ${err}`);
       });
+    try {
+      if (current) {
+        // validate time
 
-    if (current) {
-      // validate time
+        // const isBefore: boolean = await prisma.events
+        //   .findUnique({ where: { ID: current.EventID } })
+        //   .then((event) => {
+        //     if (!event) return false;
+        //     if (event.FinalDate) {
+        //       if (new Date(event.FinalDate) < new Date()) {
+        //         L.info('User tried to updated the contribution after final date');
+        //         return false;
+        //       }
+        //     }
+        //     return true;
+        //   });
 
-      const isBefore : boolean = await prisma.events.findUnique({ where: { ID: current.EventID } }).then((event) => {
-        if (!event) return false;
-        if (event.FinalDate) {
-          if (new Date(event.FinalDate) < new Date()){
-            L.info("User tried to updated the contribution after final date")
-            return false;
-          }
-        }
-        return true
-      })
-
-
-      return prisma.contributions
-        .update({
-          where: { ID: id },
-          data: {
-            Name: contribution.Name,
-            Content: contribution.Content,
-            IsPublic: contribution.IsPublic === true ? true : false,
-            IsApproved:
-              contribution.StatusID === Status.ACCEPTED ? true : false,
-            StatusID: Number(contribution.StatusID),
-            LastEditByID: contribution.LastEditByID,
-          },
-        })
-        .then((updated) => {
-          // Handle notify to teacher when resubmit
-          if(!(current.LastEditByID === updated.LastEditByID)){
-            //TODO:
-            // notificationsService.trigger(
-            //   { ID: updated.LastEditByID } as User,
-            //   {
-            //     Contribution: {
-            //       User: {
-            //         Name: updated.User.Name,
-            //       },
-            //       ID: updated.ID,
-            //       Name: updated.Name,
-            //     },
-            //   },
-            //   NotificationSentTypeEnum.RESUBMITCONTRIBUTION,
-            //   NotificationSentThrough.InApp
-            // )
-          }
-
-          // Handle Status update
-          if (
-            !(updated.StatusID === current.StatusID && updated.StatusID != 1)
-          ) {
-            var Contribution: any = {
-              Name: current.Name,
-              IsApproved: updated.StatusID == Status.ACCEPTED ? true : false,
-            };
-            if (!(updated.IsPublic === current.IsPublic)) {
-              Contribution.IsPublic = updated.IsPublic;
+        return prisma.contributions
+          .update({
+            where: { ID: id },
+            data: {
+              Name: contribution.Name,
+              Content: contribution.Content,
+              IsPublic: contribution.IsPublic === true ? true : false,
+              IsApproved:
+                contribution.StatusID === Status.ACCEPTED ? true : false,
+              StatusID: Number(contribution.StatusID),
+              LastEditByID: contribution.LastEditByID,
+            },
+          })
+          .then((updated) => {
+            // Handle notify to teacher when resubmit
+            if (
+              !(
+                current.LastEditByID === updated.LastEditByID &&
+                updated.LastEditByID === current.UserID
+              )
+            ) {
+              //TODO:
+              // notificationsService.trigger(
+              //   { ID: updated.LastEditByID } as User,
+              //   {
+              //     Contribution: {
+              //       User: {
+              //         Name: updated.Name,
+              //       },
+              //       ID: updated.ID,
+              //       Name: updated.Name,
+              //     },
+              //   },
+              //   NotificationSentTypeEnum.NEWCONTRIBUTION,
+              //   NotificationSentThrough.InApp
+              // )
             }
-            //fetch user
-            usersService.byId(current.UserID).then((user) => {
-              // Send notification to user
-              notificationsService.trigger(
-                user,
-                {
-                  Contribution,
-                },
-                NotificationSentTypeEnum.CONTRIBUTIONINAPPEVENT,
-                NotificationSentThrough.InApp
-              );
-            }).catch((error) => {
-              L.error(error);
-            });
-            // Send notification to user
-          }
 
-          return Promise.resolve(updated);
-        })
-        .catch((error) => {
-          L.error(`update ${model} failed: ${error}`);
-          return Promise.reject({
-            error: ContributionExceptionMessage.INVALID,
-            message: ContributionExceptionMessage.BAD_REQUEST,
+            // Handle Status update
+            if (
+              !(updated.StatusID === current.StatusID && updated.StatusID != 1)
+            ) {
+              var Contribution: any = {
+                Name: current.Name,
+                IsApproved: updated.StatusID == Status.ACCEPTED ? true : false,
+              };
+              if (!(updated.IsPublic === current.IsPublic)) {
+                Contribution.IsPublic = updated.IsPublic;
+              }
+              L.info('Hereeeeeeeeeeeeeeeeeeeeeeeeeee');
+              //fetch user
+              usersService
+                .byId(current.UserID)
+                .then((user) => {
+                  // Send notification to user
+                  notificationsService.trigger(
+                    user,
+                    {
+                      Contribution,
+                    },
+                    NotificationSentTypeEnum.CONTRIBUTIONINAPPEVENT,
+                    NotificationSentThrough.InApp
+                  );
+                })
+                .catch((error) => {
+                  L.error(error);
+                });
+              // Send notification to user
+              L.info('Hereeeeeeeeeeeeeeeeeeee');
+            }
+
+            return Promise.resolve(updated);
+          })
+          .catch((error) => {
+            L.error(`update ${model} failed: ${error}`);
+            return Promise.reject({
+              error: ContributionExceptionMessage.INVALID,
+              message: ContributionExceptionMessage.BAD_REQUEST,
+            });
           });
-        });
+      }
+      return Promise.reject({
+        error: ContributionExceptionMessage.INVALID,
+        message: ContributionExceptionMessage.BAD_REQUEST,
+      });
+    } catch (error) {
+      L.error(`update ${model} failed: ${error}`);
+      return Promise.reject({
+        error: ContributionExceptionMessage.INVALID,
+        message: ContributionExceptionMessage.BAD_REQUEST,
+      });
     }
-    return Promise.reject({
-      error: ContributionExceptionMessage.INVALID,
-      message: ContributionExceptionMessage.BAD_REQUEST,
-    });
   }
 
   async validateConstraints(
     contribution: Contribution
   ): Promise<{ isValid: boolean; error?: string; message?: string }> {
     // Validate Name
-    if (!contribution.Name || !/^[A-Za-z\s]{1,50}$/.test(contribution.Name)) {
+
+    try {
+      if (!contribution.Name || !/^[A-Za-z\s]{1,50}$/.test(contribution.Name)) {
+        return {
+          isValid: false,
+          error: ContributionExceptionMessage.INVALID,
+          message:
+            'Contribution name is invalid, cannot contain numbers or special characters, and must have a maximum of 15 characters.',
+        };
+      }
+
+
+      // Validate Content
+      if (!contribution.Content || contribution.Content.length > 3000) {
+        return {
+          isValid: false,
+          error: ContributionExceptionMessage.INVALID,
+          message:
+            'Content is invalid or too long, with a maximum of 3000 characters.',
+        };
+      }
+
+      // Validate IsApproved and IsPublic
+      if (
+        typeof contribution.IsApproved !== 'boolean' ||
+        typeof contribution.IsPublic !== 'boolean'
+      ) {
+        return {
+          isValid: false,
+          error: ContributionExceptionMessage.INVALID,
+          message: 'IsApproved and IsPublic must be boolean values.',
+        };
+      }
+
+      // Validate linkage IDs
+      // Similar checks for EventID, StatusID, UserID, LastEditUserID...
+      const eventExists = await prisma.events.findUnique({
+        where: { ID: contribution.EventID },
+      });
+      if (!eventExists) {
+        return {
+          isValid: false,
+          error: ContributionExceptionMessage.INVALID_EVENTID,
+          message: 'Referenced event does not exist.',
+        };
+      }
+      const userExists = await prisma.users.findUnique({
+        where: { ID: contribution.UserID },
+      });
+      if (!userExists) {
+        return {
+          isValid: false,
+          error: ContributionExceptionMessage.INVALID_USERID,
+          message: 'Referenced user does not exist.',
+        };
+      }
+      // const lastEditByIdExists = await prisma.users.findUnique({
+      //   where: { ID: contribution.LastEditByID },
+      // });
+      // if (!lastEditByIdExists) {
+      //   return {
+      //     isValid: false,
+      //     error: ContributionExceptionMessage.INVALID_EVENTID,
+      //     message: 'Referenced user does not exist.',
+      //   };
+      // }
+      const statusExists = await prisma.contributionStatuses.findUnique({
+        where: { ID: contribution.StatusID },
+      });
+      if (!statusExists) {
+        return {
+          isValid: false,
+          error: ContributionExceptionMessage.INVALID_EVENTID,
+          message: 'Referenced status does not exist.',
+        };
+      }
+      // If all validations pass
+      return { isValid: true };
+    } catch (error) {
+      L.error(` ${model} failed: invalid constraints`);
       return {
         isValid: false,
         error: ContributionExceptionMessage.INVALID,
-        message:
-          'Contribution name is invalid, cannot contain numbers or special characters, and must have a maximum of 50 characters.',
+        message: ContributionExceptionMessage.BAD_REQUEST,
       };
     }
+  }
 
-    // Validate Content
-    if (!contribution.Content || contribution.Content.length > 3000) {
-      return {
-        isValid: false,
-        error: ContributionExceptionMessage.INVALID,
-        message:
-          'Content is invalid or too long, with a maximum of 3000 characters.',
-      };
-    }
+  validateFinalDate(contribution: Contribution): Promise<boolean> {
+    return prisma.events
+      .findUnique({ where: { ID: contribution.EventID } })
+      .then((r) => {
+        if (!r) {
+          return false;
+        }
+        if (r.ClosureDate) {
+          if (new Date(r.FinalDate) < new Date()) {
+            return false;
+          }
+        }
+        return true;
+      })
+      .catch((e) => {
+        L.error(e);
+        return prisma.contributions
+          .findUnique({ where: { ID: contribution.ID } })
+          .then((c) => {
+            if (!c) {
+              return false;
+            }
+            return this.validateFinalDate(c as Contribution);
+          })
+          .catch(() => {
+            return false;
+          });
+      });
+  }
+  validateClosureDate(contribution: Contribution): Promise<boolean> {
+    return prisma.events
+      .findUnique({ where: { ID: contribution.EventID } })
+      .then((r) => {
+        if (!r) {
+          return false;
+        }
+        if (r.ClosureDate) {
+          if (new Date(r.ClosureDate) < new Date()) {
+            return false;
+          }
+        }
+        return true;
+      })
+      .catch((e) => {
+        L.error(e);
 
-    // Validate IsApproved and IsPublic
-    if (
-      typeof contribution.IsApproved !== 'boolean' ||
-      typeof contribution.IsPublic !== 'boolean'
-    ) {
-      return {
-        isValid: false,
-        error: ContributionExceptionMessage.INVALID,
-        message: 'IsApproved and IsPublic must be boolean values.',
-      };
-    }
-
-    // Validate linkage IDs
-    // Similar checks for EventID, StatusID, UserID, LastEditUserID...
-    const eventExists = await prisma.events.findUnique({
-      where: { ID: contribution.EventID },
-    });
-    if (!eventExists) {
-      return {
-        isValid: false,
-        error: ContributionExceptionMessage.INVALID_EVENTID,
-        message: 'Referenced event does not exist.',
-      };
-    }
-    const userExists = await prisma.users.findUnique({
-      where: { ID: contribution.UserID },
-    });
-    if (!userExists) {
-      return {
-        isValid: false,
-        error: ContributionExceptionMessage.INVALID_USERID,
-        message: 'Referenced user does not exist.',
-      };
-    }
-    // const lastEditByIdExists = await prisma.users.findUnique({
-    //   where: { ID: contribution.LastEditByID },
-    // });
-    // if (!lastEditByIdExists) {
-    //   return {
-    //     isValid: false,
-    //     error: ContributionExceptionMessage.INVALID_EVENTID,
-    //     message: 'Referenced user does not exist.',
-    //   };
-    // }
-    const statusExists = await prisma.contributionStatuses.findUnique({
-      where: { ID: contribution.StatusID },
-    });
-    if (!statusExists) {
-      return {
-        isValid: false,
-        error: ContributionExceptionMessage.INVALID_EVENTID,
-        message: 'Referenced status does not exist.',
-      };
-    }
-    // If all validations pass
-    return { isValid: true };
+        return prisma.contributions
+          .findUnique({ where: { ID: contribution.ID } })
+          .then((c) => {
+            if (!c) {
+              return false;
+            }
+            return this.validateClosureDate(c as Contribution);
+          })
+          .catch(() => {
+            return false;
+          });
+      });
   }
 }
 

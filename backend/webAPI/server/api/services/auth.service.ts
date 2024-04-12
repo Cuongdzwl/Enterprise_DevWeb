@@ -183,8 +183,9 @@ export class AuthService {
           L.info(`Updated Password for ${id}`)
           return prisma.users
             .update({ data: { Password: hashedPassword }, where: { ID: id } })
-            .then((r) => {
-              if (r) return Promise.resolve({ message: 'Password changed' });
+            .then((e) => {
+              L.info(`Updated user with ${e}`)
+              if (e) return Promise.resolve({ message: 'Password changed' });
               else return Promise.reject({ message: 'User not found' });
             });
         } else {
@@ -193,7 +194,7 @@ export class AuthService {
       })
       .catch((err) => {
         L.error(err);
-        return Promise.reject({ message: 'Bad Request' });
+        return Promise.reject(err);
       });
   }
   async sendOTP(userid: number, phone?: string, email?: string): Promise<any> {

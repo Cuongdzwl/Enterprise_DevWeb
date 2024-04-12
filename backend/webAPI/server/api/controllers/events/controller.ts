@@ -30,6 +30,17 @@ export class EventsController implements ISuperController {
     const contribution: boolean =
     req.query.contribution?.toString() == 'true' ? true : false;
 
+    if(res.locals.user.user.RoleID === 4 ){
+      EventsService.byId(id, depth, contribution,isPublic,res.locals.user.user.ID)
+      .then((r) => {
+        if (r) res.json(r);
+        else res.status(404).end();
+      })
+      .catch((error) => {
+        res.status(400).json({ error: error }).end();
+      });
+      return;
+    }
 
     EventsService.byId(id, depth, contribution,isPublic)
       .then((r) => {

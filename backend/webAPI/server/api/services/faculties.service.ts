@@ -242,11 +242,8 @@ export class FacultiesService implements ISuperService<Faculty> {
           },
         },
       });
-      console.log(endYear)
-      console.log(facultyID)
       for (const faculty of allContributions){
       for (let year =startYear; year <= endYear; year++){
-      console.log(faculty.ID)
       const contributionsOfFaculty = await prisma.contributions.count({
         where: {
           Event: {
@@ -258,7 +255,6 @@ export class FacultiesService implements ISuperService<Faculty> {
           },
         },
       });
-      console.log(contributionsOfFaculty)
       const allContributions = await prisma.contributions.findMany({
         where: {
           Event: {
@@ -274,7 +270,6 @@ export class FacultiesService implements ISuperService<Faculty> {
           Comments: true,
         },
       });
-      console.log(allContributions)
       const contributionsException = allContributions.filter((contribution) => {
         if (contribution.Comments.length == 0) {
           const createdDate = new Date(contribution.CreatedAt);
@@ -332,6 +327,99 @@ export class FacultiesService implements ISuperService<Faculty> {
       return 'An internal server error occurred.';
     }
   }
+
+  async generateReport(facultyID?: number, year?: number) {
+    // If facultyID is provided, filter by facultyID
+    const facultyFilter = facultyID ? { ID: facultyID } : {};
+  
+    // If year is provided, filter by year
+    const yearFilter = year
+      ? {
+          CreatedAt: {
+            gte: new Date(year, 0, 1),
+            lt: new Date(year + 1, 0, 1),
+          },
+        }
+      : {};
+  
+    // Query the database
+    const faculties = await prisma.faculties.findMany({
+      where: {
+        ...facultyFilter,
+      },
+      include: {
+        Users: true,
+        Events: {
+          where: {
+            ...yearFilter,
+          },
+          include: {
+            Contributions: {
+              include: {
+                Files: true,
+              },
+            },
+          },
+        },
+      },
+    });
+  
+    // Map the data to the desired format
+    const data = faculties.map((faculty) => {
+      const totalEvents = faculty.Events.length;
+      const totalUsers = faculty.Users.length;
+      const totalStudent = faculty.Users.filter((user) => user.RoleID === 4).length;
+      const totalCoordinator = faculty.Users.filter((user) => user.RoleID === 3).length;
+      const totalContributions = faculty.Events.reduce(
+        (sum, event) => sum + event.Contributions.length,
+        0
+      );
+      const totalFiles = faculty.Events.reduce(
+        (sum, event) =>
+          sum +
+          event.Contributions.reduce(
+            (sum, contribution) => sum + contribution.Files.length,
+            0
+          ),
+        0
+      );
+      const totalPublicContributions = faculty.Events.reduce(
+        (sum, event) =>
+          sum +
+          event.Contributions.filter((contribution) => contribution.IsPublic)
+            .length,
+        0
+      );
+      const totalApprovedContributions = faculty.Events.reduce(
+        (sum, event) =>
+          sum +
+          event.Contributions.filter((contribution) => contribution.IsApproved)
+            .length,
+        0
+      );
+      const totalRejectedContributions = totalContributions - totalApprovedContributions;
+      const pendingContributions = totalContributions - totalApprovedContributions - totalRejectedContributions;
+  
+      return {
+        year: year || "Life Time",
+        facultyName: faculty.Name,
+        totalUsers,
+        totalCoordinator,
+        totalStudent,
+        totalEvents,
+        totalContributions,
+        totalFiles,
+        totalPublicContributions,
+        totalApprovedContributions,
+        totalRejectedContributions,
+        pendingContributions,
+      };
+    });
+  
+    return data;
+  }
+
+
   async validateConstraints(
     faculty: Faculty
   ): Promise<{ isValid: boolean; error?: string; message?: string }> {

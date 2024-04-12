@@ -19,7 +19,7 @@ export class AuthController implements IAuthController {
   updateProfile(req: Request, res: Response): void {
     const id = Number.parseInt(res.locals.user.user.ID + '');
     try {
-      UserService.update(id, req.body).then((r) => {
+      UserService.update(id, req.body,true).then((r) => {
         L.info(r);
         if (r) res.status(201).json(r);
         else res.status(404).end();
