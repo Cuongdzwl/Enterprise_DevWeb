@@ -153,22 +153,41 @@ async downloadBlobToFile(file: FileDTO) {
     return createdFile;
   }
   // Delete
-  delete(id: number): Promise<any> {
-    L.info(`delete ${model} with id ${id}`);
-    return prisma.files
-      .delete({
+  async delete(id: number): Promise<any> {
+    try {
+      const fileMetadata = await prisma.files.findUnique({
         where: { ID: id },
-      })
-      .then((r) => {
-        return Promise.resolve(r);
-      })
-      .catch((err) => {
-        L.error(`delete ${model} failed: ${err}`);
-        return Promise.resolve({
-          error: ExceptionMessage.INVALID,
-          message: ExceptionMessage.BAD_REQUEST,
-        });
       });
+  
+      if (!fileMetadata) {
+        throw new Error(`File with ID ${id} not found.`);
+      }
+      const decodedUrl = decodeURIComponent(fileMetadata.Url);
+      console.log(decodedUrl);
+      const blobServiceClient = BlobServiceClient.fromConnectionString(process.env.AZURE_STORAGE_CONNECTION_STRING|| '');
+      const containerClient = blobServiceClient.getContainerClient(process.env.AZURE_STORAGE_CONTAINER_NAME|| '');
+  
+      const blobName = decodedUrl.split('/').pop();
+      if(blobName){
+        const blockBlobClient = containerClient.getBlockBlobClient(blobName);
+        await blockBlobClient.delete();
+      }
+
+      L.info(`File deleted from Azure Blob Storage: ${blobName}`);
+  
+      await prisma.files.delete({
+        where: { ID: id },
+      });
+      L.info(`File metadata deleted from database: ${id}`);
+  
+      return { message: "File and its metadata successfully deleted" };
+    } catch (err) {
+      L.error(`Error during file deletion process: ${err}`);
+      return Promise.resolve({
+        error: ExceptionMessage.INVALID,
+        message: ExceptionMessage.BAD_REQUEST,
+      });
+    }
   }
   // Update
   async update(id: number, file: File): Promise<any> {

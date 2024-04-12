@@ -82,7 +82,7 @@
     Url            String
     CreatedAt      DateTime?      @default(now())
     UpdatedAt      DateTime?      @default(now()) @updatedAt
-    Contribution   contributions? @relation(fields: [ContributionID], references: [ID], onDelete: Cascade, onUpdate: NoAction)
+    Contribution   contributions? @relation(fields: [ContributionID], references: [ID], onDelete: NoAction, onUpdate: NoAction)
     ContributionID Int
   }
 
@@ -120,9 +120,9 @@
   model scheduledNotifications {
     ID                     Int                   @id @default(autoincrement())
     NotificationSentTypeID Int
-    NotificationSentType   notificationSentTypes @relation(fields: [NotificationSentTypeID], references: [ID], onDelete: Cascade, onUpdate: NoAction)
-    EventID                Int
-    Event                  events                @relation(fields: [EventID], references: [ID], onDelete: Cascade, onUpdate: NoAction)
+    NotificationSentType   notificationSentTypes? @relation(fields: [NotificationSentTypeID], references: [ID], onDelete: Cascade, onUpdate: NoAction)
+    EventID                Int?
+    Event                  events?                @relation(fields: [EventID], references: [ID], onDelete: Cascade, onUpdate: NoAction)
     SentTo                 Int
     SentAt                 DateTime
     TransactionID          String?
