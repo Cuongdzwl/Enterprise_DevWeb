@@ -447,6 +447,29 @@ paths:
           description: Invalid input
         '404':
           description: Faculty not found
+  /faculties/report:
+    get:
+      tags:
+        - Faculties
+      summary: Get faculty report
+      parameters:
+        - in: query
+          name: id
+          schema:
+            type: integer
+          description: The ID of the faculty to get the report.
+        - in: query
+          name: year
+          schema:
+            type: integer
+          description: The year to get the report.
+      responses:
+        '200':
+          description: Faculty report.
+        '400':
+          description: Invalid input
+        '404':
+          description: Faculty not found
   /faculties/public:
     get:
       tags:

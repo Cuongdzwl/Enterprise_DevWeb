@@ -5,6 +5,8 @@ import { PrismaClient } from '@prisma/client';
 import EventsService from '../../services/events.service';
 import facultiesService from '../../services/faculties.service';
 import L from '../../../common/logger';
+import { createObjectCsvWriter as createCsvWriter } from "csv-writer";
+import * as fs from 'fs';
 
 const prisma = new PrismaClient();
 
@@ -147,6 +149,60 @@ export class FacultiesController implements ISuperController {
     } catch (error) {
       res.status(400).json(error).end();
     }
+  }
+  async downloadReport(req: Request, res: Response): Promise<void> {
+      // Get the facultyID and year from the request parameters
+      const facultyID = req.query.id ? parseInt(req.query.id.toString()) : undefined;
+      const year = req.query.year ? parseInt(req.query.year.toString()) : undefined;
+    
+      // Generate the report data
+      const data = await facultiesService.generateReport(facultyID, year);
+      L.info(data);
+
+      var path = "../../../../downloads/"
+      path = path + `faculty_${facultyID|| "all"}_${year || "lifetime"}.csv`
+      // Define the CSV writer
+      L.info("Processing CSV file: " + path)
+
+      const csvWriter = createCsvWriter({
+        path: path,
+        header: [
+          { id: 'year', title: 'Year' },
+          { id: 'facultyName', title: 'Faculty Name' },
+          { id: 'totalUsers', title: 'Total Users' },
+          { id: 'totalCoordinator', title: 'Total Coordinators' },
+          { id: 'totalStudent', title: 'Total Students' },
+          { id: 'totalEvents', title: 'Total Events' },
+          { id: 'totalContributions', title: 'Total Contributions' },
+          { id: 'totalFiles', title: 'Total Files' },
+          { id: 'totalPublicContributions', title: 'Total Public Contributions' },
+          { id: 'totalApprovedContributions', title: 'Total Approved Contributions' },
+          { id: 'totalRejectedContributions', title: 'Total Rejected Contributions' },
+          { id: 'pendingContributions', title: 'Pending Contributions' },
+        ],
+      });
+    
+      // Write the data to the CSV file
+      await csvWriter.writeRecords(data);
+
+      L.info("Ready to download CSV file")
+      // Send the CSV file as a response
+      res.status(200).download(path);
+      
+      fs.unlink(path, (err) => {
+        if (err) {
+          console.error('Error removing file:', err);
+          res.status(500).json({ error: 'Internal Server Error' }).end();
+          return;
+        }
+        console.log('File removed successfully');
+      });
+  }
+
+  convertToCSV(data: any[]) {
+    const header = Object.keys(data[0]).join(',');
+    const rows = data.map((item) => Object.values(item).join(','));
+    return `${header}\n${rows.join('\n')}`;
   }
   async dashboard(req: Request, res: Response): Promise<void> {
     try {

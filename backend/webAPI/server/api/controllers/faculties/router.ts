@@ -8,6 +8,7 @@ export default express
   .get('/public', controller.guest)
   .get('/public/:id', controller.guestById)
   .get('/public/:id/contribution/:contributionid', controller.guestEventContributions)
+  .get('/report', controller.downloadReport)
   .get('/:id',authenticateToken, controller.byId)
   .delete('/:id',authenticateToken,authorizeRole("admin"), controller.delete)
   .get('/:id/dashboard',authenticateToken,authorizeRole("manager"), controller.dashboard)
