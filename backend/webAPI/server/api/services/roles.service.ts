@@ -99,10 +99,10 @@ export class RolesService implements ISuperService<Role> {
             'Role name is invalid, cannot contain numbers or special characters, and must have a maximum of 15 characters.',
         };
       }
-    const existName = await prisma.roles.findMany({
+    const existName = await prisma.roles.findFirst({
       where: {Name: role.Name}
     })
-    if(existName && update == false){
+    if(existName != null && update == false){
       return {
         isValid: false,
         error: RoleExceptionMessage.ROLE_NAME_EXISTED,

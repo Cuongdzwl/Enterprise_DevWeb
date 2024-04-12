@@ -92,12 +92,20 @@ export class ContributionsController implements ISuperController {
       contributionsService
         .create(req.body)
         .then((createdContribution) => {
+          
           const filesObject = req.files as {
             [fieldname: string]: Express.Multer.File[];
           };
           for (const fieldName in filesObject) {
             if (Object.prototype.hasOwnProperty.call(filesObject, fieldName)) {
               const files = filesObject[fieldName];
+              for (const file of files){
+                L.info(file.size + 'bytes');
+                if(file.size > 5 * 1024 * 1024) {
+                  res.status(400).json({ message: 'File too large. (5mb)' });
+                  return;
+                }
+              }
               for (const file of files) {
                 L.info(`Processing file: ${file.originalname}`);
                 L.info(`Contribution ID: ${createdContribution.ID}`);
@@ -107,9 +115,7 @@ export class ContributionsController implements ISuperController {
               }
             }
           }
-          res
-            .status(201)
-            .json({ message: 'Contribution and files created successfully' });
+          res.status(201).json({ message: 'Contribution and files created successfully' });
         })
         .catch(() => {
           res.status(400).json({ message: 'Created Failed' });

@@ -200,7 +200,7 @@ export class FacultiesController implements ISuperController {
     L.info('Ready to download CSV file');
     // Send the CSV file as a response
     res.status(200).download(path, () => {
-      fs.unlinkSync(path);
+      // fs.unlinkSync(path);
     });
   }
 
