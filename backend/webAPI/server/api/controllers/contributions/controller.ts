@@ -129,6 +129,7 @@ export class ContributionsController implements ISuperController {
     //     .end();
     //   return;
     // }
+    L.info("update")
     const id = Number.parseInt(req.params.id);
     if (!/^\d{1,20}$/.test(id.toString())) {
       res

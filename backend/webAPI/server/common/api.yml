@@ -641,19 +641,16 @@ paths:
       requestBody:
         required: true
         content:
-          application/json:
+          multipart/form-data:
             schema:
               type: object
-              required:
-                - Path
-                - ContributionID
               properties:
-                Path:
+                file:
                   type: string
-                  description: New local file path for the uploaded file.
-                ContributionID:
-                  type: integer
+                  format: binary
                   description: Updated contribution identifier associated with the file.
+              required:
+                - ContributionID
       responses:
         '200':
           description: File information updated successfully.

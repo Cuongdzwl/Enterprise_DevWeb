@@ -58,7 +58,6 @@ export class FilesService implements ISuperService<File> {
       blobHTTPHeaders: { blobContentType: file.mimetype }
     });
     L.info("Uploaded:" + file.filename);
-    // fs.unlinkSync(file.path);
 
     return blockBlobClient.url;
   }
@@ -139,7 +138,7 @@ async downloadBlobToFile(file: FileDTO) {
     }
     L.info(`create ${model} with id`)
     L.info(`Contribution: ${contributionID} | Url: ${url}`)
-    
+    fs.unlinkSync(file.path);
     const createdFile = await prisma.files.create({
       data: {
         Url: url,
@@ -200,6 +199,34 @@ async downloadBlobToFile(file: FileDTO) {
         data: {
           Url: file.Url,
           ContributionID: file.ContributionID,
+        },
+      });
+      return Promise.resolve(updatedFile);
+    } catch (error) {
+      L.error(`update ${model} failed: ${error}`);
+      return Promise.resolve({
+        error: ExceptionMessage.INVALID,
+        message: ExceptionMessage.BAD_REQUEST,
+      });
+    }
+  }
+  async updateFile(id: number, file: Express.Multer.File): Promise<any> {
+    // Validate
+    const url = await this.uploadFileToBlob(file);
+    const stats = fs.statSync(file.path);
+    const fileSizeInBytes = stats.size;
+    const fileSizeInMegabytes = fileSizeInBytes / (1024*1024);
+    if (fileSizeInMegabytes > 5) {
+      return { isValid: false, error: FileExceptionMessage.INVALID, message: "File size exceeds 5 MB limit." };
+    }
+    L.info(`update ${model} with id`)
+    L.info(` Url: ${url}`)
+    fs.unlinkSync(file.path);
+    try {
+      const updatedFile = prisma.files.update({
+        where: { ID: id },
+        data: {
+          Url: url,
         },
       });
       return Promise.resolve(updatedFile);

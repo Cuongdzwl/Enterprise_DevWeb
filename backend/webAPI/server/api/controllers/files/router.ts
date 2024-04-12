@@ -10,5 +10,5 @@ export default express
   .get('/:id', controller.byId)
   .get('/:id/download', controller.download)
   .delete('/:id', controller.delete)
-  .put('/upload/:id', controller.update);
+  .put('/upload/:id',upload.single('file'), controller.update);
   

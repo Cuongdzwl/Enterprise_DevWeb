@@ -6,8 +6,14 @@ import filesService from '../../services/files.service';
 
 export class FilesController implements ISuperController {
   update(req: Request, res: Response): void {
+    const file = req.file;
+    console.log(req.file)
+    if (!file) {
+      res.status(400).send("Missing file");
+      return;
+    }
     const id = Number.parseInt(req.params['id']);
-    FileService.update(id, req.body).then((r) =>
+    FileService.updateFile(id, file).then((r) =>
       res.status(201).location(`/api/v1/files/${r.id}`).json(r)
     );
   }
