@@ -288,6 +288,59 @@ export class FacultiesController implements ISuperController {
       return;
     }
   }
+  async dashboardManager(req: Request, res: Response): Promise<void> {
+    try {
+      const startYear = parseInt(req.query.startYear?.toString() ?? '');
+      const endYear = parseInt(req.query.endYear?.toString() ?? '');
+      L.info(`${startYear}`);
+      if (
+        !Number.isInteger(startYear) ||
+        startYear < 1 ||
+        !Number.isInteger(endYear) ||
+        endYear < 1
+      ) {
+        res
+          .status(400)
+          .json({
+            error:
+              'Invalid year range: both startYear and endYear must be integers greater than 0.',
+          })
+          .end();
+        return;
+      }
+      if (startYear >= endYear) {
+        res
+          .status(400)
+          .json({
+            error: 'Invalid year range: startYear cannot be after endYear.',
+          })
+          .end();
+        return;
+      }
+
+      // Assuming facultiesService.getDashboardDataForFacultyYear has been implemented
+      const dashboardData = await facultiesService.dashboardManager(
+        startYear,
+        endYear
+      );
+      if (!dashboardData) {
+        res
+          .status(404)
+          .json({
+            error:
+              'No dashboard data found for the provided faculty ID and year.',
+          })
+          .end();
+        return;
+      }
+
+      res.status(200).json(dashboardData).end();
+    } catch (error) {
+      console.error('Dashboard error:', error);
+      res.status(500).json({ error: 'Internal Server Error' }).end();
+      return;
+    }
+  }
   // async public() {}
 }
 

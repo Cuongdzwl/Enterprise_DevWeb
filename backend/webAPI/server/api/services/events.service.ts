@@ -375,7 +375,7 @@ export class EventsService implements ISuperService<Event> {
         isValid: false,
         error: EventExceptionMessage.INVALID,
         message:
-          'Event name is invalid, cannot contain numbers or special characters, and must have a maximum of 15 characters.',
+          'Event name is invalid, cannot contain numbers or special characters, and must have a maximum of 50 characters.',
       };
     }
 
