@@ -100,7 +100,7 @@ export class RolesService implements ISuperService<Role> {
         };
       }
     const existName = await prisma.roles.findMany({
-      where: {Name: Role.name}
+      where: {Name: role.Name}
     })
     if(existName && update == false){
       return {

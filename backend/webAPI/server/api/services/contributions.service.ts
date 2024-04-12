@@ -51,7 +51,7 @@ export class ContributionsService implements ISuperService<Contribution> {
       select,
       where,
     });
-    L.info(contributions, `fetch all ${model}(s)`);
+    L.info(`fetch all ${model}(s)`);
 
     // return Promise.resolve(contributions);;
 
@@ -121,7 +121,7 @@ export class ContributionsService implements ISuperService<Contribution> {
         });
         const fileName = path.basename(new URL(file.Url as string).pathname);
         L.info({ fileName });
-        L.info({ response });
+        // L.info({ response });
         const fileData = Buffer.from(response.data);
         zip.file(fileName, fileData);
       } catch (error) {
@@ -222,10 +222,10 @@ export class ContributionsService implements ISuperService<Contribution> {
           StatusID: Status.PENDING as number,
         },
       })
-      .then((contribution) => {
+      .then(async (contribution) => {
         // Sent create success notification
         // find faculty
-        var success = usersService
+        var success = await usersService
           .byId(contribution.UserID)
           .then((student: User) => {
             // Send notify to coordinator
@@ -238,7 +238,7 @@ export class ContributionsService implements ISuperService<Contribution> {
             L.error(error);
             return Promise.resolve(false);
           });
-
+        L.info(`Notify Status : ${success}`)
         return Promise.resolve(contribution);
       })
       .catch((error) => {
@@ -250,13 +250,13 @@ export class ContributionsService implements ISuperService<Contribution> {
       });
   }
 
-  private notifyCoordinator(student: any, contribution: any) {
+  private notifyCoordinator(student: any, contribution: any) : Promise<boolean> {
     return prisma.users
       .findFirst({ where: { FacultyID: student.FacultyID, RoleID: 3 } })
       .then((coordinator) => {
         if (coordinator || coordinator == null) {
           // prepare notification
-          var payload: any = {
+          var send: any = {
             Contribution: {
               User: {
                 Name: student.Name,
@@ -265,11 +265,12 @@ export class ContributionsService implements ISuperService<Contribution> {
               Name: contribution.Name,
             },
           };
+          L.info(`Prepared Notification: ${send}`);
           // sent
           notificationsService
             .trigger(
               coordinator as User,
-              payload,
+              send,
               NotificationSentTypeEnum.NEWCONTRIBUTION,
               NotificationSentThrough.InApp
             )
@@ -277,7 +278,7 @@ export class ContributionsService implements ISuperService<Contribution> {
               L.error(error);
             });
           // log
-          L.info(`Sent Notification: ${payload}`);
+          L.info(`Sent Notification: ${send}`);
           // return success
           return Promise.resolve(true);
         } else {

@@ -118,7 +118,7 @@ export class NotificationService implements ISuperService<Notification> {
                   return Promise.resolve({ success: true });
                 });
             });
-        });
+        }).catch((err) => {L.error(err); Promise.reject(err.data)});
         // this.create({});
         return Promise.resolve({ success: true });
       } else {
@@ -215,7 +215,7 @@ export class NotificationService implements ISuperService<Notification> {
                   });
               });
             return Promise.resolve({ success: true });
-          });
+          }).catch(error => {L.error(error); Promise.reject(error.data);});
       } else {
         novu.trigger(type as string, { to, payload }).catch((error) => {
           L.error(error.data);
