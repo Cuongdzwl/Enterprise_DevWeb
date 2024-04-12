@@ -327,6 +327,51 @@ export class FacultiesService implements ISuperService<Faculty> {
       return 'An internal server error occurred.';
     }
   }
+  async dashboardManager(startYear:number, endYear:number) {
+    // Validate input years
+    if (!Number.isInteger(startYear) || !Number.isInteger(endYear)) {
+      return "Invalid input: 'startYear' and 'endYear' must be integers.";
+    }
+  
+    try {
+      let stats = [];
+      for (let year =startYear; year <= endYear; year++){
+      const eventTotal = await prisma.events.count({
+        where: {
+          UpdatedAt: {
+            gte: new Date(year, 0, 1),
+            lte: new Date(year, 11, 31),
+          },
+        }
+      })
+      const contribution = await prisma.contributions.count({
+        where: {
+          CreatedAt: {
+            gte: new Date(year, 0, 1),
+            lte: new Date(year, 11, 31),
+          },
+        }
+      })
+      stats.push(year, eventTotal, contribution)
+    }
+    const formattedStats = []
+    for (let i = 0; i < stats.length; i += 3) {
+      // Ensure there's a pair to process
+      if (stats[i + 1] !== undefined) {
+          formattedStats.push({
+              Year: stats[i],
+              TotalEvent: stats[i + 1],
+              TotalContribution: stats[i + 2]
+          });
+      }
+  }
+      return formattedStats;
+    } catch (error) {
+      console.error('An error occurred: ', error);
+      return 'An internal server error occurred.';
+    }
+  }
+  
 
   async generateReport(facultyID?: number, year?: number) {
     // If facultyID is provided, filter by facultyID
