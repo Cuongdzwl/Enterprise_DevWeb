@@ -42,7 +42,8 @@ export class EventsService implements ISuperService<Event> {
     id: number,
     depth?: number,
     contribution?: boolean,
-    isPublic?: boolean
+    isPublic?: boolean,
+    userid?: number
   ): Promise<any> {
     L.info(id + '');
     var select: any = {
@@ -84,6 +85,13 @@ export class EventsService implements ISuperService<Event> {
       where: { ID: id },
     });
     if (depth == 1 && contribution == true) {
+      let option: any = {};
+      if (userid) {
+        option.UserID = userid;
+      }
+      if (isPublic) {
+        option.IsPublic = isPublic;
+      }
       try {
         const eventContributions = await prisma.events.findUnique({
           select: {
@@ -112,9 +120,7 @@ export class EventsService implements ISuperService<Event> {
                 },
                 Status: { select: { ID: true, Name: true } },
               },
-              where: {
-                IsPublic: isPublic,
-              },
+              where: option,
             },
           },
           where: { ID: id },
@@ -128,34 +134,37 @@ export class EventsService implements ISuperService<Event> {
               const { textFiles, imageFiles } =
                 contributionsService.classifyFiles(filesAsDTOs);
 
-              return {
+              return Promise.resolve({
                 ...contribution,
                 TextFiles: textFiles,
                 ImageFiles: imageFiles,
-              };
+              });
             })
           );
-          return {
+          return Promise.resolve({
             ...eventContributions,
             Contributions: contributionsWithFiles,
-          };
+          });
         }
       } catch (error) {
         L.error(`Failed to fetch event with id ${id}: ${error}`);
         L.error(` failed: ${error}`);
+        Promise.reject({message: `Failed to fetch event with id ${id}: ${error}`});
       }
     }
-    return event;
+    return Promise.resolve(event);
   }
 
   filter(filter: string, key: string): Promise<any> {
-    const events = prisma.events.findMany({
-      where: {
-        [filter]: key,
-      },
-    }).catch((error) => {
-      L.error(`Failed to fetch events: ${error}`);
-    });
+    const events = prisma.events
+      .findMany({
+        where: {
+          [filter]: key,
+        },
+      })
+      .catch((error) => {
+        L.error(`Failed to fetch events: ${error}`);
+      });
     L.info(events, `fetch all ${model}(s)`);
     return Promise.resolve(events);
   }
@@ -191,31 +200,32 @@ export class EventsService implements ISuperService<Event> {
   }
   async delete(id: number): Promise<any> {
     try {
-    L.info(`delete ${model} with id ${id}`);
-    L.info(`delete ${model} with id ${id}`);
-    const contributions = await prisma.contributions.findMany({
-      where: { EventID: id },
-    });
-    for (const contribution of contributions) {
-      console.log(contribution.ID)
-      await contributionsService.delete(contribution.ID)
-    }
-    await prisma.scheduledNotifications.deleteMany({ where: { EventID: id } });
-    return prisma.events
-      .delete({
-        where: { ID: id },
-      })
-      .then((r) => {
-        return Promise.resolve(r);
-      })
-    }
-    catch (error) {
-        L.error(`delete ${model} failed: ${error}`);
-        return Promise.resolve({
-          error: ExceptionMessage.INVALID,
-          message: ExceptionMessage.BAD_REQUEST,
-        });
+      L.info(`delete ${model} with id ${id}`);
+      L.info(`delete ${model} with id ${id}`);
+      const contributions = await prisma.contributions.findMany({
+        where: { EventID: id },
+      });
+      for (const contribution of contributions) {
+        console.log(contribution.ID);
+        await contributionsService.delete(contribution.ID);
       }
+      await prisma.scheduledNotifications.deleteMany({
+        where: { EventID: id },
+      });
+      return prisma.events
+        .delete({
+          where: { ID: id },
+        })
+        .then((r) => {
+          return Promise.resolve(r);
+        });
+    } catch (error) {
+      L.error(`delete ${model} failed: ${error}`);
+      return Promise.resolve({
+        error: ExceptionMessage.INVALID,
+        message: ExceptionMessage.BAD_REQUEST,
+      });
+    }
   }
   async update(id: number, event: Event): Promise<any> {
     const validations = await this.validateConstraints(event);

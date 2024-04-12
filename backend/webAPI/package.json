@@ -3,9 +3,6 @@
   "version": "1.0.0",
   "description": "Website API Server",
   "main": "dist/index.js",
-  
-  
-  
   "scripts": {
     "start": "node dist/index.js",
     "compile": "ts-node build.ts && tsc",
@@ -35,6 +32,7 @@
     "body-parser": "^1.19.2",
     "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
+    "csv-writer": "^1.6.0",
     "dotenv": "^16.4.5",
     "express": "^4.17.3",
     "express-openapi-validator": "^4.13.8",
@@ -55,10 +53,10 @@
     "@types/chai": "^4.3.0",
     "@types/cookie-parser": "^1.4.2",
     "@types/cors": "^2.8.17",
-    "@types/express": "^4.17.13",
+    "@types/express": "^4.17.21",
     "@types/jsonwebtoken": "^9.0.6",
     "@types/mocha": "^9.1.0",
-    "@types/node": "^17.0.21",
+    "@types/node": "^17.0.45",
     "@types/passport-google-oauth2": "^0.1.8",
     "@types/passport-jwt": "^4.0.1",
     "@types/passport-local": "^1.0.38",
@@ -77,9 +75,8 @@
     "prettier": "^2.5.1",
     "shelljs": "^0.8.5",
     "supertest": "^6.1.6",
-    "ts-node": "^10.7.0",
-    "typescript": "^4.6.2"
+    "ts-node": "^10.9.2",
+    "typescript": "^4.9.5"
   },
   "author": "CUONGDZ"
-  
 }

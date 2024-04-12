@@ -88,8 +88,6 @@ async function main() {
           Description: `${eventName} for ${faculty.Name}`,
           ClosureDate: new Date(),
           FinalDate: finalDate,
-          CreatedAt: new Date(2023, 0, 0),
-          UpdatedAt: new Date(),
           FacultyID: faculty.ID,
         },
       });

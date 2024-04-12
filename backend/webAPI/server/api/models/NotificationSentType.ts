@@ -16,7 +16,7 @@ export enum NotificationSentTypeEnum {
   EMAILRESETPASSWORD = "password-reset",
   EMAILPASSWORD = 'email-password',
   NEWEVENT = "new-event",
-  CONTRIBUTIONINAPPEVENT = "contribution-in-app-event",
+  CONTRIBUTIONINAPPEVENT = "contributions-inapp-event",
   COMMENTONCONTRIBUTION =  "comment-on-contribution",
   NEWCONTRIBUTION = "new-contribution"
   
