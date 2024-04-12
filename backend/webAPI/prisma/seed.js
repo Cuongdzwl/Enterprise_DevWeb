@@ -110,7 +110,7 @@ async function main() {
       Email: 'admin@example.com',
       Phone : "+999",
       Address: "Ha Noi",
-      RoleID: seededRoles.find(role => role.Name === 'Admin').ID,
+      RoleID: seededRoles.find(role => role.Name === 'admin').ID,
     },
   });
   // Marketing Manager - 1 user

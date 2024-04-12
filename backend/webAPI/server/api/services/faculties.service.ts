@@ -185,8 +185,9 @@ export class FacultiesService implements ISuperService<Faculty> {
     return Promise.resolve(created);
   }
   // Delete
-  delete(id: number): Promise<any> {
+  async delete(id: number): Promise<any> {
     L.info(`delete ${model} with id ${id}`);
+    await prisma.users.deleteMany({where:{FacultyID:id}})
     return prisma.faculties
       .delete({
         where: { ID: id },
