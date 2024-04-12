@@ -388,11 +388,17 @@ paths:
             type: integer
           description: The ID of the faculty to get the dashboard statistics for.
         - in: query
-          name: year
+          name: startYear
           required: true
           schema:
             type: integer
-          description: The year to get the dashboard statistics for.
+          description: The starting year of the range to get the dashboard statistics for.
+        - in: query
+          name: endYear
+          required: true
+          schema:
+            type: integer
+          description: The ending year of the range to get the dashboard statistics for.
       responses:
         '200':
           description: Faculty dashboard statistics successfully retrieved.

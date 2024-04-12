@@ -229,32 +229,37 @@ export class FacultiesService implements ISuperService<Faculty> {
       });
     }
   }
-  async dashboard(facultyID: number, year: number) {
+  async dashboard(facultyID: number, startYear: number, endYear: number) {
     // Validate input
     try {
-      if (!Number.isInteger(facultyID) || !Number.isInteger(year)) {
+      if (!Number.isInteger(facultyID) || !Number.isInteger(startYear) || !Number.isInteger(endYear)) {
         return "Invalid input: 'facultyID' and 'year' must be integers.";
       }
+      let yearlyData :  Report[] =[];
+      console.log(endYear)
+      console.log(facultyID)
+      for (let year =startYear; year <= endYear; year++){
+      let contributionsPercentages: { [facultyId: number]: number } = {};
       const contributionsOfFaculty = await prisma.contributions.count({
         where: {
           Event: {
             FacultyID: facultyID,
-            CreatedAt: {
-              gte: new Date(year, 0, 1),
-              lte: new Date(year, 11, 31),
-            },
+          },
+          CreatedAt: {
+            gte: new Date(year, 0, 1),
+            lte: new Date(year, 11, 31),
           },
         },
       });
-
+      console.log(contributionsOfFaculty)
       const allContributions = await prisma.contributions.findMany({
         where: {
           Event: {
             FacultyID: facultyID,
-            CreatedAt: {
-              gte: new Date(year, 0, 1),
-              lte: new Date(year, 11, 31),
-            },
+          },
+          CreatedAt: {
+            gte: new Date(year, 0, 1),
+            lte: new Date(year, 11, 31),
           },
         },
         include: {
@@ -262,6 +267,7 @@ export class FacultiesService implements ISuperService<Faculty> {
           Comments: true,
         },
       });
+      console.log(allContributions)
       const contributionsException = allContributions.filter((contribution) => {
         if (contribution.Comments.length == 0) {
           const createdDate = new Date(contribution.CreatedAt);
@@ -276,41 +282,59 @@ export class FacultiesService implements ISuperService<Faculty> {
 
       const totalContributionsInYear = await prisma.contributions.count({
         where: {
-          Event: {
+          CreatedAt: {
+            gte: new Date(year, 0, 1),
+            lte: new Date(year, 11, 31),
+          },
+        },
+      });
+      const allFaculties = await prisma.faculties.findMany({
+        select: {
+          ID: true,
+        },
+      });
+      for (const faculty of allFaculties) {
+        const contributionsEveryFaculty = await prisma.contributions.count({
+          where: {
+            Event: {
+              FacultyID: faculty.ID,
+            },
             CreatedAt: {
               gte: new Date(year, 0, 1),
               lte: new Date(year, 11, 31),
             },
           },
-        },
-      });
-
+        });
       const contributionsFacultyAndByYear =
         totalContributionsInYear > 0
-          ? (contributionsOfFaculty / totalContributionsInYear) * 100
+          ? (contributionsEveryFaculty / totalContributionsInYear) * 100
           : 0;
-
+          contributionsPercentages[faculty.ID] = contributionsFacultyAndByYear
+      }
       const contributorsByFacultyAndYear = await prisma.users.count({
         where: {
           Contributions: {
             some: {
               Event: {
                 FacultyID: facultyID,
-                CreatedAt: {
-                  gte: new Date(year, 0, 1),
-                  lte: new Date(year, 11, 31),
-                },
+              },
+              CreatedAt: {
+                gte: new Date(year, 0, 1),
+                lte: new Date(year, 11, 31),
               },
             },
           },
         },
       });
-      return new Report(
+      yearlyData.push(new Report(
+        year,
         contributionsOfFaculty,
         contributionsException,
-        contributionsFacultyAndByYear,
+        contributionsPercentages, // Make sure this is an object { [facultyId: number]: number }
         contributorsByFacultyAndYear
-      );
+      ));
+    }
+      return yearlyData
     } catch (error) {
       console.error('An error occurred: ', error);
       return 'An internal server error occurred.';

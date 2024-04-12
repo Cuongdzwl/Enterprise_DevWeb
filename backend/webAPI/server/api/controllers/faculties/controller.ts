@@ -151,9 +151,10 @@ export class FacultiesController implements ISuperController {
   async dashboard(req: Request, res: Response): Promise<void> {
     try {
       var facultyId = Number.parseInt(req.params['id']);
-      const year = parseInt(req.query.year?.toString() ?? '');
+      const startYear = parseInt(req.query.startYear?.toString() ?? '');
+      const endYear = parseInt(req.query.endYear?.toString() ?? '');
       L.info(`${facultyId}`);
-      L.info(`${year}`);
+      L.info(`${startYear}`);
       if (Number.isNaN(facultyId)) {
         res.status(400).json({ error: 'Invalid facultyId provided.' }).end();
         return;
@@ -177,17 +178,17 @@ export class FacultiesController implements ISuperController {
           .end();
         return;
       }
-
-      if (!Number.isInteger(year) || year < 1) {
-        res
-          .status(400)
-          .json({ error: 'Invalid year: must be an integer greater than 0.' })
-          .end();
+      if (!Number.isInteger(startYear) || startYear < 1 || !Number.isInteger(endYear) || endYear < 1) {
+        res.status(400).json({ error: 'Invalid year range: both startYear and endYear must be integers greater than 0.' }).end();
         return;
       }
-
+      if (startYear >= endYear) {
+        res.status(400).json({ error: 'Invalid year range: startYear cannot be after endYear.' }).end();
+        return;
+      }
+  
       // Assuming facultiesService.getDashboardDataForFacultyYear has been implemented
-      const dashboardData = await facultiesService.dashboard(facultyId, year);
+      const dashboardData = await facultiesService.dashboard(facultyId, startYear, endYear);
       if (!dashboardData) {
         res
           .status(404)
