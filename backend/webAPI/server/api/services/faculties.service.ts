@@ -234,14 +234,22 @@ export class FacultiesService implements ISuperService<Faculty> {
         return "Invalid input: 'facultyID' and 'year' must be integers.";
       }
       let yearlyData :  Report[] =[];
+      const allContributions = await prisma.contributions.findMany({
+        where: {
+          CreatedAt: {
+            gte: new Date(startYear, 0, 1),
+            lte: new Date(endYear, 11, 31),
+          },
+        },
+      });
       console.log(endYear)
       console.log(facultyID)
+      for (const faculty of allContributions){
       for (let year =startYear; year <= endYear; year++){
-      let contributionsPercentages: { [facultyId: number]: number } = {};
       const contributionsOfFaculty = await prisma.contributions.count({
         where: {
           Event: {
-            FacultyID: facultyID,
+            FacultyID: faculty.ID,
           },
           CreatedAt: {
             gte: new Date(year, 0, 1),
@@ -286,29 +294,11 @@ export class FacultiesService implements ISuperService<Faculty> {
           },
         },
       });
-      const allFaculties = await prisma.faculties.findMany({
-        select: {
-          ID: true,
-        },
-      });
-      for (const faculty of allFaculties) {
-        const contributionsEveryFaculty = await prisma.contributions.count({
-          where: {
-            Event: {
-              FacultyID: faculty.ID,
-            },
-            CreatedAt: {
-              gte: new Date(year, 0, 1),
-              lte: new Date(year, 11, 31),
-            },
-          },
-        });
       const contributionsFacultyAndByYear =
-        totalContributionsInYear > 0
-          ? (contributionsEveryFaculty / totalContributionsInYear) * 100
-          : 0;
-          contributionsPercentages[faculty.ID] = contributionsFacultyAndByYear
-      }
+      totalContributionsInYear > 0
+        ? (contributionsOfFaculty / totalContributionsInYear) * 100
+        : 0;
+      const contributionsPercentage = contributionsFacultyAndByYear
       const contributorsByFacultyAndYear = await prisma.users.count({
         where: {
           Contributions: {
@@ -328,10 +318,11 @@ export class FacultiesService implements ISuperService<Faculty> {
         year,
         contributionsOfFaculty,
         contributionsException,
-        contributionsPercentages, // Make sure this is an object { [facultyId: number]: number }
+        contributionsPercentage, // Make sure this is an object { [facultyId: number]: number }
         contributorsByFacultyAndYear
       ));
     }
+  }
       return yearlyData
     } catch (error) {
       console.error('An error occurred: ', error);
