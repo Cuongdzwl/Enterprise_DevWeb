@@ -453,6 +453,45 @@ paths:
           description: Invalid input
         '404':
           description: Faculty not found
+  /faculties/{id}/dashboardManager:
+    get:
+      tags:
+        - Faculties
+      summary: Get faculty dashboard statistics for a given faculty ID and year
+      parameters:
+        - in: query
+          name: startYear
+          required: true
+          schema:
+            type: integer
+          description: The starting year of the range to get the dashboard statistics for.
+        - in: query
+          name: endYear
+          required: true
+          schema:
+            type: integer
+          description: The ending year of the range to get the dashboard statistics for.
+      responses:
+        '200':
+          description: Faculty dashboard statistics successfully retrieved.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  totalContributions:
+                    type: integer
+                    description: The total number of contributions made to the faculty in the given year.
+                  totalEvents:
+                    type: integer
+                    description: The total number of events organized by the faculty in the given year.
+                  activeContributors:
+                    type: integer
+                    description: The number of active contributors in the faculty for the given year.
+        '400':
+          description: Invalid input
+        '404':
+          description: Faculty not found
   /faculties/report:
     get:
       tags:

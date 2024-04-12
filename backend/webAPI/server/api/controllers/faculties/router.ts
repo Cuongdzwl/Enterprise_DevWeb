@@ -12,5 +12,6 @@ export default express
   .get('/:id',authenticateToken, controller.byId)
   .delete('/:id',authenticateToken,authorizeRole("admin"), controller.delete)
   .get('/:id/dashboard', controller.dashboard)
+  .get('/:id/dashboardManager', controller.dashboardManager)
   .put('/:id',authenticateToken,authorizeRole("admin"), controller.update);
 
