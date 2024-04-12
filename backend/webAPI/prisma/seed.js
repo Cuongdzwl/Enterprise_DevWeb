@@ -51,8 +51,6 @@ async function main() {
           Description: `${eventName} for ${faculty.Name}`,
           ClosureDate: new Date(),
           FinalDate: finalDate,
-          CreatedAt: new Date(2023, 0, 0),
-          UpdatedAt: new Date(),
           FacultyID: faculty.ID,
         },
       });
@@ -60,15 +58,12 @@ async function main() {
     }
   }
   // Seed Users
-  
   // Admin - 1 user
-  const adminPassword = 'admin123';
-  const adminSalt = bcrypt.genSaltSync(10);
   await prisma.users.create({
     data: {
       Name: 'Admin User',
-      Password: bcrypt.hashSync(adminPassword, adminSalt),
-      Salt: adminSalt,
+      Password: 'adminpassword123',
+      Salt: 'adminsalt',
       Email: 'admin@example.com',
       Phone : "+999",
       Address: "Ha Noi",

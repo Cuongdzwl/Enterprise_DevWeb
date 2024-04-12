@@ -10,6 +10,6 @@ export default express
   .get('/public/:id/contribution/:contributionid', controller.guestEventContributions)
   .get('/:id',authenticateToken, controller.byId)
   .delete('/:id',authenticateToken,authorizeRole("admin"), controller.delete)
-  .get('/:id/dashboard', controller.dashboard)
+  .get('/:id/dashboard',authenticateToken,authorizeRole("manager"), controller.dashboard)
   .put('/:id',authenticateToken,authorizeRole("admin"), controller.update);
 

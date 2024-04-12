@@ -110,6 +110,7 @@ export class CommentsService implements ISuperService<Comment> {
                   Name: user.Name,
                 },
                 Contribution: {
+                  ID : contribution.ID,
                   Name: contribution?.Name,
                 },
               },

@@ -9,6 +9,7 @@ import { Contribution } from '../../models/Contribution';
 import filesService from '../../services/files.service';
 import { Status } from '../../models/Status';
 import { FileDTO } from '../../models/DTO/File.DTO';
+import eventsService from '../../services/events.service';
 
 const prisma = new PrismaClient();
 export class ContributionsController implements ISuperController {
@@ -37,17 +38,27 @@ export class ContributionsController implements ISuperController {
   }
 
   async create(req: Request, res: Response): Promise<void> {
-    const { Name, Content, IsPublic, IsApproved, EventID, UserID, StatusID,LastEditByID,CreatedAt,UpdatedAt } = req.body;
-    console.log({IsPublic, IsApproved})
+    const {
+      Name,
+      Content,
+      IsPublic,
+      IsApproved,
+      EventID,
+      UserID,
+      StatusID,
+      LastEditByID,
+      CreatedAt,
+      UpdatedAt,
+    } = req.body;
+    console.log({ IsPublic, IsApproved });
     let isPublic = true;
     let isApproved = true;
-    if(IsPublic==="false"){
+    if (IsPublic === 'false') {
       isPublic = false;
     }
-    if(IsApproved==="false")
-    {
+    if (IsApproved === 'false') {
       isApproved = false;
-    } 
+    }
     const contributionData = {
       Name,
       Content,
@@ -58,10 +69,17 @@ export class ContributionsController implements ISuperController {
       StatusID: parseInt(StatusID),
       LastEditByID,
       CreatedAt,
-      UpdatedAt
+      UpdatedAt,
     };
-        const validations = await ContributionsService.validateConstraints(
-          contributionData
+
+    // Check timeline
+    const isValid = contributionsService.validateClosureDate(contributionData);
+    if (!isValid) {
+      res.status(400).json({ error: 'The event this closed'}).end();
+      return;
+    }
+    const validations = await ContributionsService.validateConstraints(
+      contributionData
     );
     if (!validations.isValid) {
       res
@@ -84,7 +102,7 @@ export class ContributionsController implements ISuperController {
                 L.info(`Processing file: ${file.originalname}`);
                 L.info(`Contribution ID: ${createdContribution.ID}`);
                 if (file && createdContribution.ID) {
-                  FilesService.createfile(file, createdContribution.ID);
+                  FilesService.createfile(file, createdContribution.ID).catch((error) => {L.error(error);});
                 }
               }
             }
@@ -129,6 +147,8 @@ export class ContributionsController implements ISuperController {
     //     .end();
     //   return;
     // }
+
+
     const id = Number.parseInt(req.params.id);
     if (!/^\d{1,20}$/.test(id.toString())) {
       res
@@ -163,6 +183,12 @@ export class ContributionsController implements ISuperController {
     //   Name,
     // };
     var contribution = req.body;
+
+    const isValid = contributionsService.validateFinalDate(contribution);
+    if (!isValid) {
+      res.status(400).json({ error: 'The event this closed'}).end();
+      return;
+    }
     contribution.LastEditByID = Number(res.locals.user.user.ID + '');
     try {
       if (res.locals.user.user.RoleID === 4) {
@@ -211,15 +237,18 @@ export class ContributionsController implements ISuperController {
           if (Object.prototype.hasOwnProperty.call(filesObject, fieldName)) {
             const files = filesObject[fieldName];
             for (const file of files) {
-              file.originalname.endsWith
+              file.originalname.endsWith;
               if (file.originalname) {
-                if (file.originalname.endsWith('.pdf') || file.originalname.endsWith('.docx')) {
+                if (
+                  file.originalname.endsWith('.pdf') ||
+                  file.originalname.endsWith('.docx')
+                ) {
                   textFiles.push(file);
                 } else if (
                   file.originalname.endsWith('.png') ||
                   file.originalname.endsWith('.jpeg') ||
-                  file.originalname.endsWith('.JPG')  ||
-                  file.originalname.endsWith ('jpg')
+                  file.originalname.endsWith('.JPG') ||
+                  file.originalname.endsWith('jpg')
                 ) {
                   imageFiles.push(file);
                 }
@@ -234,58 +263,57 @@ export class ContributionsController implements ISuperController {
             .json({ message: 'Contribution and files updated successfully' });
           return;
         }
-        console.log({ textFiles, imageFiles })
+        console.log({ textFiles, imageFiles });
 
-        if (imageFiles.length >= 1)
-          {
-            console.log("detele text")
-            const texts = await prisma.files.findMany({
-              where: {
-                ContributionID : id
-              }
-            })
-            for (let i = 0; i < texts.length; i++)
-              {
-                if(texts[i].Url.endsWith('.pdf') || texts[i].Url.endsWith('.docx'))
-                  {
-                    await prisma.files.delete({
-                      where: {
-                        ID : texts[i]?.ID
-                      }
-                    })
-                  }
-              }
+        if (imageFiles.length >= 1) {
+          console.log('detele text');
+          const texts = await prisma.files.findMany({
+            where: {
+              ContributionID: id,
+            },
+          });
+          for (let i = 0; i < texts.length; i++) {
+            if (
+              texts[i].Url.endsWith('.pdf') ||
+              texts[i].Url.endsWith('.docx')
+            ) {
+              await prisma.files.delete({
+                where: {
+                  ID: texts[i]?.ID,
+                },
+              });
+            }
           }
-        if (textFiles.length >= 1)
-          {
-            console.log("detele image")
-            const images = await prisma.files.findMany({
-              where: {
-                ContributionID : id
-              }
-            })
-            for (let i = 0; i < images.length; i++)
-              {
-                if(                   images[i]?.Url.endsWith('.png') ||
-                images[i]?.Url.endsWith('.jpeg') ||
-                images[i]?.Url.endsWith('.JPG')  ||
-                images[i]?.Url.endsWith ('jpg'))
-                  {
-                    await prisma.files.delete({
-                      where: {
-                        ID : images[i]?.ID
-                      }
-                    })
-                  }
-              }
+        }
+        if (textFiles.length >= 1) {
+          console.log('detele image');
+          const images = await prisma.files.findMany({
+            where: {
+              ContributionID: id,
+            },
+          });
+          for (let i = 0; i < images.length; i++) {
+            if (
+              images[i]?.Url.endsWith('.png') ||
+              images[i]?.Url.endsWith('.jpeg') ||
+              images[i]?.Url.endsWith('.JPG') ||
+              images[i]?.Url.endsWith('jpg')
+            ) {
+              await prisma.files.delete({
+                where: {
+                  ID: images[i]?.ID,
+                },
+              });
+            }
           }
+        }
         for (const fieldName in filesObject) {
           if (Object.prototype.hasOwnProperty.call(filesObject, fieldName)) {
             const files = filesObject[fieldName];
             for (const file of files) {
               L.info(`Processing file: ${file.originalname}`);
               if (file && id) {
-                FilesService.createfile(file, id);
+                FilesService.createfile(file, id).catch((error)=>{L.error(error)});
               }
             }
           }

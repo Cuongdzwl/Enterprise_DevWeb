@@ -313,6 +313,23 @@ export class FacultiesService implements ISuperService<Faculty> {
       return 'An internal server error occurred.';
     }
   }
+
+  async generateReport(facultyID?: number, year?: number): Promise<any>{
+    if (facultyID && year) {
+      const contributionsCount = await prisma.contributions.count({
+        where: {
+          Event: {
+          FacultyID: facultyID,
+          CreatedAt: {
+            gte: new Date(year, 0, 1),
+            lte: new Date(year, 12, 31),
+          },
+          },
+        },
+      });
+      return {contributionsCount};
+    }
+  }
   async validateConstraints(
     faculty: Faculty
   ): Promise<{ isValid: boolean; error?: string; message?: string }> {
