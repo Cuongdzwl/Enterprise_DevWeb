@@ -234,7 +234,7 @@ export class FacultiesService implements ISuperService<Faculty> {
         return "Invalid input: 'facultyID' and 'year' must be integers.";
       }
       let yearlyData :  Report[] =[];
-      const allContributions = await prisma.contributions.findMany({
+      const allContributions = await prisma.faculties.findMany({
         where: {
           CreatedAt: {
             gte: new Date(startYear, 0, 1),
@@ -246,6 +246,7 @@ export class FacultiesService implements ISuperService<Faculty> {
       console.log(facultyID)
       for (const faculty of allContributions){
       for (let year =startYear; year <= endYear; year++){
+      console.log(faculty.ID)
       const contributionsOfFaculty = await prisma.contributions.count({
         where: {
           Event: {
@@ -261,11 +262,7 @@ export class FacultiesService implements ISuperService<Faculty> {
       const allContributions = await prisma.contributions.findMany({
         where: {
           Event: {
-            FacultyID: facultyID,
-          },
-          CreatedAt: {
-            gte: new Date(year, 0, 1),
-            lte: new Date(year, 11, 31),
+            FacultyID: faculty.ID,
           },
         },
         include: {
@@ -304,7 +301,7 @@ export class FacultiesService implements ISuperService<Faculty> {
           Contributions: {
             some: {
               Event: {
-                FacultyID: facultyID,
+                FacultyID: faculty.ID,
               },
               CreatedAt: {
                 gte: new Date(year, 0, 1),
@@ -315,6 +312,8 @@ export class FacultiesService implements ISuperService<Faculty> {
         },
       });
       yearlyData.push(new Report(
+        faculty.ID,
+        faculty.Name,
         year,
         contributionsOfFaculty,
         contributionsException,

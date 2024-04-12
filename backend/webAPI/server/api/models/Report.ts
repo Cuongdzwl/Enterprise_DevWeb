@@ -1,14 +1,18 @@
 export class Report {
-    year: number
-    contributionsOfFaculty: number
-    contributionsException: number
-    contributionsFacultyAndByYear: number;
-    contributorsByFacultyAndYear: number
-    constructor(year: number, contributionsOfFaculty: number,contributionsException: number, contributionsFacultyAndByYear: number, contributorsByFacultyAndYear: number) {
+    facultyID: number;
+    facultyName: string;
+    year: number;
+    contributionsOfFaculty: number;
+    contributionsException: number;
+    contributionsPercentage: number;
+    contributorsOfFaculty: number;
+    constructor(facultyID: number, facultyName: string, year: number, contributionsOfFaculty: number,contributionsException: number, contributionsPercentage: number, contributorsOfFaculty: number) {
+        this.facultyID = facultyID;
+        this.facultyName = facultyName;
         this.year = year;
         this.contributionsOfFaculty = contributionsOfFaculty;
         this.contributionsException = contributionsException;
-        this.contributionsFacultyAndByYear = contributionsFacultyAndByYear;
-        this.contributorsByFacultyAndYear =contributorsByFacultyAndYear;
+        this.contributionsPercentage = contributionsPercentage;
+        this.contributorsOfFaculty =contributorsOfFaculty;
     }
 }
