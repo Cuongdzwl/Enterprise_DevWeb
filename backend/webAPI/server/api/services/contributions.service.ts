@@ -303,6 +303,8 @@ export class ContributionsService implements ISuperService<Contribution> {
         // After successfully deleting files, delete the contribution
         return prisma.contributions.delete({
           where: { ID: id },
+        }).catch((e) => {
+          L.error(e);
         });
       })
       .then((r) => {

@@ -11,6 +11,6 @@ export default express
   .get('/report', controller.downloadReport)
   .get('/:id',authenticateToken, controller.byId)
   .delete('/:id',authenticateToken,authorizeRole("admin"), controller.delete)
-  .get('/:id/dashboard',authenticateToken,authorizeRole("manager"), controller.dashboard)
+  .get('/:id/dashboard', controller.dashboard)
   .put('/:id',authenticateToken,authorizeRole("admin"), controller.update);
 

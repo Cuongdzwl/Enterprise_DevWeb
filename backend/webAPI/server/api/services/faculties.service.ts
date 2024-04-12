@@ -4,7 +4,7 @@ import { PrismaClient } from '@prisma/client';
 import { ISuperService } from '../interfaces/ISuperService.interface';
 import { ExceptionMessage, FacultyExceptionMessage } from '../common/exception';
 import l from '../../common/logger';
-import { Report } from '../models/Report';
+import { DashBoard } from '../models/DashBoard';
 
 const prisma = new PrismaClient();
 const model = 'faculties';
@@ -186,8 +186,9 @@ export class FacultiesService implements ISuperService<Faculty> {
     return Promise.resolve(created);
   }
   // Delete
-  delete(id: number): Promise<any> {
+  async delete(id: number): Promise<any> {
     L.info(`delete ${model} with id ${id}`);
+    await prisma.users.deleteMany({where:{FacultyID:id}})
     return prisma.faculties
       .delete({
         where: { ID: id },
@@ -226,32 +227,42 @@ export class FacultiesService implements ISuperService<Faculty> {
         });
       });
   }
-  async dashboard(facultyID: number, year: number) {
+  async dashboard(facultyID: number, startYear: number, endYear: number) {
     // Validate input
     try {
-      if (!Number.isInteger(facultyID) || !Number.isInteger(year)) {
+      if (!Number.isInteger(facultyID) || !Number.isInteger(startYear) || !Number.isInteger(endYear)) {
         return "Invalid input: 'facultyID' and 'year' must be integers.";
       }
-      const contributionsOfFaculty = await prisma.contributions.count({
+      let yearlyData :  DashBoard[] =[];
+      const allContributions = await prisma.faculties.findMany({
         where: {
-          Event: {
-            FacultyID: facultyID,
-            CreatedAt: {
-              gte: new Date(year, 0, 1),
-              lte: new Date(year, 11, 31),
-            },
+          CreatedAt: {
+            gte: new Date(startYear, 0, 1),
+            lte: new Date(endYear, 11, 31),
           },
         },
       });
-
+      for (const faculty of allContributions){
+      for (let year =startYear; year <= endYear; year++){
+      const contributionsOfFaculty = await prisma.contributions.count({
+        where: {
+          Event: {
+            FacultyID: faculty.ID,
+          },
+          CreatedAt: {
+            gte: new Date(year, 0, 1),
+            lte: new Date(year, 11, 31),
+          },
+        },
+      });
       const allContributions = await prisma.contributions.findMany({
         where: {
           Event: {
-            FacultyID: facultyID,
-            CreatedAt: {
-              gte: new Date(year, 0, 1),
-              lte: new Date(year, 11, 31),
-            },
+            FacultyID: faculty.ID,
+          },
+          CreatedAt: {
+            gte: new Date(year, 0, 1),
+            lte: new Date(year, 11, 31),
           },
         },
         include: {
@@ -273,41 +284,44 @@ export class FacultiesService implements ISuperService<Faculty> {
 
       const totalContributionsInYear = await prisma.contributions.count({
         where: {
-          Event: {
-            CreatedAt: {
-              gte: new Date(year, 0, 1),
-              lte: new Date(year, 11, 31),
-            },
+          CreatedAt: {
+            gte: new Date(year, 0, 1),
+            lte: new Date(year, 11, 31),
           },
         },
       });
-
       const contributionsFacultyAndByYear =
-        totalContributionsInYear > 0
-          ? (contributionsOfFaculty / totalContributionsInYear) * 100
-          : 0;
-
+      totalContributionsInYear > 0
+        ? (contributionsOfFaculty / totalContributionsInYear) * 100
+        : 0;
+      const contributionsPercentage = contributionsFacultyAndByYear
       const contributorsByFacultyAndYear = await prisma.users.count({
         where: {
           Contributions: {
             some: {
               Event: {
-                FacultyID: facultyID,
-                CreatedAt: {
-                  gte: new Date(year, 0, 1),
-                  lte: new Date(year, 11, 31),
-                },
+                FacultyID: faculty.ID,
+              },
+              CreatedAt: {
+                gte: new Date(year, 0, 1),
+                lte: new Date(year, 11, 31),
               },
             },
           },
         },
       });
-      return new Report(
+      yearlyData.push(new DashBoard(
+        faculty.ID,
+        faculty.Name,
+        year,
         contributionsOfFaculty,
         contributionsException,
-        contributionsFacultyAndByYear,
+        contributionsPercentage, // Make sure this is an object { [facultyId: number]: number }
         contributorsByFacultyAndYear
-      );
+      ));
+    }
+  }
+      return yearlyData
     } catch (error) {
       console.error('An error occurred: ', error);
       return 'An internal server error occurred.';

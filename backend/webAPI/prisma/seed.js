@@ -1,6 +1,43 @@
 const { PrismaClient } = require('@prisma/client');
-
+const bcrypt = require ('bcrypt')
 const prisma = new PrismaClient()
+
+class Utils {
+  constructor() {
+    this.saltRounds = 10;
+  }
+
+  generateSalt(saltRounds = this.saltRounds) {
+    return bcrypt.genSaltSync(saltRounds);
+  }
+
+  hashedPassword(password, salt) {
+    return bcrypt.hashSync(password, salt);
+  }
+
+  generatePassword() {
+    const characters =
+      'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let password = '';
+    for (let i = 0; i < 8; i++) {
+      const randomIndex = Math.floor(Math.random() * characters.length);
+      password += characters[randomIndex];
+    }
+    return password;
+  }
+
+  generateOTP() {
+    const characters = '0123456789';
+    let otp = '';
+    for (let i = 0; i < 6; i++) {
+      const randomIndex = Math.floor(Math.random() * characters.length);
+      otp += characters[randomIndex];
+    }
+    return otp;
+  }
+}
+
+const utils = new Utils();
 
 const generateRandomDate = (year) => {
   const start = new Date(`${year}-01-01`);
@@ -59,10 +96,14 @@ async function main() {
   }
   // Seed Users
   // Admin - 1 user
+  
+  var password = "adminpassword123";
+  var salt = utils.generateSalt();
+  var hashedPassword = utils.hashedPassword(password, salt);
   await prisma.users.create({
     data: {
       Name: 'Admin User',
-      Password: 'adminpassword123',
+      Password: hashedPassword,
       Salt: 'adminsalt',
       Email: 'admin@example.com',
       Phone : "+999",
@@ -70,12 +111,13 @@ async function main() {
       RoleID: seededRoles.find(role => role.Name === 'Admin').ID,
     },
   });
-
   // Marketing Manager - 1 user
+  password = "marketingmanagerpassword123";
+  hashedPassword = utils.hashedPassword(password, salt);
   await prisma.users.create({
     data: {
       Name: 'Marketing Manager User',
-      Password: 'marketingmanagerpassword123',
+      Password: hashedPassword,
       Salt: 'marketingmanagersalt',
       Email: 'marketingmanager@example.com',
       Phone : "+999",
@@ -83,13 +125,15 @@ async function main() {
       RoleID: seededRoles.find(role => role.Name === 'Marketing Manager').ID,
     },
   });
-
+  let studentCount = 0;
   for (const seededFaculty of seededFaculties) {
     // Marketing Coordinator for each faculty
+    password = "marketingmanagerpassword123";
+    hashedPassword = utils.hashedPassword(password, salt);
     await prisma.users.create({
       data: {
         Name: `Marketing Coordinator for ${seededFaculty.Name}`,
-        Password: 'marketingcoordinatorpassword123',
+        Password: hashedPassword,
         Salt: 'marketingcoordinatorsalt',
         Email: `marketingcoordinator${seededFaculty.Name.toLowerCase().replace(/ /g, '')}@example.com`,
         RoleID: seededRoles.find(role => role.Name === 'Marketing Coordinator').ID,
@@ -101,10 +145,12 @@ async function main() {
     let contributionCount = 0;
     // Adding some students for each faculty
     for (let i = 1; i <= 2; i++) { // Assuming 2 students per faculty for example
+      password = "studentpassword123";
+      hashedPassword = utils.hashedPassword(password, salt);
       const student = await prisma.users.create({
         data: {
-          Name: `Student ${i} for ${seededFaculty.Name}`,
-          Password: `studentpassword${i}`,
+          Name: `Student for ${seededFaculty.Name}`,
+          Password: hashedPassword,
           Salt: `studentsalt${i}`,
           Email: `student${i}${seededFaculty.Name.toLowerCase().replace(/ /g, '')}@example.com`,
           RoleID: seededRoles.find(role => role.Name === 'Student').ID,
@@ -113,7 +159,8 @@ async function main() {
           FacultyID: seededFaculty.ID
         },
       });
-      let facultyCount = 0
+      studentCount++;
+      let facultyCount = 0;
       for (let year = 2023; year <= 2024; year++) {
         for (let faculties = facultyCount; facultyCount < faculties+3; facultyCount++) {
         for (let studentID = 1; studentID <= 2; studentID++) {

@@ -8,15 +8,11 @@ import { BlobServiceClient } from '@azure/storage-blob';
 import * as path from 'path';
 import * as fs from 'fs';
 import axios from 'axios';
-import stream from 'stream';
-import { promisify } from 'util';
 
 
 const prisma = new PrismaClient();
 const model = 'files';
 const JSZip = require('jszip');
-const pipeline = promisify(stream.pipeline);
-const archiver = require('archiver');
 
 
 export class FilesService implements ISuperService<File> {
@@ -83,9 +79,7 @@ async downloadBlobToFile(file: FileDTO) {
     zip.file(fileName, fileData);
   } catch (error) {
     console.error(`Failed to download file: ${file.Url}`, error);
-    // Nếu việc tải xuống thất bại, bạn có thể quyết định làm gì tùy theo nhu cầu của bạn,
-    // ví dụ trả về null, throw một exception mới, hoặc handle lỗi theo cách khác
-    return null; // hoặc throw new Error('Failed to download file');
+    return null;
   }
 
   const zipContent = await zip.generateAsync({ type: 'nodebuffer' });
@@ -159,7 +153,7 @@ async downloadBlobToFile(file: FileDTO) {
         L.error(`File creation failed: ${err}`);
       });
       return createdFile;
-    }catch(error){
+    }catch(error){  
       L.error(`File creation failed: ${error}`);
       return Promise.reject({
         error: ExceptionMessage.INVALID,
@@ -235,6 +229,34 @@ async downloadBlobToFile(file: FileDTO) {
         data: {
           Url: file.Url,
           ContributionID: file.ContributionID,
+        },
+      });
+      return Promise.resolve(updatedFile);
+    } catch (error) {
+      L.error(`update ${model} failed: ${error}`);
+      return Promise.resolve({
+        error: ExceptionMessage.INVALID,
+        message: ExceptionMessage.BAD_REQUEST,
+      });
+    }
+  }
+  async updateFile(id: number, file: Express.Multer.File): Promise<any> {
+    // Validate
+    const url = await this.uploadFileToBlob(file);
+    const stats = fs.statSync(file.path);
+    const fileSizeInBytes = stats.size;
+    const fileSizeInMegabytes = fileSizeInBytes / (1024*1024);
+    if (fileSizeInMegabytes > 5) {
+      return { isValid: false, error: FileExceptionMessage.INVALID, message: "File size exceeds 5 MB limit." };
+    }
+    L.info(`update ${model} with id`)
+    L.info(` Url: ${url}`)
+    fs.unlinkSync(file.path);
+    try {
+      const updatedFile = prisma.files.update({
+        where: { ID: id },
+        data: {
+          Url: url,
         },
       });
       return Promise.resolve(updatedFile);

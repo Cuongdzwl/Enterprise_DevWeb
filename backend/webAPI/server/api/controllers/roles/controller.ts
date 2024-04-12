@@ -23,7 +23,7 @@ export class RolesController implements ISuperController {
     }
 
     async create(req: Request, res: Response): Promise <void> {
-        const validations = await RolesService.validateConstraints(req.body);
+        const validations = await RolesService.validateConstraints(req.body,false);
         if(!validations.isValid){
           res.status(400).json({error: validations.error, message : validations.message}).end();
           return;
@@ -51,7 +51,7 @@ export class RolesController implements ISuperController {
 
 
   async update(req: Request, res: Response): Promise<void> {
-    const validations = await RolesService.validateConstraints(req.body);
+    const validations = await RolesService.validateConstraints(req.body, true);
     if(!validations.isValid){
       res.status(400).json({error: validations.error, message : validations.message}).end();
       return;
