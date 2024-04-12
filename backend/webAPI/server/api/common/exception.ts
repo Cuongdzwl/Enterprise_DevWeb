@@ -43,6 +43,7 @@ export class NotificationExceptionMessage extends ExceptionMessage{
 }
 
 export class RoleExceptionMessage extends ExceptionMessage{
+    public static readonly ROLE_NAME_EXISTED: string = "This name already exists";
 }
 
 export class CommentExceptionMessage extends ExceptionMessage{
