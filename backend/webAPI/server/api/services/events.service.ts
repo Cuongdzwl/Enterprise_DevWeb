@@ -370,7 +370,7 @@ export class EventsService implements ISuperService<Event> {
     event: Event
   ): Promise<{ isValid: boolean; error?: string; message?: string }> {
     // Validate Name
-    if (!event.Name || !/^[A-Za-z\s]{1,15}$/.test(event.Name)) {
+    if (!event.Name || !/^[A-Za-z\s]{1,50}$/.test(event.Name)) {
       return {
         isValid: false,
         error: EventExceptionMessage.INVALID,

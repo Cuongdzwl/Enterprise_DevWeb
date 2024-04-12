@@ -424,7 +424,7 @@ export class FacultiesService implements ISuperService<Faculty> {
     faculty: Faculty
   ): Promise<{ isValid: boolean; error?: string; message?: string }> {
     // Validate Name
-    if (!faculty.Name || !/^[A-Za-z\s]{1,15}$/.test(faculty.Name)) {
+    if (!faculty.Name || !/^[A-Za-z\s]{1,50}$/.test(faculty.Name)) {
       return {
         isValid: false,
         error: FacultyExceptionMessage.INVALID,

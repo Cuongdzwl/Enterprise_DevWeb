@@ -445,8 +445,9 @@ export class ContributionsService implements ISuperService<Contribution> {
     contribution: Contribution
   ): Promise<{ isValid: boolean; error?: string; message?: string }> {
     // Validate Name
+
     try {
-      if (!contribution.Name || !/^[A-Za-z\s]{1,15}$/.test(contribution.Name)) {
+      if (!contribution.Name || !/^[A-Za-z\s]{1,50}$/.test(contribution.Name)) {
         return {
           isValid: false,
           error: ContributionExceptionMessage.INVALID,
@@ -454,6 +455,7 @@ export class ContributionsService implements ISuperService<Contribution> {
             'Contribution name is invalid, cannot contain numbers or special characters, and must have a maximum of 15 characters.',
         };
       }
+
 
       // Validate Content
       if (!contribution.Content || contribution.Content.length > 3000) {
