@@ -53,6 +53,11 @@ export class UsersController implements ISuperController {
 
   delete(req: Request, res: Response): void {
     const id = Number.parseInt(req.params['id']);
+    const userid = res.locals.user.user.ID;
+    if(userid === id){
+      res.status(400).json({ error: 'You cannot delete yourself' }).end();
+      return;
+    }
     try {
       UsersService.delete(id).then((r) => {
         if (r) res.json(r);

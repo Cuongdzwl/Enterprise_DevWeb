@@ -164,35 +164,38 @@ export class ContributionsController implements ISuperController {
     //   Name,
     // };
     var contribution = req.body;
-    L.info(req.body);
-    L.info(id + '');
-    L.info(contribution);
-    L.info(contributionFound);
-    contribution.LastEditByID = 1;
-    // try {
-    //   if (res.locals.user.user.RoleID === 4) {
-    //     // Student
-    //     contribution.IsApproved = false;
-    //     contribution.IsPublic = false;
-    //     contribution.StatusID = Status.PENDING;
-    //   } else if (res.locals.user.user.RoleID === 3) {
-    //     // Coordinator
-    //     //contribution.Content = contributionFound.Content as string;
-    //     // contribution.Name = contributionFound.Name as string;
-    //     if (contribution.StatusID == (Status.ACCEPTED as Number)) {
-    //       contribution.IsApproved = true;
-    //       contribution.IsPublic = req.body.IsPublic === 'true' ? true : false;
-    //     } else {
-    //       contribution.IsApproved = false;
-    //       contribution.IsPublic = false;
-    //     }
-
-    //   }
-    // } catch (error) {
-    //   L.error(error);
-    //   res.status(400).json({ error: error.message }).end();
-    //   return 
-    // }
+    contribution.LastEditByID = Number(res.locals.user.user.ID + '');
+    try {
+      if (res.locals.user.user.RoleID === 4) {
+        // Student
+        contribution.IsApproved = false;
+        contribution.IsPublic = false;
+        contribution.StatusID = Status.PENDING;
+        // Block Other Student update other contribution
+        if (contributionFound.UserID !== res.locals.user.user.ID) {
+          res.status(403).json({ error: 'Forbidden' }).end();
+          return;
+        }
+      } else if (res.locals.user.user.RoleID === 3) {
+        // Coordinator
+        //contribution.Content = contributionFound.Content as string;
+        // contribution.Name = contributionFound.Name as string;
+        if (contribution.StatusID == (Status.ACCEPTED as Number)) {
+          contribution.IsApproved = true;
+          contribution.IsPublic = req.body.IsPublic === 'true' ? true : false;
+        } else {
+          contribution.IsApproved = false;
+          contribution.IsPublic = false;
+        }
+      } else {
+        res.status(403).json({ error: 'Forbidden' }).end();
+        return;
+      }
+    } catch (error) {
+      L.error(error);
+      res.status(400).json({ error: error.message }).end();
+      return;
+    }
 
     L.info(contribution);
     contributionsService
@@ -294,7 +297,7 @@ export class ContributionsController implements ISuperController {
       })
       .catch((error) => {
         L.error(error);
-        return res.status(400).json({ error: error.message }).end();
+        return res.status(400).json(error).end();
       });
   }
   async download(req: Request, res: Response): Promise<void> {

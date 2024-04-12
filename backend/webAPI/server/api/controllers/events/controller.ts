@@ -4,24 +4,34 @@ import { Request, Response } from 'express';
 import { ISuperController } from '../../interfaces/ISuperController.interface';
 import eventsService from '../../services/events.service';
 import { PrismaClient } from '@prisma/client';
+import facultiesService from '../../services/faculties.service';
 
 const prisma = new PrismaClient();
 
 export class EventsController implements ISuperController {
   async all(req: Request, res: Response): Promise<void> {
+
+    if(res.locals.user.user.RoleID === 4 ||res.locals.user.user.RoleID === 3){
+      const result = await eventsService.filter("FacultyID", res.locals.user.user.FacultyID as string);
+      res.status(200).json(result);
+      return;
+    }
+
     const depth = Number.parseInt(req.query.depth?.toString() ?? '');
 
     const result = await EventsService.all(depth);
-    res.json(result);
+    res.status(200).json(result);
   }
 
-  byId(req: Request, res: Response): void {
+  byId(req: Request, res: Response): void {    
     const id = Number.parseInt(req.params['id']);
     const depth = Number.parseInt(req.query.depth?.toString() ?? '');
+    const isPublic = Boolean(req.query.isPublic);
     const contribution: boolean =
-      req.query.contribution?.toString() == 'true' ? true : false;
+    req.query.contribution?.toString() == 'true' ? true : false;
 
-    EventsService.byId(id, depth, contribution)
+
+    EventsService.byId(id, depth, contribution,isPublic)
       .then((r) => {
         if (r) res.json(r);
         else res.status(404).end();

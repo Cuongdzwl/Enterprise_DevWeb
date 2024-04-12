@@ -1,4 +1,4 @@
-import { error } from 'console';
+import { Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import utils from '../common/utils';
 import { UserDTO } from '../models/DTO/User.DTO';
@@ -10,13 +10,42 @@ import bcrypt from 'bcrypt';
 import usersService from './users.service';
 import { AuthExceptionMessage, ExceptionMessage } from '../common/exception';
 import notificationsService from './notifications.service';
-import { NotificationSentType } from '../models/NotificationSentType';
 import { NotificationSentThrough } from '../models/NotificationSentThrough';
+import {
+  NotificationSentType,
+  NotificationSentTypeEnum,
+} from '../models/NotificationSentType'; // Import the correct file
 
 const prisma = new PrismaClient();
 const model = 'user';
 export class AuthService {
   async login(req: Request): Promise<any> {
+    if (req.body.FacultyID) {
+      var foundInFaculty: boolean = await prisma.users
+        .findUnique({
+          where: {
+            Email: req.body.email as string, // Add the Email property
+            FacultyID: req.body.FacultyID as number,
+          },
+        })
+        .then((r) => {
+          if (r) {
+            L.info(r);
+            return Promise.resolve(true);
+          }
+          return Promise.resolve(false);
+        })
+        .catch((_) => {
+          return Promise.resolve(false);
+        });
+      L.info(foundInFaculty);
+      if (!foundInFaculty) {
+        return Promise.reject({
+          error: AuthExceptionMessage.BAD_REQUEST,
+          message: AuthExceptionMessage.INVALID_USER_NOT_BELONG_TO_FACULTY,
+        });
+      }
+    }
     return new Promise((resolve, reject) => {
       authStrategy.authenticate(
         'local',
@@ -28,7 +57,7 @@ export class AuthService {
             reject(info);
           } else {
             const token = jwt.sign(
-              { id: user.ID, roleID : user.RoleID, FacultyID: user.FacultyID},
+              { id: user.ID, roleID: user.RoleID, FacultyID: user.FacultyID },
               process.env.JWT_SECRET || 'default',
               { expiresIn: '1h' }
             );
@@ -39,7 +68,7 @@ export class AuthService {
     });
   }
 
-  async google(req: Request): Promise<any> {
+  async google(req: any): Promise<any> {
     return new Promise((resolve, reject) => {
       authStrategy.authenticate(
         'google',
@@ -51,7 +80,7 @@ export class AuthService {
             reject(info);
           } else {
             const token = jwt.sign(
-              { id: user.ID, roleID : user.RoleID, FacultyID: user.FacultyID},
+              { id: user.ID, roleID: user.RoleID, FacultyID: user.FacultyID },
               process.env.JWT_SECRET || 'default',
               { expiresIn: '3h' }
             );
@@ -88,15 +117,15 @@ export class AuthService {
             ResetPassword: token,
           },
         });
-        L.info("Updated User")
-        const site = process.env.SITE_DOMAIN || 'http://localhost:5173'
+        L.info('Updated User');
+        const site = process.env.SITE_DOMAIN || 'http://localhost:5173';
         const resetLink = site + '/resetpassword?token=' + token;
         const securityEmail = 'cuongndgch211353@fpt.edu.vn';
         // Send email
         notificationsService.trigger(
           user as User,
           { token, resetLink, securityEmail },
-          NotificationSentType.EMAILRESETPASSWORD,
+          NotificationSentTypeEnum.EMAILRESETPASSWORD, // Use the correct type
           NotificationSentThrough.Email
         );
         return Promise.resolve({ isSuccess: true });
@@ -105,28 +134,67 @@ export class AuthService {
         return Promise.reject({
           error: AuthExceptionMessage.BAD_REQUEST,
           message: ExceptionMessage.INVALID,
-          e:e
+          e: e,
         });
       });
     return resolve;
   }
 
   async verifyPhone(code: string, userid: number): Promise<any> {
-    return this.verifyOTP(code, userid).then((r) => {
-      if (r.isValid) {
-        const updated =  prisma.users.update({
-          where: { ID: userid },
-          data: {
-            OTPUsed: true,
-            Phone: r.user.NewPhone,
-          },
-        });
-        return Promise.resolve(updated)
-      }
-      return Promise.reject(r.isValid)
-    }).catch((err) => {
-      return Promise.reject(err)
-    });
+    return this.verifyOTP(code, userid)
+      .then((r) => {
+        if (r.isValid) {
+          const updated = prisma.users.update({
+            where: { ID: userid },
+            data: {
+              OTPUsed: true,
+              Phone: r.user.NewPhone,
+            },
+          });
+          return Promise.resolve(updated);
+        }
+        return Promise.reject(r.isValid);
+      })
+      .catch((err) => {
+        return Promise.reject(err);
+      });
+  }
+
+  async changePassword(
+    id: number,
+    oldPassword: string,
+    newPassword: string
+  ): Promise<any> {
+    const validate = usersService.validatePassword(newPassword);
+    if(!validate.isValid) {
+      return Promise.reject({ message: validate.message });
+    }
+
+    return prisma.users
+      .findUnique({ where: { ID: id } })
+      .then((r) => {
+        if (r == null) {
+          return Promise.reject({ message: 'User not found' });
+        }
+        const validPassword = bcrypt.compareSync(oldPassword, r.Password);
+        if (validPassword) {
+          const salt = r.Salt;
+          const hashedPassword = bcrypt.hashSync(newPassword, salt);
+          L.info(`Updated Password for ${id}`)
+          return prisma.users
+            .update({ data: { Password: hashedPassword }, where: { ID: id } })
+            .then((r) => {
+              if (r) return Promise.resolve({ message: 'Password changed' });
+              else return Promise.reject({ message: 'User not found' });
+            });
+        } else {
+          return Promise.reject({ message: 'Password not match' });
+        }
+      })
+      .catch((err) => {
+        L.error(err);
+        return Promise.reject({ message: 'Bad Request' });
+      });
   }
   async sendOTP(userid: number, phone?: string, email?: string): Promise<any> {
     const OTP = utils.generateOTP();
@@ -151,15 +219,15 @@ export class AuthService {
       notificationsService.trigger(
         updateduser as User,
         { OTP: OTP },
-        NotificationSentType.EMAILOTP,
+        NotificationSentTypeEnum.EMAILOTP,
         NotificationSentThrough.Email
       );
     }
-    if(phone){
+    if (phone) {
       notificationsService.trigger(
         updateduser as User,
         { OTP: OTP },
-        NotificationSentType.PHONEOTP,
+        NotificationSentTypeEnum.PHONEOTP,
         NotificationSentThrough.NewSMS
       );
     }

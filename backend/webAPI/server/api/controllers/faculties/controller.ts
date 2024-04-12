@@ -63,7 +63,7 @@ export class FacultiesController implements ISuperController {
     const event = req.query.event?.toString() == 'true' ? true : false;
     const user = req.query.user?.toString() == 'true' ? true : false;
     // Authorize
-    if (!(res.locals.user.user.RoleID == 1 || 2)) {
+    if (!(res.locals.user.user.RoleID == 1 || res.locals.user.user.RoleID == 2)) {
       id = res.locals.user.user.FacultyID;
     }
     try {
@@ -84,7 +84,7 @@ export class FacultiesController implements ISuperController {
         .json({ error: validations.error, message: validations.message })
         .end();
       return;
-    }
+    }   
     try {
       FacultyService.create(req.body).then((r) => {
         res.status(201).location(`/api/v1/faculties/${r.id}`).json(r);
@@ -141,11 +141,11 @@ export class FacultiesController implements ISuperController {
     }
     try {
       FacultyService.update(id, req.body).then((r) => {
-        if (r) res.json(r);
+        if (r) res.status(201).json(r);
         else res.status(404).end();
       });
     } catch (error) {
-      res.status(400).json({ error: error.message }).end();
+      res.status(400).json(error).end();
     }
   }
   async dashboard(req: Request, res: Response): Promise<void> {

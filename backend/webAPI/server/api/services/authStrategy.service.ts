@@ -39,7 +39,7 @@ const localStrategy = new Local(
       L.info(users);
       const user: User = users[0];
       if (!user) {
-        return done(null, false, { message: 'Invalid email.' });
+        return done(null, false, { message: 'Invalid User.' });
       }
       const validPassword = bcrypt.compareSync(password, user.Password);
       if (!validPassword) {

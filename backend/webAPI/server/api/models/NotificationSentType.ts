@@ -1,4 +1,14 @@
-export enum NotificationSentType {
+export class NotificationSentType {
+    ID?: number;
+    Name: string;
+    constructor(ID: number, Name: string) {
+        this.ID = ID;
+        this.Name = Name;
+    }
+}
+
+
+export enum NotificationSentTypeEnum {
   EMAILOTP = "email-otp",
   PHONEOTP = "phone-otp",
   CLOSUREDATE = "closure-date",

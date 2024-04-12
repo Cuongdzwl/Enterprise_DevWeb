@@ -1,8 +1,8 @@
 import { NotificationSentType } from "./NotificationSentType";
 
 export class Notification {
-    ID: number;
-    EventID?: number;
+    ID?: number;
+    EventID: number;
     SentTo: number;
     SentAt: Date;
     NotificationSentTypeID: number;
