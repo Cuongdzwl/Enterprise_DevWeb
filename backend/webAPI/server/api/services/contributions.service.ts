@@ -431,7 +431,7 @@ export class ContributionsService implements ISuperService<Contribution> {
         isValid: false,
         error: ContributionExceptionMessage.INVALID,
         message:
-          'Contribution name is invalid, cannot contain numbers or special characters, and must have a maximum of 15 characters.',
+          'Contribution name is invalid, cannot contain numbers or special characters, and must have a maximum of 50 characters.',
       };
     }
 

@@ -321,7 +321,7 @@ export class FacultiesService implements ISuperService<Faculty> {
         year,
         contributionsOfFaculty,
         contributionsException,
-        contributionsPercentage, // Make sure this is an object { [facultyId: number]: number }
+        contributionsPercentage,
         contributorsByFacultyAndYear
       ));
     }
@@ -341,7 +341,7 @@ export class FacultiesService implements ISuperService<Faculty> {
         isValid: false,
         error: FacultyExceptionMessage.INVALID,
         message:
-          'Faculty name is invalid, cannot contain numbers or special characters, and must have a maximum of 15 characters.',
+          'Faculty name is invalid, cannot contain numbers or special characters, and must have a maximum of 50 characters.',
       };
     }
 
