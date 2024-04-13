@@ -7,15 +7,13 @@ import Loading from '../../../components/Loading';
 const Data = {
     Name: '',
     Description: '',
-    IsEnabledGuest: false,
 }
 
 const ApiResponse = 'https://dev-nodejs.cuongnd.work/api/v1/'
 
-const DetailFaculty = () => {
+const DetailRole = () => {
     // State
     const [formData, setFormData] = useState(Data);
-    const [isLoading] = useState(false);
     const [error] = useState(null);
 
     // ID, Redirect
@@ -23,19 +21,21 @@ const DetailFaculty = () => {
     const { id } = useParams();
 
     // Fetch data
-    const { data: faculty } = useFetch(`${ApiResponse}faculties/${id}`);
+    const { data: role } = useFetch(`${ApiResponse}roles/${id}`);
 
     // Set form data
     useEffect(() => {
-        if (faculty) {
-            setFormData(faculty);
+        if (role) {
+            setFormData(role);
         }
-    }, [faculty]);
+    }, [role]);
 
     // Handle Event
-    const handleBack = () => navigate('/admin/faculty')
+    const handleBack = () => {
+        navigate('/admin/role');
+    }
 
-    if (!faculty) {
+    if (!role) {
         return (
             <Loading />
         )
@@ -45,15 +45,14 @@ const DetailFaculty = () => {
         <div className="box">
             <div className="row-1">
                 <div className="header">
-                    <div className="title">Detail faculty</div>
+                    <div className="title">Detail role</div>
                 </div>
             </div>
             <div className="row-2">
                 <div className="box"
-                     style={{
-                         height: 'calc(100vh - 150px)'
-                     }}
-                >
+                    style={{
+                        minHeight: '580px',
+                    }}>
                     <div className="box-content">
                         <form>
                             <FormGroup
@@ -65,17 +64,11 @@ const DetailFaculty = () => {
 
                             <div className="form-group">
                                 <label>Description</label>
-                                <textarea required name="Description" readOnly cols="30" rows="10"
-                                          value={formData?.Description}></textarea>
-                            </div>
-
-                            <div className="form-group mb-input">
-                                <label>Guest</label>
-                                <input type="text" className='select-guest' readOnly value={formData.IsEnabledGuest}/>
+                                <textarea required name="Description" readOnly cols="30" rows="10" value={formData?.Description}></textarea>
                             </div>
 
                             <div className="form-action">
-                                <button type="submit" onClick={handleBack} className="btn">Cancel</button>
+                                <button type="submit" onClick={handleBack} className="btn">Back</button>
                             </div>
                             {error && <div className="error">{error}</div>}
                         </form>
@@ -86,4 +79,4 @@ const DetailFaculty = () => {
     );
 };
 
-export default DetailFaculty;
+export default DetailRole;

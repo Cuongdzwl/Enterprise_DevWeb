@@ -7,12 +7,11 @@ import FormGroup from '../../../components/FormGroup';
 const Data = {
     Name: '',
     Description: '',
-    IsEnabledGuest: false,
 }
 
 const ApiResponse = 'https://dev-nodejs.cuongnd.work/api/v1/'
 
-const UpdateFaculty = () => {
+const UpdateRole = () => {
     // State
     const [formData, setFormData] = useState(Data);
     const [isFormValid, setIsFormValid] = useState(false);
@@ -25,32 +24,26 @@ const UpdateFaculty = () => {
     const { id } = useParams();
 
     // Fetch data
-    const { data: faculty } = useFetch(`${ApiResponse}faculties/${id}`);
+    const { data: role } = useFetch(`${ApiResponse}roles/${id}`);
 
     // Set form data
     useEffect(() => {
-        if (faculty) {
-            setFormData(faculty);
+        if (role) {
+            setFormData(role);
         }
-    }, [faculty]);
+    }, [role]);
 
     // Validate form
     useEffect(() => {
-        setIsFormValid(Object.values(validationErrors).every(error => error === ''));
+        setIsFormValid(Object.values(validationErrors).every(error => error === '') && Object.values(formData).every(value => value !== ''));
     }, [validationErrors, formData]);
 
     const validateField = (name, value) => {
-        let errorMessage = '';
-        switch (name) {
-            case 'Name':
-                errorMessage = value.trim() && /^[A-Za-z\s]{1,50}$/.test(value) ? '' : 'Invalid faculty name: no numbers or special characters, max 15 chars';
-                break;
-            case 'Description':
-                errorMessage = value.length < 3000 ? '' : 'Description is invalid, must have a maximum of 3000 characters.'
-                break;
-            default:
-                break;
-        }
+        const errorMessage = {
+            Name: /^[A-Za-z\s]{1,50}$/.test(value) ? '' : 'Invalid role name: no numbers or special characters, max 15 chars',
+            Description: value.trim() ? '' : 'Description is required'
+        }[name];
+
         setValidationErrors(prevState => ({ ...prevState, [name]: errorMessage }));
     };
 
@@ -62,49 +55,42 @@ const UpdateFaculty = () => {
     };
 
     const handleBack = () => {
-        navigate('/admin/faculty');
+        navigate('/admin/role');
     }
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-
         if (!isFormValid) {
             setError("Please fill in all fields correctly.");
             return;
         }
-
-        const newFormData = {
-            ...formData,
-            IsEnabledGuest: formData.IsEnabledGuest === 'true' ? true : false,
-        }
-
         setIsLoading(true);
         setError(null);
 
         try {
-            const response = await fetch(`${ApiResponse}faculties/${id}`, {
+            const response = await fetch(`${ApiResponse}roles/${id}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': 'Bearer ' + localStorage.getItem('token')
                 },
-                body: JSON.stringify(newFormData)
+                body: JSON.stringify(formData)
             });
             if (!response.ok) {
                 const data = await response.json();
                 setError(data.message);
                 return;
             }
-            navigate('/admin/faculty');
+            navigate('/admin/role');
         } catch (error) {
-            console.error('Error update faculty:', error);
-            setError('Failed to update faculty. Please try again later.');
+            console.error('Error creating role:', error);
+            setError('Failed to create role. Please try again later.');
         } finally {
             setIsLoading(false);
         }
     };
 
-    if (!faculty) {
+    if (!role) {
         return (
             <Loading />
         )
@@ -114,15 +100,14 @@ const UpdateFaculty = () => {
         <div className="box">
             <div className="row-1">
                 <div className="header">
-                    <div className="title">Update faculty</div>
+                    <div className="title">Update role</div>
                 </div>
             </div>
             <div className="row-2">
                 <div className="box"
-                     style={{
-                         height: 'calc(100vh - 150px)'
-                     }}
-                >
+                    style={{
+                        minHeight: '580px',
+                    }}>
                     <div className="box-content">
                         <form onSubmit={handleSubmit}>
                             <FormGroup
@@ -136,25 +121,13 @@ const UpdateFaculty = () => {
 
                             <div className="form-group">
                                 <label>Description</label>
-                                <textarea required name="Description" cols="30" rows="10" value={formData?.Description}
-                                          onChange={handleChange}></textarea>
-                                {validationErrors.Description &&
-                                    <div className="error">{validationErrors.Description}</div>}
-                            </div>
-
-                            <div className="form-group mb-input">
-                                <label>Guest</label>
-                                <select value={formData?.IsEnabledGuest} onChange={handleChange}
-                                        className='form-control'
-                                        name="IsEnabledGuest">
-                                    <option value='true'>True</option>
-                                    <option value='false'>False</option>
-                                </select>
+                                <textarea required name="Description" cols="30" rows="10" value={formData?.Description} onChange={handleChange}></textarea>
+                                {validationErrors.Description && <div className="error">{validationErrors.Description}</div>}
                             </div>
 
                             <div className="form-action">
-                            <button type="submit" onClick={handleBack} className="btn">Cancel</button>
-                                <button type="submit" className="btn">Update</button>
+                                <button type="submit" onClick={handleBack} className="btn">Cancel</button>
+                                <button type="submit" disabled={!isFormValid} className="btn">Update</button>
                             </div>
                             {error && <div className="error">{error}</div>}
                         </form>
@@ -165,4 +138,4 @@ const UpdateFaculty = () => {
     );
 };
 
-export default UpdateFaculty;
+export default UpdateRole;

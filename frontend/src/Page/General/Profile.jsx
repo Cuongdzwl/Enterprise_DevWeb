@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Loading from '../../../components/Loading';
-import FormGroup from '../../../components/FormGroup';
-import useFetch from '../../../CustomHooks/useFetch';
+import Loading from '../../components/Loading';
+import FormGroup from '../../components/FormGroup';
+import useFetch from '../../CustomHooks/useFetch';
 
-const ApiResponse = 'https://dev-nodejs.cuongnd.work/api/v1/'
+const ApiResponse = 'https://dev-nodejs.cuongnd.work/api/v1/';
 
 const Data = {
     Name: '',
@@ -13,13 +13,14 @@ const Data = {
     Address: '',
     RoleID: '',
     FacultyID: ''
-}
+};
 
-const CreateAccount = () => {
+const Profile = () => {
     const navigate = useNavigate();
     // Data
     const facultyData = useFetch(`${ApiResponse}faculties`);
     const roleData = useFetch(`${ApiResponse}roles`);
+    const { data: userData, isLoading: isUserDataLoading, error: userDataError } = useFetch(`${ApiResponse}auth/user`);
 
     // State
     const [formData, setFormData] = useState(Data);
@@ -28,16 +29,22 @@ const CreateAccount = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
 
+    useEffect(() => {
+        if (userData && userData.user) {
+            setFormData(userData.user);
+        }
+    }, [userData]);
+
     // Validate form
     useEffect(() => {
-        setIsFormValid(Object.values(validationErrors).every(error => error === ''));
+        setIsFormValid(Object.values(validationErrors).every(error => error === '') && Object.values(formData).every(value => value !== ''));
     }, [validationErrors, formData]);
 
     const validateField = (name, value) => {
         let errorMessage = '';
         switch (name) {
             case 'Name':
-                errorMessage = value.trim() && /^[A-Za-z\s]{1,50}$/.test(value)  ? '' : 'Name is required and must be less than 15 characters.';
+                errorMessage = value.trim() && /^[A-Za-z\s]{1,15}$/.test(value)  ? '' : 'Name is required and must be less than 15 characters.';
                 break;
             case 'Email':
                 errorMessage = /^\S+@\S+\.\S+$/.test(value) ? '' : 'Email is invalid.';
@@ -54,7 +61,6 @@ const CreateAccount = () => {
         setValidationErrors(prevState => ({ ...prevState, [name]: errorMessage }));
     };
 
-
     // Handle Event
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -62,31 +68,38 @@ const CreateAccount = () => {
         validateField(name, value);
     };
 
-    const handleBack = () => navigate('/admin/account');
+    const handleBack = () => {
+        navigate(-1);
+    };
+
+    const handlePassword = () => {
+        navigate('/changepassword');
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+
         if (!isFormValid) {
             setError("Please fill in all fields correctly.");
             return;
         }
+
         setIsLoading(true);
         setError(null);
 
         const newFormData = {
             ...formData,
-            FacultyID: formData.FacultyID ? parseInt(formData.FacultyID) : '',
+            FacultyID: parseInt(formData.FacultyID),
             RoleID: parseInt(formData.RoleID)
-        }
+        };
 
         try {
-            const response = await fetch(`${ApiResponse}users`, {
-                method: 'POST',
+            const response = await fetch(`${ApiResponse}auth/user`, {
+                method: 'PATCH',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': 'Bearer ' + localStorage.getItem('token')
                 },
-
                 body: JSON.stringify(newFormData)
             });
             if (!response.ok) {
@@ -94,20 +107,23 @@ const CreateAccount = () => {
                 setError(data.message);
                 return;
             }
-            navigate('/admin/account');
+            navigate(-1);
         } catch (error) {
-            console.error('Error creating account:', error);
-            setError('Failed to create account. Please try again later.');
+            console.error('Error update profile account:', error);
+            setError('Failed to update profile account. Please try again later.');
         } finally {
             setIsLoading(false);
         }
     };
 
+    if (isUserDataLoading) return <Loading />;
+    if (userDataError) return <div>Error: {userDataError}</div>;
+
     return (
         <div className="box">
             <div className="row-1">
                 <div className="header">
-                    <div className="title">Create Account</div>
+                    <div className="title">Profile</div>
                 </div>
             </div>
 
@@ -151,10 +167,9 @@ const CreateAccount = () => {
                             />
                             {validationErrors.Address && <div className="error">{validationErrors.Address}</div>}
 
-
                             <div className="form-group">
                                 <label>Role</label>
-                                <select value={formData.RoleID} onChange={handleChange} className='form-control' required name="RoleID">
+                                <select value={formData.RoleID} onChange={handleChange} className='form-control' name="RoleID">
                                     <option value="" hidden>Select Role</option>
                                     {roleData && Array.isArray(roleData.data) && roleData.data.map((role) => (
                                         <option key={role.ID} value={role.ID}>{role.Name}</option>
@@ -165,7 +180,7 @@ const CreateAccount = () => {
 
                             <div className="form-group mb-input">
                                 <label>Faculty</label>
-                                <select value={formData.FacultyID} onChange={handleChange} className='form-control' name="FacultyID">
+                                <select value={formData.FacultyID} required onChange={handleChange} className='form-control' name="FacultyID">
                                     <option value="" hidden>Select Faculty</option>
                                     {facultyData && Array.isArray(facultyData.data) && facultyData.data.map((faculty) => (
                                         <option key={faculty.ID} value={faculty.ID}>{faculty.Name}</option>
@@ -174,9 +189,14 @@ const CreateAccount = () => {
                                 {validationErrors.FacultyID && <div className="error">{validationErrors.FacultyID}</div>}
                             </div>
 
-                            <div className="form-action">
-                                <button type="submit" onClick={handleBack} className="btn">Cancel</button>
-                                <button type="submit" className="btn" disabled={!isFormValid}>Create</button>
+                            <div className="form-action profile">
+                                <div className="change-pass">
+                                    <button type="button" onClick={handlePassword}>Change Password</button>
+                                </div>
+
+                                <button type="button" onClick={handleBack} className="btn">Cancel</button>
+                                <button type="submit" disabled={!isFormValid} className="btn">Update</button>
+
                             </div>
                             {error && <div className="error">{error}</div>}
                         </form>
@@ -187,4 +207,4 @@ const CreateAccount = () => {
     );
 };
 
-export default CreateAccount;
+export default Profile;
