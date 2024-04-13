@@ -164,7 +164,7 @@ export class FacultiesController implements ISuperController {
     // Generate the report data
     const data = await facultiesService.generateReport(facultyID, year);
     L.info(data);
-    var path = `./downloads/faculty_${facultyID || 'all'}_${
+    var path = `faculty_${facultyID || 'all'}_${
       year || 'lifetime'
     }.csv`;
     // Define the CSV writer
