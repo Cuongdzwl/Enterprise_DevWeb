@@ -7,8 +7,14 @@ const useFetch = (url) => {
 
     useEffect(() => {
         const abortCont = new AbortController();
-
-        fetch(url, { signal: abortCont.signal })
+        const token = localStorage.getItem('token');
+        fetch(url, {
+            headers: {
+                'Content-type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            signal: abortCont.signal
+        })
             .then(res => {
                 if (!res.ok) {
                     throw Error('Could not fetch the data for that resource');

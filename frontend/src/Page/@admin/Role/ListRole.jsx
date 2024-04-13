@@ -7,39 +7,25 @@ import Loading from '../../../components/Loading';
 
 const ApiResponse = 'https://dev-nodejs.cuongnd.work/api/v1/'
 
-const headings = ['Name', 'Description', 'Number event', 'Guest', 'Action'];
+const headings = ['Name', 'Description', 'Action'];
 
-const ListFaculty = () => {
+const ListRole = () => {
     // Fetch data
-    const { data: facultyData } = useFetch(`${ApiResponse}faculties`);
-    const { data: eventData } = useFetch(`${ApiResponse}events`);
+    const { data: roleData, error } = useFetch(`${ApiResponse}roles`);
 
     // State
     const navigate = useNavigate();
-    const [faculty, setFaculty] = useState([]);
+    const [role, setRole] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
-    const [facultyEvents, setFacultyEvents] = useState([]);
-    const [error, setError] = useState(null);
 
-    // Set faculty and count number of events by faculty
+    // Set Data
     useEffect(() => {
-        if (facultyData && eventData) {
-            setFaculty(facultyData);
-
-            // Count number of events by faculty
-            const eventCountsByFaculty = {};
-            eventData.forEach(event => {
-                if (!eventCountsByFaculty[event.FacultyID]) {
-                    eventCountsByFaculty[event.FacultyID] = 1;
-                } else {
-                    eventCountsByFaculty[event.FacultyID]++;
-                }
-            });
-            setFacultyEvents(eventCountsByFaculty);
+        if (roleData) {
+            setRole(roleData);
         }
-    }, [facultyData, eventData]);
+    }, [roleData]);
 
-    if (!facultyData) {
+    if (!roleData) {
         return (
             <Loading />
         );
@@ -48,22 +34,20 @@ const ListFaculty = () => {
     // Handle Event
     const handleDelete = async (id) => {
         try {
-            const response = await fetch(`${ApiResponse}faculties/${id}`, {
+            const response = await fetch(`${ApiResponse}roles/${id}`, {
                 method: 'DELETE',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': 'Bearer ' + localStorage.getItem('token')
                 },
-                
             });
-
             if (!response.ok) {
                 const data = response.json();
-                data.then(data => setError(data.message))
+                throw new Error(data.then(data => (data.message)));
             }
-            setFaculty(prevFaculty => prevFaculty.filter(faculty => faculty.ID !== id));
+            setRole(prevRole => prevRole.filter(role => role.ID !== id));
         } catch (error) {
-            console.error('Error deleting faculty:', error);
+            console.error('Error deleting role:', error);
         }
     };
 
@@ -71,22 +55,23 @@ const ListFaculty = () => {
         setSearchTerm(event.target.value);
     };
 
-    // Filter faculty
-    const filteredFaculty = faculty.filter(faculty =>
-        faculty.Name.toLowerCase().includes(searchTerm.toLowerCase())
+    // Filter Role
+    const filteredRole = role.filter(role =>
+        role.Name.toLowerCase().includes(searchTerm.toLowerCase())
     );
+
 
     return (
         <div className="box">
             <div className="row-1">
                 <div className="header">
-                    <div className="title">List Faculty</div>
+                    <div className="title">List Role</div>
                 </div>
 
-                <Search placeholder={'Search Faculty'} value={searchTerm} onChange={handleSearchChange} />
+                <Search placeholder={'Search Role'} value={searchTerm} onChange={handleSearchChange} />
 
                 <div className="create">
-                    <button className="custom-button" onClick={() => navigate('/admin/faculty/create')}>Create</button>
+                    <button className="custom-button" onClick={() => navigate('/admin/role/create')}>Create</button>
                 </div>
             </div>
 
@@ -97,19 +82,11 @@ const ListFaculty = () => {
                             <TableHead headings={headings} />
                         </thead>
                         <tbody>
-                            {filteredFaculty.length > 0 ? (
-                                filteredFaculty.map((row, index) => (
+                            {filteredRole.length > 0 ? (
+                                filteredRole.map((row, index) => (
                                     <tr key={index}>
                                         <td>{row.Name}</td>
-                                        <td className="description">{row?.Description}</td>
-                                        <td className="number-event">{facultyEvents[row.ID] || 0}</td>
-                                        <td>
-                                            <span className={`guest-status ${row.IsEnabledGuest ? "active" : ""}`}>
-                                                {row.IsEnabledGuest ? "Yes" : "No"}
-                                            </span>
-                                        </td>
-
-
+                                        <td className="description">{row.Description}</td>
                                         <td colSpan="2">
                                             <ul className="menu-action">
                                                 <li>
@@ -144,4 +121,4 @@ const ListFaculty = () => {
     );
 };
 
-export default ListFaculty;
+export default ListRole;

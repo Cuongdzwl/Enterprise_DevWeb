@@ -1,19 +1,19 @@
 import { useState, useEffect } from 'react';
 import useFetch from '../../../CustomHooks/useFetch';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ApiResponse } from '../../../Api';
 import FormGroup from '../../../components/FormGroup';
+import { Link } from 'react-router-dom';
+import { ApiResponse } from '../../../Api';
 import Loading from '../../../components/Loading';
 
 const Data = {
     Name: '',
     Description: '',
-    FacultyID: '',
     ClosureDate: '',
     FinalDate: ''
 }
 
-const DetailEvent = () => {
+const DetailEventM = () => {
     // State
     const [formData, setFormData] = useState(Data);
     const [isLoading, setIsLoading] = useState(false);
@@ -33,8 +33,13 @@ const DetailEvent = () => {
     }, [event]);
 
     // Handle Event
-    const handleBack = () => navigate('/admin/event')
-    
+    const handleBack = () => {
+        navigate('/manager/event')
+    }
+
+    const handleSubmit = () => {
+        navigate(`/manager/public/${id}`);
+    }
 
     if (!event) {
         return <Loading />;
@@ -78,13 +83,6 @@ const DetailEvent = () => {
                                 <div className='detail-ck-editor' dangerouslySetInnerHTML={{ __html: formData.Description }} />
                             </div>
 
-                            <FormGroup
-                                label={'Faculty'}
-                                inputType={'text'}
-                                inputName={'FacultyID'}
-                                value={formData.Faculty?.Name}
-                            />
-
                             <div className="flex-row mb-input">
 
                                 <FormGroup
@@ -108,9 +106,8 @@ const DetailEvent = () => {
 
                             <div className="form-action">
                                 <button type="submit" onClick={handleBack} className="btn">Back</button>
+                                <button type='button' onClick={handleSubmit} className="btn">View List Contribution</button>
                             </div>
-                            {isLoading && <Loading/>}
-                            {error && <div className="error">{error}</div>}
                         </form>
                     </div>
                 </div>
@@ -119,4 +116,4 @@ const DetailEvent = () => {
     );
 };
 
-export default DetailEvent;
+export default DetailEventM;
