@@ -82,11 +82,11 @@ const CreateRole = () => {
                 </div>
             </div>
             <div className="row-2">
-                <div
-                    style={{
-                        minHeight: '580px',
-                    }}
-                    className="box">
+                <div className="box"
+                     style={{
+                         height: 'calc(100vh - 150px)'
+                     }}
+                >
                     <div className="box-content">
                         <form onSubmit={handleSubmit}>
                             <FormGroup

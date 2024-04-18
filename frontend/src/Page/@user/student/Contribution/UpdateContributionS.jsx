@@ -125,10 +125,14 @@ const UpdateContributionS = () => {
                 </div>
             </div>
             <div className="row-2">
-                <div className="box">
+                <div className="box"
+                     style={{
+                         height: '100vh'
+                     }}
+                >
                     <div className="box-content contribution">
                         <form onSubmit={handleSubmit} encType='multipart/form-data'
-                            style={{ width: '100%' }}
+                              style={{width: '100%'}}
                         >
                             <FormGroup
                                 label={'Name'}
@@ -140,7 +144,8 @@ const UpdateContributionS = () => {
 
                             <div className="form-group">
                                 <label>Content</label>
-                                <textarea required name="Content" cols="30" rows="10" value={formData.Content} onChange={handleChange}></textarea>
+                                <textarea required name="Content" cols="30" rows="10" value={formData.Content}
+                                          onChange={handleChange}></textarea>
                             </div>
 
                             <div className="form-group">

@@ -50,7 +50,7 @@ const DetailAccount = () => {
         <div className="box">
             <div className="row-1">
                 <div className="header">
-                    <div className="title">List Account</div>
+                    <div className="title">Detail Account</div>
                 </div>
             </div>
             <div className="row-2">

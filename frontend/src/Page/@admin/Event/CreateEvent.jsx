@@ -136,7 +136,7 @@ const CreateEvent = () => {
         <div className="box">
             <div className="row-1">
                 <div className="header">
-                    <div className="title">List event</div>
+                    <div className="title">Create event</div>
                 </div>
             </div>
 

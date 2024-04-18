@@ -104,7 +104,9 @@ const ChangePassword = () => {
 
             <div className="row-2">
                 <div className="box"
-                     style={{ minHeight: '620px' }}
+                     style={{
+                         height: 'calc(100vh - 150px)'
+                     }}
                 >
                     <div className="box-content">
                         <form onSubmit={handleSubmit}>
@@ -115,7 +117,8 @@ const ChangePassword = () => {
                                 value={formData.oldPassword}
                                 onChange={handleChange}
                             />
-                            {validationErrors.oldPassword && <div className="error">{validationErrors.oldPassword}</div>}
+                            {validationErrors.oldPassword &&
+                                <div className="error">{validationErrors.oldPassword}</div>}
 
                             <FormGroup
                                 label={'New Password'}
@@ -124,7 +127,8 @@ const ChangePassword = () => {
                                 value={formData.newPassword}
                                 onChange={handleChange}
                             />
-                            {validationErrors.newPassword && <div className="error">{validationErrors.newPassword}</div>}
+                            {validationErrors.newPassword &&
+                                <div className="error">{validationErrors.newPassword}</div>}
 
                             <FormGroup
                                 label={'Confirm Password'}
@@ -133,18 +137,19 @@ const ChangePassword = () => {
                                 value={confirmPassword}
                                 onChange={(e) => setConfirmPassword(e.target.value)}
                             />
-                            {validationErrors.ConfirmPassword && <div className="error">{validationErrors.ConfirmPassword}</div>}
+                            {validationErrors.ConfirmPassword &&
+                                <div className="error">{validationErrors.ConfirmPassword}</div>}
 
                             <div className="form-action">
                                 <button type="button" onClick={handleBack} className="btn">Cancel</button>
-                                <button type="submit"  className="btn">Update</button>
+                                <button type="submit" className="btn">Update</button>
                             </div>
                             {error && <div className="error">{error}</div>}
                         </form>
                     </div>
                 </div>
-            </div >
-        </div >
+            </div>
+        </div>
     );
 };
 
