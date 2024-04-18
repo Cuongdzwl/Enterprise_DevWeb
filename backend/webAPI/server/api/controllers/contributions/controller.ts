@@ -106,6 +106,9 @@ export class ContributionsController implements ISuperController {
                   return;
                 }
               }
+
+              
+
               for (const file of files) {
                 L.info(`Processing file: ${file.originalname}`);
                 L.info(`Contribution ID: ${createdContribution.ID}`);
