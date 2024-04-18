@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import {useState, useEffect} from 'react';
 import useFetch from '../../../CustomHooks/useFetch';
-import { useNavigate, useParams } from 'react-router-dom';
+import {useNavigate, useParams} from 'react-router-dom';
 import Loading from '../../../components/Loading';
 import FormGroup from '../../../components/FormGroup';
 
@@ -21,10 +21,10 @@ const UpdateRole = () => {
 
     // ID, Redirect
     const navigate = useNavigate();
-    const { id } = useParams();
+    const {id} = useParams();
 
     // Fetch data
-    const { data: role } = useFetch(`${ApiResponse}roles/${id}`);
+    const {data: role} = useFetch(`${ApiResponse}roles/${id}`);
 
     // Set form data
     useEffect(() => {
@@ -44,13 +44,13 @@ const UpdateRole = () => {
             Description: value.trim() ? '' : 'Description is required'
         }[name];
 
-        setValidationErrors(prevState => ({ ...prevState, [name]: errorMessage }));
+        setValidationErrors(prevState => ({...prevState, [name]: errorMessage}));
     };
 
     // Handle Event
     const handleChange = (e) => {
-        const { name, value } = e.target;
-        setFormData(prevState => ({ ...prevState, [name]: value }));
+        const {name, value} = e.target;
+        setFormData(prevState => ({...prevState, [name]: value}));
         validateField(name, value);
     };
 
@@ -92,7 +92,7 @@ const UpdateRole = () => {
 
     if (!role) {
         return (
-            <Loading />
+            <Loading/>
         )
     }
 
@@ -105,9 +105,10 @@ const UpdateRole = () => {
             </div>
             <div className="row-2">
                 <div className="box"
-                    style={{
-                        minHeight: '580px',
-                    }}>
+                     style={{
+                         height: 'calc(100vh - 150px)'
+                     }}
+                >
                     <div className="box-content">
                         <form onSubmit={handleSubmit}>
                             <FormGroup
@@ -121,8 +122,10 @@ const UpdateRole = () => {
 
                             <div className="form-group">
                                 <label>Description</label>
-                                <textarea required name="Description" cols="30" rows="10" value={formData?.Description} onChange={handleChange}></textarea>
-                                {validationErrors.Description && <div className="error">{validationErrors.Description}</div>}
+                                <textarea required name="Description" cols="30" rows="10" value={formData?.Description}
+                                          onChange={handleChange}></textarea>
+                                {validationErrors.Description &&
+                                    <div className="error">{validationErrors.Description}</div>}
                             </div>
 
                             <div className="form-action">
