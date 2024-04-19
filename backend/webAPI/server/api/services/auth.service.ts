@@ -67,28 +67,7 @@ export class AuthService {
     });
   }
 
-  async google(req: any): Promise<any> {
-    return new Promise((resolve, reject) => {
-      authStrategy.authenticate(
-        'google',
-        { session: false },
-        (err: any, user: User, info: any) => {
-          if (err) {
-            reject(err);
-          } else if (!user) {
-            reject(info);
-          } else {
-            const token = jwt.sign(
-              { id: user.ID, roleID: user.RoleID, FacultyID: user.FacultyID },
-              process.env.JWT_SECRET || 'default',
-              { expiresIn: '3h' }
-            );
-            resolve({ user: new UserDTO().map(user), token });
-          }
-        }
-      )(req);
-    });
-  }
+
   async forgotPassword(email: string, _: string): Promise<any> {
     const resolve: any = prisma.users
       .findUnique({ where: { Email: email } })

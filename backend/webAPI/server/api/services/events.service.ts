@@ -321,7 +321,7 @@ export class EventsService implements ISuperService<Event> {
   private schedule(event: Event) {
     if (event) {
       L.info(`create ${model} with id ${event.ID}`);
-      prisma.users
+      const created =  prisma.users
         .findMany({ where: { FacultyID: event.FacultyID } })
         .then((users: any) => {
           if (users) var user: User[] = users;
@@ -364,7 +364,7 @@ export class EventsService implements ISuperService<Event> {
               NotificationSentThrough.Email
             )
             .then((rr) => {
-              L.info(rr);
+              L.info("Create scheduled notification for event's closure date Success" +  rr?.data);
             });
           // Scheduled Email Final Date
           notificationsService
@@ -374,6 +374,15 @@ export class EventsService implements ISuperService<Event> {
                 Event: {
                   ID: event.ID,
                   Name: event.Name,
+                  FinalDate: event.FinalDate.toLocaleDateString('en-US', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric',
+                  }),
+                  FinalTime: event.FinalDate.toLocaleTimeString('en-US', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  }),
                 },
                 Name: event.Name,
                 sendAt: event.FinalDate.toISOString(),
@@ -382,14 +391,16 @@ export class EventsService implements ISuperService<Event> {
               NotificationSentThrough.Email
             )
             .then((r) => {
-              L.info(r);
+              L.info("Create scheduled notification for event's final date Success" +  r?.data);
             });
           return true;
         })
         .catch((error) => {
           L.error(error);
+          return false;
         });
-    }
+        L.info("Created notifications for event's closure and final date: " + created)
+      }
     return Promise.resolve(event);
   }
 
