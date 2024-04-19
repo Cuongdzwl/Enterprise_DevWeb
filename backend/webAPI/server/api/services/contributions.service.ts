@@ -397,7 +397,7 @@ export class ContributionsService implements ISuperService<Contribution> {
                     User: {
                       Name: updated.Name,
                     },
-                    ID: updated.ID,
+                    ID: id,
                     Name: updated.Name,
                   },
                 },
