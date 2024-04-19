@@ -410,11 +410,12 @@ export class ContributionsService implements ISuperService<Contribution> {
             if (
               !(updated.StatusID === current.StatusID) && updated.StatusID != Status.PENDING as number
             ) {
-
               var Contribution: any = {
                 Name: current.Name,
-                IsApproved: updated.StatusID == Status.ACCEPTED ? true : false,
+                ID: id,
               };
+
+              Contribution.IsApproved = updated.StatusID == Status.ACCEPTED ? true : false;
               if (!(updated.IsPublic === current.IsPublic && current.IsPublic ===  true)) {
                 Contribution.IsPublic = updated.IsPublic;
               }
