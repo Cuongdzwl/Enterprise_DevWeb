@@ -137,7 +137,9 @@ export class ContributionsService implements ISuperService<Contribution> {
     id: number,
     depth?: number,
     comment?: boolean,
-    file?: boolean
+    file?: boolean,
+    facultyID?: number,
+    userID?: number
   ): Promise<any> {
     // L.info(`fetch ${model} with id ${id}`);
     var select: any = {
@@ -177,11 +179,22 @@ export class ContributionsService implements ISuperService<Contribution> {
         select: { ID: true, Url: true },
         where: { ContributionID: id },
       };
-
+    // Featch Contribution
+    var where: any = { ID: id };
+    if (facultyID) {
+      var eventList : number[] = await prisma.events.findMany({select: { ID: true}, where: { FacultyID: facultyID}}).then((r)=>{
+        return r.map((e)=> e.ID);
+      })
+      where.EventID = {in: eventList};
+    }
+    if (userID) {
+      where.UserID = userID;
+    }
     const contribution = await prisma.contributions.findUnique({
       select,
-      where: { ID: id },
+      where,
     });
+    // Categorize the contribution's files into text and image files
     try {
       if (contribution) {
         const filesAsDTOs = this.toFileDTOArray(contribution.Files || []);
@@ -238,7 +251,7 @@ export class ContributionsService implements ISuperService<Contribution> {
             L.error(error);
             return Promise.resolve(false);
           });
-        L.info(`Notify Status : ${success}`)
+        L.info(`Notify Status : ${success}`);
         return Promise.resolve(contribution);
       })
       .catch((error) => {
@@ -250,7 +263,7 @@ export class ContributionsService implements ISuperService<Contribution> {
       });
   }
 
-  private notifyCoordinator(student: any, contribution: any) : Promise<boolean> {
+  private notifyCoordinator(student: any, contribution: any): Promise<boolean> {
     return prisma.users
       .findFirst({ where: { FacultyID: student.FacultyID, RoleID: 3 } })
       .then((coordinator) => {
@@ -302,11 +315,13 @@ export class ContributionsService implements ISuperService<Contribution> {
       })
       .then(() => {
         // After successfully deleting files, delete the contribution
-        return prisma.contributions.delete({
-          where: { ID: id },
-        }).catch((e) => {
-          L.error(e);
-        });
+        return prisma.contributions
+          .delete({
+            where: { ID: id },
+          })
+          .catch((e) => {
+            L.error(e);
+          });
       })
       .then((r) => {
         // If both deletions are successful, resolve with the result of deleting the contribution
@@ -456,7 +471,6 @@ export class ContributionsService implements ISuperService<Contribution> {
             'Contribution name is invalid, cannot contain numbers or special characters, and must have a maximum of 15 characters.',
         };
       }
-
 
       // Validate Content
       if (!contribution.Content || contribution.Content.length > 3000) {

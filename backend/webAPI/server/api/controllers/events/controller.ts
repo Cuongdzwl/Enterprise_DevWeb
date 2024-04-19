@@ -5,14 +5,20 @@ import { ISuperController } from '../../interfaces/ISuperController.interface';
 import eventsService from '../../services/events.service';
 import { PrismaClient } from '@prisma/client';
 import facultiesService from '../../services/faculties.service';
+import L from '../../../common/logger';
 
 const prisma = new PrismaClient();
 
 export class EventsController implements ISuperController {
   async all(req: Request, res: Response): Promise<void> {
-
-    if(res.locals.user.user.RoleID === 4 ||res.locals.user.user.RoleID === 3){
-      const result = await eventsService.filter("FacultyID", res.locals.user.user.FacultyID as string);
+    if (
+      res.locals.user.user.RoleID === 4 ||
+      res.locals.user.user.RoleID === 3
+    ) {
+      const result = await eventsService.filter(
+        'FacultyID',
+        res.locals.user.user.FacultyID as string
+      );
       res.status(200).json(result);
       return;
     }
@@ -23,34 +29,36 @@ export class EventsController implements ISuperController {
     res.status(200).json(result);
   }
 
-  byId(req: Request, res: Response): void {    
+  byId(req: Request, res: Response): void {
     const id = Number.parseInt(req.params['id']);
     const depth = Number.parseInt(req.query.depth?.toString() ?? '');
     const isPublic = Boolean(req.query.isPublic);
     const contribution: boolean =
-    req.query.contribution?.toString() == 'true' ? true : false;
+      req.query.contribution?.toString() == 'true' ? true : false;
+    const user = res.locals.user.user;
 
-    if(res.locals.user.user.RoleID === 4 ){
-      EventsService.byId(id, depth, contribution,isPublic,res.locals.user.user.ID)
-      .then((r) => {
-        if (r) res.json(r);
-        else res.status(404).end();
-      })
-      .catch((error) => {
-        res.status(400).json({ error: error }).end();
-      });
+    if (user.RoleID === 4) {
+      EventsService.byId(id, depth, contribution, isPublic, user.ID)
+        .then((r) => {
+          L.info(r);
+          if (r) res.json(r);
+          else res.status(404).end();
+        })
+        .catch((error) => {
+          res.status(400).json({ error: error }).end();
+        });
+      return;
+    } else {
+      EventsService.byId(id, depth, contribution, isPublic)
+        .then((r) => {
+          if (r) res.json(r);
+          else res.status(404).end();
+        })
+        .catch((error) => {
+          res.status(400).json({ error: error }).end();
+        });
       return;
     }
-
-    EventsService.byId(id, depth, contribution,isPublic)
-      .then((r) => {
-        if (r) res.json(r);
-        else res.status(404).end();
-        return;
-      })
-      .catch((error) => {
-        res.status(400).json({ error: error }).end();
-      });
   }
 
   async create(req: Request, res: Response): Promise<void> {

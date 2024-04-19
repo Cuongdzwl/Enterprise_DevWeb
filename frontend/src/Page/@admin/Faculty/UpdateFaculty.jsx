@@ -1,46 +1,52 @@
 import { useState, useEffect } from 'react';
 import useFetch from '../../../CustomHooks/useFetch';
 import { useNavigate, useParams } from 'react-router-dom';
+import Loading from '../../../components/Loading';
+import FormGroup from '../../../components/FormGroup';
+
+const Data = {
+    Name: '',
+    Description: '',
+    IsEnabledGuest: false,
+}
+
+const ApiResponse = 'https://dev-nodejs.cuongnd.work/api/v1/'
 
 const UpdateFaculty = () => {
-    const [formData, setFormData] = useState({
-        name: '',
-        description: '',
-        guest: false
-    });
+    // State
+    const [formData, setFormData] = useState(Data);
     const [isFormValid, setIsFormValid] = useState(false);
-    const [validationErrors, setValidationErrors] = useState({
-        name: '',
-        description: ''
-    });
+    const [validationErrors, setValidationErrors] = useState(Data);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
 
+    // ID, Redirect
     const navigate = useNavigate();
     const { id } = useParams();
 
-    const { data: faculty } = useFetch('http://localhost:3000/faculty/' + id);
+    // Fetch data
+    const { data: faculty } = useFetch(`${ApiResponse}faculties/${id}`);
 
+    // Set form data
     useEffect(() => {
         if (faculty) {
-            const { name, description, guest } = faculty;
-            setFormData({ name, description, guest });
+            setFormData(faculty);
         }
     }, [faculty]);
 
-
+    // Validate form
     useEffect(() => {
-        setIsFormValid(Object.values(validationErrors).every(error => error === '') && Object.values(formData).every(value => value !== ''));
+        setIsFormValid(Object.values(validationErrors).every(error => error === ''));
     }, [validationErrors, formData]);
 
     const validateField = (name, value) => {
         let errorMessage = '';
         switch (name) {
-            case 'name':
-                errorMessage = value.trim() ? '' : 'Name is required.';
+            case 'Name':
+                errorMessage = value.trim() && /^[A-Za-z\s]{1,50}$/.test(value) ? '' : 'Invalid faculty name: no numbers or special characters, max 15 chars';
                 break;
-            case 'description':
-                errorMessage = value.trim() ? '' : 'Description is required.';
+            case 'Description':
+                errorMessage = value.length < 3000 ? '' : 'Description is invalid, must have a maximum of 3000 characters.'
                 break;
             default:
                 break;
@@ -48,18 +54,11 @@ const UpdateFaculty = () => {
         setValidationErrors(prevState => ({ ...prevState, [name]: errorMessage }));
     };
 
+    // Handle Event
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData(prevState => ({ ...prevState, [name]: value }));
         validateField(name, value);
-        const inputElement = e.target;
-        if (validationErrors[name]) {
-            inputElement.classList.remove('valid');
-            inputElement.classList.add('invalid');
-        } else {
-            inputElement.classList.remove('invalid');
-            inputElement.classList.add('valid');
-        }
     };
 
     const handleBack = () => {
@@ -74,31 +73,41 @@ const UpdateFaculty = () => {
             return;
         }
 
+        const newFormData = {
+            ...formData,
+            IsEnabledGuest: formData.IsEnabledGuest === 'true' ? true : false,
+        }
+
         setIsLoading(true);
         setError(null);
 
         try {
-            const response = await fetch(`http://localhost:3000/faculty/${id}`, {
+            const response = await fetch(`${ApiResponse}faculties/${id}`, {
                 method: 'PUT',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + localStorage.getItem('token')
                 },
-                body: JSON.stringify(formData)
+                body: JSON.stringify(newFormData)
             });
             if (!response.ok) {
-                throw new Error('Failed to create faculty');
+                const data = await response.json();
+                setError(data.message);
+                return;
             }
-            navigate(-1);
+            navigate('/admin/faculty');
         } catch (error) {
-            console.error('Error creating faculty:', error);
-            setError('Failed to create faculty. Please try again later.');
+            console.error('Error update faculty:', error);
+            setError('Failed to update faculty. Please try again later.');
         } finally {
             setIsLoading(false);
         }
     };
 
     if (!faculty) {
-        return <p>Loading...</p>;
+        return (
+            <Loading />
+        )
     }
 
     return (
@@ -109,34 +118,44 @@ const UpdateFaculty = () => {
                 </div>
             </div>
             <div className="row-2">
-                <div className="box">
+                <div className="box"
+                     style={{
+                         height: 'calc(100vh - 150px)'
+                     }}
+                >
                     <div className="box-content">
                         <form onSubmit={handleSubmit}>
-                            <div className="form-group">
-                                <label>Name</label>
-                                <input type="text" className='form-control' required name="name" value={formData.name} onChange={handleChange} />
-                                {validationErrors.name && <div className="error">{validationErrors.name}</div>}
-                            </div>
+                            <FormGroup
+                                label={'Name'}
+                                inputType={'text'}
+                                inputName={'Name'}
+                                value={formData?.Name}
+                                onChange={handleChange}
+                            />
+                            {validationErrors.Name && <div className="error">{validationErrors.Name}</div>}
+
                             <div className="form-group">
                                 <label>Description</label>
-                                <textarea required name="description" cols="30" rows="10" value={formData.description} onChange={handleChange}></textarea>
-                                {validationErrors.description && <div className="error">{validationErrors.description}</div>}
+                                <textarea required name="Description" cols="30" rows="10" value={formData?.Description}
+                                          onChange={handleChange}></textarea>
+                                {validationErrors.Description &&
+                                    <div className="error">{validationErrors.Description}</div>}
                             </div>
 
                             <div className="form-group mb-input">
                                 <label>Guest</label>
-                                <select value={formData.guest} onChange={handleChange} className='form-control' required name="guest">
-                                    <option value="" hidden>Select Guest</option>
-                                    <option value={true}>True</option>
-                                    <option value={false}>False</option>
+                                <select value={formData?.IsEnabledGuest} onChange={handleChange}
+                                        className='form-control'
+                                        name="IsEnabledGuest">
+                                    <option value='true'>True</option>
+                                    <option value='false'>False</option>
                                 </select>
                             </div>
 
                             <div className="form-action">
-                                <button type="submit" onClick={handleBack} className="btn">Cancel</button>
-                                <button type="submit" disabled={!isFormValid || isLoading} className="btn">Update</button>
+                            <button type="submit" onClick={handleBack} className="btn">Cancel</button>
+                                <button type="submit" className="btn">Update</button>
                             </div>
-                            {isLoading && <span>Loading...</span>}
                             {error && <div className="error">{error}</div>}
                         </form>
                     </div>

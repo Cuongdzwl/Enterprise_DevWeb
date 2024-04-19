@@ -1,53 +1,52 @@
 import { useState, useEffect } from 'react';
-import useFetch from '../../../CustomHooks/useFetch';
 import { useNavigate } from 'react-router-dom';
+import Loading from '../../../components/Loading';
+import FormGroup from '../../../components/FormGroup';
+import useFetch from '../../../CustomHooks/useFetch';
+
+const ApiResponse = 'https://dev-nodejs.cuongnd.work/api/v1/'
+
+const Data = {
+    Name: '',
+    Email: '',
+    Phone: '',
+    Address: '',
+    RoleID: '',
+    FacultyID: ''
+}
 
 const CreateAccount = () => {
-    const defaultPassword = '12345678';
+    const navigate = useNavigate();
+    // Data
+    const facultyData = useFetch(`${ApiResponse}faculties`);
+    const roleData = useFetch(`${ApiResponse}roles`);
 
-    const [formData, setFormData] = useState({
-        name: '',
-        email: '',
-        phone: '',
-        address: '',
-        role: '',
-        faculty: ''
-    });
+    // State
+    const [formData, setFormData] = useState(Data);
     const [isFormValid, setIsFormValid] = useState(false);
-    const [validationErrors, setValidationErrors] = useState({
-        name: '',
-        email: '',
-        phone: '',
-        address: '',
-        role: '',
-        faculty: ''
-    });
+    const [validationErrors, setValidationErrors] = useState(Data);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
 
-    const navigate = useNavigate();
-
-    const { data: roleData } = useFetch('http://localhost:3000/role');
-    const { data: facultyData } = useFetch('http://localhost:3000/faculty');
-
+    // Validate form
     useEffect(() => {
-        setIsFormValid(Object.values(validationErrors).every(error => error === '') && Object.values(formData).every(value => value !== ''));
+        setIsFormValid(Object.values(validationErrors).every(error => error === ''));
     }, [validationErrors, formData]);
 
     const validateField = (name, value) => {
         let errorMessage = '';
         switch (name) {
-            case 'name':
-                errorMessage = value.trim() ? '' : 'Name is required.';
+            case 'Name':
+                errorMessage = value.trim() && /^[A-Za-z\s]{1,50}$/.test(value)  ? '' : 'Name is required and must be less than 15 characters.';
                 break;
-            case 'email':
+            case 'Email':
                 errorMessage = /^\S+@\S+\.\S+$/.test(value) ? '' : 'Email is invalid.';
                 break;
-            case 'phone':
-                errorMessage = /^\d{10}$/.test(value) ? '' : 'Phone number must be 10 digits.';
+            case 'Phone':
+                errorMessage = /^\+?[0-9]\d{1,20}$/.test(value) ? '' : 'Phone is invalid';
                 break;
-            case 'address':
-                errorMessage = value.trim() ? '' : 'Address is required.';
+            case 'Address':
+                errorMessage = value.length < 300 ? '' : 'Address is invalid, must have a maximum of 300 characters.';
                 break;
             default:
                 break;
@@ -55,54 +54,47 @@ const CreateAccount = () => {
         setValidationErrors(prevState => ({ ...prevState, [name]: errorMessage }));
     };
 
+
+    // Handle Event
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData(prevState => ({ ...prevState, [name]: value }));
         validateField(name, value);
-        const inputElement = e.target;
-        if (validationErrors[name]) {
-            inputElement.classList.remove('valid');
-            inputElement.classList.add('invalid');
-        } else {
-            inputElement.classList.remove('invalid');
-            inputElement.classList.add('valid');
-        }
     };
 
-    const handleBack = () => {
-        navigate('/admin/account');
-    }
+    const handleBack = () => navigate('/admin/account');
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-
         if (!isFormValid) {
             setError("Please fill in all fields correctly.");
             return;
         }
-
         setIsLoading(true);
         setError(null);
 
         const newFormData = {
             ...formData,
-            password: defaultPassword,
-            role: parseInt(formData.role),
-            faculty: parseInt(formData.faculty)
+            FacultyID: formData.FacultyID ? parseInt(formData.FacultyID) : '',
+            RoleID: parseInt(formData.RoleID)
         }
 
         try {
-            const response = await fetch('http://localhost:3000/account', {
+            const response = await fetch(`${ApiResponse}users`, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + localStorage.getItem('token')
                 },
+
                 body: JSON.stringify(newFormData)
             });
             if (!response.ok) {
-                throw new Error('Failed to create account');
+                const data = await response.json();
+                setError(data.message);
+                return;
             }
-            navigate(-1);
+            navigate('/admin/account');
         } catch (error) {
             console.error('Error creating account:', error);
             setError('Failed to create account. Please try again later.');
@@ -115,7 +107,7 @@ const CreateAccount = () => {
         <div className="box">
             <div className="row-1">
                 <div className="header">
-                    <div className="title">List Account</div>
+                    <div className="title">Create Account</div>
                 </div>
             </div>
 
@@ -123,60 +115,75 @@ const CreateAccount = () => {
                 <div className="box">
                     <div className="box-content">
                         <form onSubmit={handleSubmit}>
-                            <div className="form-group">
-                                <label>Name</label>
-                                <input type="text" className='form-control' required name="name" value={formData.name} onChange={handleChange} />
-                                {validationErrors.name && <div className="error">{validationErrors.name}</div>}
-                            </div>
-                            <div className="form-group">
-                                <label>Email</label>
-                                <input type="email" className='form-control' required name="email" value={formData.email} onChange={handleChange} />
-                                {validationErrors.email && <div className="error">{validationErrors.email}</div>}
-                            </div>
-                            <div className="form-group">
-                                <label>Phone</label>
-                                <input type="text" className='form-control' required name="phone" value={formData.phone} onChange={handleChange} />
-                                {validationErrors.phone && <div className="error">{validationErrors.phone}</div>}
-                            </div>
-                            <div className="form-group">
-                                <label>Address</label>
-                                <input type="text" className='form-control' required name="address" value={formData.address} onChange={handleChange} />
-                                {validationErrors.address && <div className="error">{validationErrors.address}</div>}
-                            </div>
+                            <FormGroup
+                                label={'Name'}
+                                inputType={'text'}
+                                inputName={'Name'}
+                                value={formData.Name}
+                                onChange={handleChange}
+                            />
+                            {validationErrors.Name && <div className="error">{validationErrors.Name}</div>}
+
+                            <FormGroup
+                                label={'Email'}
+                                inputType={'email'}
+                                inputName={'Email'}
+                                value={formData.Email}
+                                onChange={handleChange}
+                            />
+                            {validationErrors.Email && <div className="error">{validationErrors.Email}</div>}
+
+                            <FormGroup
+                                label={'Phone'}
+                                inputType={'text'}
+                                inputName={'Phone'}
+                                value={formData.Phone}
+                                onChange={handleChange}
+                            />
+                            {validationErrors.Phone && <div className="error">{validationErrors.Phone}</div>}
+
+                            <FormGroup
+                                label={'Address'}
+                                inputType={'text'}
+                                inputName={'Address'}
+                                value={formData.Address}
+                                onChange={handleChange}
+                            />
+                            {validationErrors.Address && <div className="error">{validationErrors.Address}</div>}
+
+
                             <div className="form-group">
                                 <label>Role</label>
-                                <select value={formData.role} onChange={handleChange} className='form-control' required name="role">
+                                <select value={formData.RoleID} onChange={handleChange} className='form-control' required name="RoleID">
                                     <option value="" hidden>Select Role</option>
-                                    {roleData && roleData.map((role) => (
-                                        <option key={role.id} value={role.id}>{role.name}</option>
+                                    {roleData && Array.isArray(roleData.data) && roleData.data.map((role) => (
+                                        <option key={role.ID} value={role.ID}>{role.Name}</option>
                                     ))}
                                 </select>
-                                {validationErrors.role && <div className="error">{validationErrors.role}</div>}
+                                {validationErrors.RoleID && <div className="error">{validationErrors.RoleID}</div>}
                             </div>
+
                             <div className="form-group mb-input">
                                 <label>Faculty</label>
-                                <select value={formData.faculty} onChange={handleChange} className='form-control' required name="faculty">
+                                <select value={formData.FacultyID} onChange={handleChange} className='form-control' name="FacultyID">
                                     <option value="" hidden>Select Faculty</option>
-                                    {facultyData && facultyData.map((faculty) => (
-                                        <option key={faculty.id} value={faculty.id}>{faculty.name}</option>
+                                    {facultyData && Array.isArray(facultyData.data) && facultyData.data.map((faculty) => (
+                                        <option key={faculty.ID} value={faculty.ID}>{faculty.Name}</option>
                                     ))}
                                 </select>
-                                {validationErrors.faculty && <div className="error">{validationErrors.faculty}</div>}
+                                {validationErrors.FacultyID && <div className="error">{validationErrors.FacultyID}</div>}
                             </div>
 
                             <div className="form-action">
                                 <button type="submit" onClick={handleBack} className="btn">Cancel</button>
-                                <button type="submit" disabled={!isFormValid || isLoading} className="btn">Create</button>
+                                <button type="submit" className="btn" disabled={!isFormValid}>Create</button>
                             </div>
-                            {isLoading && <span>Loading...</span>}
                             {error && <div className="error">{error}</div>}
                         </form>
                     </div>
                 </div>
-            </div>
-        </div>
-
-
+            </div >
+        </div >
     );
 };
 

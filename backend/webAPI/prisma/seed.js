@@ -159,22 +159,22 @@ seedUser = async () => {
   //     Email: 'admin@example.com',
   //     Phone : "+999",
   //     Address: "Ha Noi",
-  //     RoleID: 1,
-  //   },
-  // });
-  // Marketing Manager - 1 user
-  password = "marketingmanagerpassword123";
-  hashedPassword = utils.hashedPassword(password, salt);
-  await prisma.users.create({
-    data: {
-      Name: 'Marketing Manager User',
-      Password: hashedPassword,
-      Salt: salt,
-      Email: 'manager123@example.com',
-      Phone : "+999",
-      Address: "Ha Noi",
-      RoleID: 2,
-    },
+    //     RoleID: 1,
+    //   },
+    // });
+    // Marketing Manager - 1 user
+    password = "marketingmanagerpassword123";
+    hashedPassword = utils.hashedPassword(password, salt);
+    await prisma.users.create({
+      data: {
+        Name: 'Marketing Manager User',
+        Password: hashedPassword,
+        Salt: salt,
+        Email: 'manager123@example.com',
+        Phone : "+999",
+        Address: "Ha Noi",
+        RoleID: 2,
+      },
   });
   // let studentCount = 0;
   // for (const seededFaculty of seededFaculties) {

@@ -21,18 +21,34 @@ export class ContributionsController implements ISuperController {
   }
 
   byId(req: Request, res: Response): void {
+    const user = res.locals.user.user
     const id = Number.parseInt(req.params['id']);
     const depth = Number.parseInt(req.query.depth?.toString() ?? '');
     const comment: boolean =
       req.query.comment?.toString() == 'true' ? true : false;
     const file: boolean = req.query.file?.toString() == 'true' ? true : false;
-
+    // get by id for
     try {
-      ContributionsService.byId(id, depth, comment, file).then((r) => {
-        if (r) res.status(200).json(r);
-        else res.status(404).end();
-      });
+      if (user.RoleID == 4) {
+        ContributionsService.byId(id, depth, comment, file,user.FacultyID,user.ID).then((r) => {
+          if (r) res.status(200).json(r);
+          else res.status(404).end();
+        });
+      }
+      else if (user.RoleID == 3) {
+        ContributionsService.byId(id, depth, comment, file,user.FacultyID).then((r) => {
+          if (r) res.status(200).json(r);
+          else res.status(404).end();
+        });
+      } else {
+        ContributionsService.byId(id, depth, comment, file).then((r) => {
+          if (r) res.status(200).json(r);
+          else res.status(404).end();
+        });
+      }
+
     } catch (error) {
+      L.error(error)
       res.status(400).json({ error: error.message }).end();
     }
   }
@@ -75,7 +91,7 @@ export class ContributionsController implements ISuperController {
     // Check timeline
     const isValid = contributionsService.validateClosureDate(contributionData);
     if (!isValid) {
-      res.status(400).json({ error: 'The event this closed'}).end();
+      res.status(400).json({ error: 'The event this closed' }).end();
       return;
     }
     const validations = await ContributionsService.validateConstraints(
@@ -92,33 +108,36 @@ export class ContributionsController implements ISuperController {
       contributionsService
         .create(req.body)
         .then((createdContribution) => {
-          
           const filesObject = req.files as {
             [fieldname: string]: Express.Multer.File[];
           };
           for (const fieldName in filesObject) {
             if (Object.prototype.hasOwnProperty.call(filesObject, fieldName)) {
               const files = filesObject[fieldName];
-              for (const file of files){
+              for (const file of files) {
                 L.info(file.size + 'bytes');
-                if(file.size > 5 * 1024 * 1024) {
+                if (file.size > 5 * 1024 * 1024) {
                   res.status(400).json({ message: 'File too large. (5mb)' });
                   return;
                 }
               }
 
-              
-
               for (const file of files) {
                 L.info(`Processing file: ${file.originalname}`);
                 L.info(`Contribution ID: ${createdContribution.ID}`);
                 if (file && createdContribution.ID) {
-                  FilesService.createfile(file, createdContribution.ID).catch((error) => {L.error(error);});
+                  FilesService.createfile(file, createdContribution.ID).catch(
+                    (error) => {
+                      L.error(error);
+                    }
+                  );
                 }
               }
             }
           }
-          res.status(201).json({ message: 'Contribution and files created successfully' });
+          res
+            .status(201)
+            .json({ message: 'Contribution and files created successfully' });
         })
         .catch(() => {
           res.status(400).json({ message: 'Created Failed' });
@@ -193,7 +212,7 @@ export class ContributionsController implements ISuperController {
 
     const isValid = contributionsService.validateFinalDate(contribution);
     if (!isValid) {
-      res.status(400).json({ error: 'The event this closed'}).end();
+      res.status(400).json({ error: 'The event this closed' }).end();
       return;
     }
     contribution.LastEditByID = Number(res.locals.user.user.ID + '');
@@ -320,7 +339,9 @@ export class ContributionsController implements ISuperController {
             for (const file of files) {
               L.info(`Processing file: ${file.originalname}`);
               if (file && id) {
-                FilesService.createfile(file, id).catch((error)=>{L.error(error)});
+                FilesService.createfile(file, id).catch((error) => {
+                  L.error(error);
+                });
               }
             }
           }

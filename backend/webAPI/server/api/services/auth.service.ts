@@ -58,8 +58,7 @@ export class AuthService {
           } else {
             const token = jwt.sign(
               { id: user.ID, roleID: user.RoleID, FacultyID: user.FacultyID },
-              process.env.JWT_SECRET || 'default',
-              { expiresIn: '1h' }
+              process.env.JWT_SECRET || 'default'
             );
             resolve({ user: new UserDTO().map(user), token });
           }

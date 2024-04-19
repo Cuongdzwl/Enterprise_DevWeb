@@ -80,13 +80,24 @@ export class EventsService implements ISuperService<Event> {
     if (depth == 1) {
       select.Faculty = { select: { ID: true, Name: true } };
     }
-    const event = await prisma.events.findUnique({
-      select,
-      where: { ID: id },
-    });
+
+    var where: any = { ID: id };
+    if (userid) {
+      where.FacultyID = await prisma.users
+        .findUnique({ select: { FacultyID: true }, where: { ID: userid } })
+        .then((r) => {
+          return r?.FacultyID;
+        });
+    }
+    // categorize files
     if (depth == 1 && contribution == true) {
       let option: any = {};
       if (userid) {
+        // option.FacultyID = await prisma.users
+        //   .findUnique({ select: { FacultyID: true }, where: { ID: userid } })
+        //   .then((r) => {
+        //     return r?.FacultyID;
+        //   });
         option.UserID = userid;
       }
       if (isPublic) {
@@ -109,6 +120,7 @@ export class EventsService implements ISuperService<Event> {
                 Name: true,
                 Content: true,
                 StatusID: true,
+                UserID: true,
                 Files: {
                   select: {
                     ID: true,
@@ -123,7 +135,7 @@ export class EventsService implements ISuperService<Event> {
               where: option,
             },
           },
-          where: { ID: id },
+          where,
         });
         //  Categorize file
         if (eventContributions && eventContributions.Contributions) {
@@ -148,11 +160,26 @@ export class EventsService implements ISuperService<Event> {
         }
       } catch (error) {
         L.error(`Failed to fetch event with id ${id}: ${error}`);
-        L.error(` failed: ${error}`);
-        Promise.reject({message: `Failed to fetch event with id ${id}: ${error}`});
+        Promise.reject({
+          message: `Failed to fetch event with id ${id}}`,
+        });
       }
     }
-    return Promise.resolve(event);
+    // Fectch
+    return await prisma.events
+      .findUnique({
+        select,
+        where,
+      })
+      .then((event) => {
+        return Promise.resolve(event);
+      })
+      .catch((error) => {
+        L.error(`Failed to fetch event with id ${id}: ${error}`);
+        return Promise.reject({
+          message: `Failed to fetch event with id ${id}`,
+        });
+      });
   }
 
   filter(filter: string, key: string): Promise<any> {
