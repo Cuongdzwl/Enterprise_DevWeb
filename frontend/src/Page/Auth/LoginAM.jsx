@@ -38,7 +38,7 @@ const LoginAM = () => {
         validateField(name, value);
     };
 
-    const handleBack = () => navigate('/login');
+    const handleBack = () => navigate('/');
 
     const handleSubmit = async (e) => {
         e.preventDefault();

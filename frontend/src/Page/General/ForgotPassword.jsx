@@ -51,7 +51,7 @@ const ForgotPassword = () => {
             }
             setMessage('Please Check your email to reset your password.');
             setTimeout(() => {
-                navigate('/login');
+                navigate('/');
             }, 3000);
 
         } catch (error) {

@@ -93,18 +93,13 @@ function App() {
             setIsLoggedIn(!!guest)
         }
 
-        // Redirect login
-        if (window.location.pathname === '/') {
-            window.location.href = '/login/';
-        }
-
         if (token) {
             const decodedToken = jwtDecode(token);
             const currentTime = Date.now() / 1000;
 
             if (decodedToken.exp < currentTime) {
                 localStorage.clear()
-                window.location.href = '/login/';
+                window.location.href = '/';
             }
         }
     }, []);
@@ -138,8 +133,8 @@ function App() {
             <div className="App">
                 <Routes>
                     {/* Auth */}
-                    <Route path='/login/' element={<Login />} />
-                    <Route path='/login/admin' element={<LoginAM />} />
+                    <Route path='/' element={<Login />} />
+                    <Route path='/staff' element={<LoginAM />} />
                     <Route path='/forgotpassword' element={<ForgotPassword />} />
                     <Route path='/resetpassword' element={<ResetPassword />} />
 

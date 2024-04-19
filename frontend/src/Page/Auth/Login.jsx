@@ -76,7 +76,7 @@ const LoginSCG = () => {
         }
     };
 
-    const handleStaffLogin = () => navigate('/login/admin');
+    const handleStaffLogin = () => navigate('/staff');
 
     const handleGuestLogin = async (e) => {
         e.preventDefault();
