@@ -62,7 +62,7 @@ export class NotificationService implements ISuperService<Notification> {
     }
     // Send Payload
     try {
-      if (events[0].payload.sendAtd) {
+      if (events[0].payload.sendAt) {
         novu.events.bulkTrigger(events).then(async (r) => {
           var data: TransactionDTO[] = r.data.data;
           prisma.notificationSentTypes

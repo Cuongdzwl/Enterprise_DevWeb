@@ -291,7 +291,7 @@ export class ContributionsController implements ISuperController {
         }
         console.log({ textFiles, imageFiles });
 
-        if (imageFiles.length >= 1) {
+        if (textFiles.length >= 1) {
           console.log('detele text');
           const texts = await prisma.files.findMany({
             where: {
@@ -311,7 +311,7 @@ export class ContributionsController implements ISuperController {
             }
           }
         }
-        if (textFiles.length >= 1) {
+        if (imageFiles.length >= 1) {
           console.log('detele image');
           const images = await prisma.files.findMany({
             where: {

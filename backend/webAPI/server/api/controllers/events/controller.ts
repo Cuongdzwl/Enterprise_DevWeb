@@ -11,6 +11,7 @@ const prisma = new PrismaClient();
 
 export class EventsController implements ISuperController {
   async all(req: Request, res: Response): Promise<void> {
+    const depth = Number.parseInt(req.query.depth?.toString() ?? '');
     if (
       res.locals.user.user.RoleID === 4 ||
       res.locals.user.user.RoleID === 3
@@ -22,9 +23,6 @@ export class EventsController implements ISuperController {
       res.status(200).json(result);
       return;
     }
-
-    const depth = Number.parseInt(req.query.depth?.toString() ?? '');
-
     const result = await EventsService.all(depth);
     res.status(200).json(result);
   }

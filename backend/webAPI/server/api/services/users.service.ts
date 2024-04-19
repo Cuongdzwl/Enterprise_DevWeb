@@ -187,6 +187,8 @@ export class UsersService implements ISuperService<User> {
         hashedPassword = result.Password;
       }
       // Update
+      // Parse Faculty ID
+      
       var data: any = {
         Name: user.Name,
         Password: hashedPassword,
@@ -194,7 +196,7 @@ export class UsersService implements ISuperService<User> {
         Phone: user.Phone,
         Address: user.Address,
         RoleID: user.RoleID,
-        FacultyID: user.FacultyID,
+        FacultyID: user.FacultyID || undefined,
       };
       // updateProfile
       if (updateProfile && updateProfile == true) {
@@ -315,29 +317,32 @@ export class UsersService implements ISuperService<User> {
     }
 
     // Validate Faculty ID
-    if (
-      user.FacultyID != null &&
-      !/^\d{1,20}$/.test(user.FacultyID.toString())
-    ) {
-      return {
-        isValid: false,
-        error: UserExceptionMessage.INVALID_FACULTYID,
-        message: 'Faculty ID must be a number with a maximum of 20 digits.',
-      };
-    }
-    if (user.FacultyID) {
-      const facultyexists = await prisma.faculties.findUnique({
-        where: { ID: user.FacultyID },
-      });
-      if (!facultyexists) {
+    if(user.RoleID && (user.RoleID == 3 || user.RoleID == 4)){
+      if (
+        user.FacultyID != null &&
+        !/^\d{1,20}$/.test(user.FacultyID.toString())
+      ) {
         return {
           isValid: false,
           error: UserExceptionMessage.INVALID_FACULTYID,
-          message: 'Referenced Faculty does not exist.',
+          message: 'Faculty ID must be a number with a maximum of 20 digits.',
         };
       }
+      
+      if (user.FacultyID) {
+        const facultyexists = await prisma.faculties.findUnique({
+          where: { ID: user.FacultyID },
+        });
+        if (!facultyexists) {
+          return {
+            isValid: false,
+            error: UserExceptionMessage.INVALID_FACULTYID,
+            message: 'Referenced Faculty does not exist.',
+          };
+        }
+      }
     }
-    if (user.Phone) {
+      if (user.Phone) {
       // Validate Phone
       if (!user.Phone || !/^\+?[0-9]\d{1,20}$/.test(user.Phone)) {
         return {

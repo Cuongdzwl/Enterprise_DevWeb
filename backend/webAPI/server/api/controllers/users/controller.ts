@@ -69,14 +69,14 @@ export class UsersController implements ISuperController {
   }
 
   async update(req: Request, res: Response): Promise<void> {
-    const validations = await UsersService.validateConstraints(req.body, true);
-    if (!validations.isValid) {
-      res
-        .status(400)
-        .json({ error: validations.error, message: validations.message })
-        .end();
-      return;
-    }
+    // const validations = await UsersService.validateConstraints(req.body, true);
+    // if (!validations.isValid) {
+    //   res
+    //     .status(400)
+    //     .json({ error: validations.error, message: validations.message })
+    //     .end();
+    //   return;
+    // }
     const id = Number.parseInt(req.params['id']);
     if (!/^\d{1,20}$/.test(id.toString())) {
       res

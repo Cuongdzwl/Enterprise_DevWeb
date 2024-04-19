@@ -222,20 +222,20 @@ export class ContributionsService implements ISuperService<Contribution> {
   }
 
   async create(contribution: Contribution): Promise<any> {
-    L.info(`create ${model} with id ${contribution.ID}`);
     return prisma.contributions
-      .create({
-        data: {
-          Name: contribution.Name,
-          Content: contribution.Content,
-          IsPublic: false,
-          IsApproved: false,
-          EventID: Number(contribution.EventID),
-          UserID: Number(contribution.UserID),
-          StatusID: Status.PENDING as number,
-        },
-      })
-      .then(async (contribution) => {
+    .create({
+      data: {
+        Name: contribution.Name,
+        Content: contribution.Content,
+        IsPublic: false,
+        IsApproved: false,
+        EventID: Number(contribution.EventID),
+        UserID: Number(contribution.UserID),
+        StatusID: Status.PENDING as number,
+      },
+    })
+    .then(async (contribution) => {
+        L.info(`create ${model} with id ${contribution.ID}`);
         // Sent create success notification
         // find faculty
         var success = await usersService
@@ -264,12 +264,16 @@ export class ContributionsService implements ISuperService<Contribution> {
   }
 
   private notifyCoordinator(student: any, contribution: any): Promise<boolean> {
+
     return prisma.users
       .findFirst({ where: { FacultyID: student.FacultyID, RoleID: 3 } })
       .then((coordinator) => {
         if (coordinator || coordinator == null) {
           // prepare notification
           var send: any = {
+            Event:{
+              ID: contribution.EventID,
+            },
             Contribution: {
               User: {
                 Name: student.Name,
@@ -369,10 +373,10 @@ export class ContributionsService implements ISuperService<Contribution> {
             data: {
               Name: contribution.Name,
               Content: contribution.Content,
-              IsPublic: contribution.IsPublic === true ? true : false,
+              IsPublic: contribution.IsPublic == true ? true : false,
               IsApproved:
                 contribution.StatusID === Status.ACCEPTED ? true : false,
-              StatusID: Number(contribution.StatusID),
+              StatusID: Number(contribution.StatusID),  
               LastEditByID: contribution.LastEditByID,
             },
           })
@@ -384,32 +388,34 @@ export class ContributionsService implements ISuperService<Contribution> {
                 updated.LastEditByID === current.UserID
               )
             ) {
-              //TODO:
-              // notificationsService.trigger(
-              //   { ID: updated.LastEditByID } as User,
-              //   {
-              //     Contribution: {
-              //       User: {
-              //         Name: updated.Name,
-              //       },
-              //       ID: updated.ID,
-              //       Name: updated.Name,
-              //     },
-              //   },
-              //   NotificationSentTypeEnum.NEWCONTRIBUTION,
-              //   NotificationSentThrough.InApp
-              // )
+              //Resubmit
+              L.info("Sent re-submit notification")
+              notificationsService.trigger(
+                { ID: updated.LastEditByID } as User,
+                {
+                  Contribution: {
+                    User: {
+                      Name: updated.Name,
+                    },
+                    ID: updated.ID,
+                    Name: updated.Name,
+                  },
+                },
+                NotificationSentTypeEnum.NEWCONTRIBUTION,
+                NotificationSentThrough.InApp
+              )
             }
 
             // Handle Status update
             if (
-              !(updated.StatusID === current.StatusID && updated.StatusID != 1)
+              !(updated.StatusID === current.StatusID) && updated.StatusID != Status.PENDING as number
             ) {
+
               var Contribution: any = {
                 Name: current.Name,
                 IsApproved: updated.StatusID == Status.ACCEPTED ? true : false,
               };
-              if (!(updated.IsPublic === current.IsPublic)) {
+              if (!(updated.IsPublic === current.IsPublic && current.IsPublic ===  true)) {
                 Contribution.IsPublic = updated.IsPublic;
               }
               L.info('Hereeeeeeeeeeeeeeeeeeeeeeeeeee');
@@ -421,6 +427,9 @@ export class ContributionsService implements ISuperService<Contribution> {
                   notificationsService.trigger(
                     user,
                     {
+                      Event: {
+                        ID: current.EventID
+                      },
                       Contribution,
                     },
                     NotificationSentTypeEnum.CONTRIBUTIONINAPPEVENT,

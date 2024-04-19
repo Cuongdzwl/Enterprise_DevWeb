@@ -215,6 +215,7 @@ export class EventsService implements ISuperService<Event> {
         },
       })
       .then((event) => {
+        L.info(`create ${model} `)
         return this.schedule(event);
       })
       .catch((error) => {
@@ -226,9 +227,7 @@ export class EventsService implements ISuperService<Event> {
       });
   }
   async delete(id: number): Promise<any> {
-    try {
-      L.info(`delete ${model} with id ${id}`);
-      L.info(`delete ${model} with id ${id}`);
+    L.info(`delete ${model} with id ${id}`);
       const contributions = await prisma.contributions.findMany({
         where: { EventID: id },
       });
@@ -245,14 +244,11 @@ export class EventsService implements ISuperService<Event> {
         })
         .then((r) => {
           return Promise.resolve(r);
+        }).catch((err)=>{
+          L.error(`delete ${model} failed: ${err}`);
+          return Promise.reject(err);
         });
-    } catch (error) {
-      L.error(`delete ${model} failed: ${error}`);
-      return Promise.resolve({
-        error: ExceptionMessage.INVALID,
-        message: ExceptionMessage.BAD_REQUEST,
-      });
-    }
+     
   }
   async update(id: number, event: Event): Promise<any> {
     const validations = await this.validateConstraints(event);
@@ -338,7 +334,7 @@ export class EventsService implements ISuperService<Event> {
             },
             NotificationSentTypeEnum.NEWEVENT,
             NotificationSentThrough.InApp
-          );
+          )
           // Scheduled Email Due Date
           notificationsService
             .bulkTrigger(
@@ -364,8 +360,10 @@ export class EventsService implements ISuperService<Event> {
               NotificationSentThrough.Email
             )
             .then((rr) => {
-              L.info("Create scheduled notification for event's closure date Success" +  rr?.data);
-            });
+              L.info("Create scheduled notification for event's closure date Success: " +  rr?.data);
+            }).catch((err) => {
+              L.error(err);
+            });;
           // Scheduled Email Final Date
           notificationsService
             .bulkTrigger(
@@ -392,7 +390,9 @@ export class EventsService implements ISuperService<Event> {
             )
             .then((r) => {
               L.info("Create scheduled notification for event's final date Success" +  r?.data);
-            });
+            }).catch((err) => {
+              L.error(err);
+            });;
           return true;
         })
         .catch((error) => {
