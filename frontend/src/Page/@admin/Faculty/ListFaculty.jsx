@@ -38,12 +38,6 @@ const ListFaculty = () => {
         }
     }, [facultyData, eventData]);
 
-    if (!facultyData) {
-        return (
-            <Loading />
-        );
-    }
-
     // Handle Event
     const handleDelete = async (id) => {
         try {

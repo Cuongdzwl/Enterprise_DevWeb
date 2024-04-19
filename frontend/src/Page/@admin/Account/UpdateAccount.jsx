@@ -87,7 +87,7 @@ const UpdateAccount = () => {
 
         const newFormData = {
             ...formData,
-            FacultyID: formData.FacultyID ? parseInt(formData.FacultyID) : '',
+            FacultyID: formData.FacultyID ? parseInt(formData.FacultyID) : undefined,
             RoleID: parseInt(formData.RoleID)
         }
 

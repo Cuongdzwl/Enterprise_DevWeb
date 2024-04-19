@@ -19,7 +19,7 @@ const Profile = () => {
     // Data
     const facultyData = useFetch(`${ApiResponse}faculties`);
     const roleData = useFetch(`${ApiResponse}roles`);
-    const { data: userData, isLoading: isUserDataLoading, error: userDataError } = useFetch(`${ApiResponse}auth/user`);
+    const { data: userData} = useFetch(`${ApiResponse}auth/user`);
 
     // State
     const [formData, setFormData] = useState(Data);
@@ -114,9 +114,6 @@ const Profile = () => {
             setIsLoading(false);
         }
     };
-
-    if (isUserDataLoading) return <Loading />;
-    if (userDataError) return <div>Error: {userDataError}</div>;
 
     return (
         <div className="box">

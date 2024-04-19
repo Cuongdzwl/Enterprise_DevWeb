@@ -94,7 +94,6 @@ const ListAccount = () => {
                         </tbody>
                     </table>
                     {error && <div className="error">{error}</div>}
-                    {!accountData && <Loading />}
                 </div>
             </div>
         </div>

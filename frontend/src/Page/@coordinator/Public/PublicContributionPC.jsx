@@ -34,12 +34,10 @@ const ListContributionPC = () => {
     const handleSearchChange = (contribution) => {
         setSearchTerm(contribution.target.value);
     };
-
+    
     // Filter data
-    const filteredContribution = contributionData?.Contributions ?
-        contributionData?.Contributions.filter(item =>
-            item.Name.toLowerCase().includes(searchTerm.toLowerCase())
-        ) : [];
+    const filteredContribution = contribution.Contributions ?
+        contribution.Contributions.filter(item => item.Name.toLowerCase().includes(searchTerm.toLowerCase())) : [];
 
     const splitFiles = (str) => {
         const files = str?.split('/');
@@ -74,14 +72,14 @@ const ListContributionPC = () => {
                                             <img
                                                 width={50 + 'px'}
                                                 height={50 + 'px'}
-                                                src={row?.ImageFiles[0]?.Url}/>
+                                                src={row?.ImageFiles[0]?.Url} />
                                         </td>
 
                                         <td>{(splitFiles(row?.TextFiles[0]?.Url))}</td>
 
                                         <td colSpan="2">
                                             <ul className="menu-action"
-                                                style={{display: 'block'}}
+                                                style={{ display: 'block' }}
                                             >
                                                 <li><Link to={`detail/${row.ID}`}><i
                                                     className="fa-solid fa-circle-info"></i></Link></li>

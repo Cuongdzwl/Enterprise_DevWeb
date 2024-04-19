@@ -16,28 +16,17 @@ const ListContribution = () => {
     const navigate = useNavigate();
     const [contribution, setContribution] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
+    const [isBeforeClosureDate, setIsBeforeClosureDate] = useState(true);
 
     // Set Data
     useEffect(() => {
         if (contributionData) {
             setContribution(contributionData);
+            setIsBeforeClosureDate(new Date(contributionData?.ClosureDate) >= new Date());
         }
     }, [contributionData]);
 
-    if (!contribution) {
-        return (
-            <Loading />
-        )
-    }
-
     // Handle Event
-    if (!contribution || contribution.length === 0) {
-        return (
-            <Loading />
-        )
-    }
-
-
     const handleDelete = async (id) => {
         try {
             const response = await fetch(`${ApiResponse}contributions/${id}`, {
@@ -75,9 +64,6 @@ const ListContribution = () => {
         const files = str?.split('/');
         return files?.[files?.length - 1]
     }
-
-    const isBeforeClosureDate = new Date(contributionData?.ClosureDate) >= new Date()
-
 
     // Filter data
     const filteredContribution = contribution.Contributions ?

@@ -161,7 +161,7 @@ const CreateAccount = () => {
                                 </select>
                                 {validationErrors.RoleID && <div className="error">{validationErrors.RoleID}</div>}
                             </div>
-
+                            
                             <div className="form-group mb-input">
                                 <label>Faculty</label>
                                 <select value={formData.FacultyID} onChange={handleChange} className='form-control' name="FacultyID">

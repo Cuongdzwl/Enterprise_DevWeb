@@ -12,7 +12,7 @@ const ListEventC = () => {
     // State
     const [events, setEvents] = useState([]);
     const [searchDate, setSearchDate] = useState('');
-
+    const [noEvent, setNoEvent] = useState(false);
     const token = localStorage.getItem('token');
     const decodedToken = jwtDecode(token);
     const FacultyID = decodedToken.FacultyID;
@@ -22,14 +22,11 @@ const ListEventC = () => {
         if (eventData) {
             const filteredEvents = eventData.filter(event => event.FacultyID === FacultyID);
             setEvents(filteredEvents);
+            if (filteredEvents.length === 0) {
+                setNoEvent(true);
+            }
         }
-    }, [eventData]);
-
-    if (!events) {
-        return (
-            <Loading />
-        )
-    }
+    }, [eventData, FacultyID]);
 
     const handleDateChange = (event) => {
         setSearchDate(event.target.value);
@@ -90,7 +87,7 @@ const ListEventC = () => {
                                     </Link>
                                 ))
                             ) : (
-                                <Loading />
+                                noEvent && <h1 style={{ color: 'red' }}>No Event!!!</h1>
                             )
                         }
                     </div>

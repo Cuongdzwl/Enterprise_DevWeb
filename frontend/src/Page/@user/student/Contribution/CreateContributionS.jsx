@@ -97,7 +97,7 @@ const CreateContributionS = () => {
         formDataToSend.append('IsApproved', formData.IsApproved);
         formDataToSend.append('EventID', id);
         formDataToSend.append('UserID', UserID);
-        formDataToSend.append('StatusID', 0);
+        formDataToSend.append('StatusID', 1);
 
         formData.filesPath.forEach(file => {
             formDataToSend.append('filesPath', file);

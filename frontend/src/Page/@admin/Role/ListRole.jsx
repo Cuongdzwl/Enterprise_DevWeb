@@ -24,12 +24,6 @@ const ListRole = () => {
         }
     }, [roleData]);
 
-    if (!roleData) {
-        return (
-            <Loading />
-        );
-    }
-
     // Handle Event
     const handleDelete = async (id) => {
         try {

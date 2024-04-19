@@ -10,11 +10,12 @@ const headings = ['Name', 'Description', 'Faculty', 'Closure Date', 'Due Date', 
 
 const ListEvent = () => {
     // Fetch data
-    const { data: eventData, error } = useFetch(`${ApiResponse}events/?depth=1`);
+    const { data: eventData } = useFetch(`${ApiResponse}events/?depth=1`);
 
     // State
     const navigate = useNavigate();
     const [events, setEvents] = useState([]);
+    const [error, setError] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
 
     // Set Data
@@ -35,12 +36,16 @@ const ListEvent = () => {
         try {
             const response = await fetch(`${ApiResponse}events/${id}`, {
                 method: 'DELETE',
-                'Authorization': 'Bearer ' + localStorage.getItem('token')
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + localStorage.getItem('token')
+                }
             });
 
             if (!response.ok) {
-                const data = response.json();
-                throw new Error(data.then(data => (data.message)));
+                const data = await response.json();
+                setError(data.message);
+                return;
             }
             setEvents(prevEvents => prevEvents.filter(event => event.ID !== id));
         } catch (error) {
@@ -121,6 +126,7 @@ const ListEvent = () => {
                                     <td colSpan={headings.length}>Not Found</td>
                                 </tr>
                             )}
+                            {error && <div className="error">{error}</div>}
                         </tbody>
                     </table>
                 </div>

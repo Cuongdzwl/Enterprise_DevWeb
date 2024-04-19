@@ -6,16 +6,20 @@ import Loading from '../../../components/Loading';
 
 const ListEventM = () => {
     // Fetch data
-    const { data: eventData, error } = useFetch(`${ApiResponse}events/?depth=1`);
+    const { data: eventData } = useFetch(`${ApiResponse}events/?depth=1`);
 
     // State
     const [events, setEvents] = useState([]);
     const [searchDate, setSearchDate] = useState('');
+    const [noEvent, setNoEvent] = useState(false);
 
     // Set Data
     useEffect(() => {
         if (eventData) {
             setEvents(eventData);
+            if (eventData.length === 0) {
+                setNoEvent(true);
+            }
         }
     }, [eventData]);
 
@@ -89,7 +93,7 @@ const ListEventM = () => {
                                     </Link>
                                 ))
                             ) : (
-                                <Loading />
+                                noEvent && <h1 style={{ color: 'red' }}>No Event!!!</h1>
                             )
                         }
                     </div>

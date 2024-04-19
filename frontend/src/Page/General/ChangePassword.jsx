@@ -84,7 +84,7 @@ const ChangePassword = () => {
                 setError(data.message);
                 return;
             }
-            // navigate(-1);
+            navigate('/profile');
         } catch (error) {
             console.error('Error change password:', error);
             setError('Failed to change password. Please try again later.');
@@ -103,9 +103,9 @@ const ChangePassword = () => {
 
             <div className="row-2">
                 <div className="box"
-                     style={{
-                         height: 'calc(100vh - 150px)'
-                     }}
+                    style={{
+                        height: 'calc(100vh - 150px)'
+                    }}
                 >
                     <div className="box-content">
                         <form onSubmit={handleSubmit}>

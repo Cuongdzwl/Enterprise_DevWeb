@@ -27,12 +27,6 @@ const ListContributionS = () => {
         }
     }, [contributionData]);
 
-    if (!contribution) {
-        return (
-            <Loading />
-        )
-    }
-
     const handleSearchChange = (contribution) => {
         setSearchTerm(contribution.target.value);
     };
@@ -58,8 +52,6 @@ const ListContributionS = () => {
     const currentDate = new Date();
     const expired = currentDate.getTime() <= finalDate.getTime();
     console.log("Expired:", expired);
-
-
 
     return (
         <div className="box">

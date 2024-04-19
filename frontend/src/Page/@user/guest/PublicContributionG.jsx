@@ -40,8 +40,6 @@ const ListContributionG = () => {
         setSearchTerm(contribution.target.value);
     };
 
-
-
     const handleDetailClick = (ID) => {
         return () => {
             navigate(`/guest/public/detail/${ID}`, {state: contribution});

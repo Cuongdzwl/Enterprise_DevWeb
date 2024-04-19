@@ -1,6 +1,6 @@
-import {useState, useEffect} from 'react';
+import { useState, useEffect } from 'react';
 import useFetch from '../../../CustomHooks/useFetch';
-import {useNavigate, useParams} from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import FormGroup from '../../../components/FormGroup';
 import Loading from '../../../components/Loading';
 import { ApiResponse } from '../../../Api';
@@ -17,10 +17,10 @@ const DetailRole = () => {
 
     // ID, Redirect
     const navigate = useNavigate();
-    const {id} = useParams();
+    const { id } = useParams();
 
     // Fetch data
-    const {data: role} = useFetch(`${ApiResponse}roles/${id}`);
+    const { data: role } = useFetch(`${ApiResponse}roles/${id}`);
 
     // Set form data
     useEffect(() => {
@@ -36,7 +36,7 @@ const DetailRole = () => {
 
     if (!role) {
         return (
-            <Loading/>
+            <Loading />
         )
     }
 
@@ -49,9 +49,9 @@ const DetailRole = () => {
             </div>
             <div className="row-2">
                 <div className="box"
-                     style={{
-                         height: 'calc(100vh - 150px)'
-                     }}
+                    style={{
+                        height: 'calc(100vh - 150px)'
+                    }}
                 >
                     <div className="box-content">
                         <form>
@@ -65,7 +65,7 @@ const DetailRole = () => {
                             <div className="form-group">
                                 <label>Description</label>
                                 <textarea required name="Description" readOnly cols="30" rows="10"
-                                          value={formData?.Description}></textarea>
+                                    value={formData?.Description}></textarea>
                             </div>
 
                             <div className="form-action">

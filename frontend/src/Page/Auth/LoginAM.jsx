@@ -22,7 +22,7 @@ const LoginAM = () => {
     const validateField = (name, value) => {
         const errorMessage = {
             email: /\S+@\S+\.\S+/.test(value) ? '' : 'Email requires @ and no other special characters.',
-            // password: /(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}/.test(value) ? '' : 'Password must be at least 8 characters with letters and numbers.'
+            password: /(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}/.test(value) ? '' : 'Password must be at least 8 characters with letters and numbers.'
         }[name];
         setValidationErrors(prevState => ({ ...prevState, [name]: errorMessage }));
     }
