@@ -2,8 +2,7 @@ import {useState} from 'react';
 import {useNavigate, useParams, useLocation} from 'react-router-dom';
 import useFetch from '../../../CustomHooks/useFetch';
 import DocViewer, {DocViewerRenderers} from "@cyntler/react-doc-viewer";
-
-const ApiResponse = 'https://dev-nodejs.cuongnd.work/api/v1/'
+import { ApiResponse } from '../../../Api';
 
 const DetailContributionPM = () => {
     // State

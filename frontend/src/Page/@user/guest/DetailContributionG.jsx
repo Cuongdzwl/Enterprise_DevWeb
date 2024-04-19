@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import Loading from '../../../components/Loading';
 import DocViewer, {DocViewerRenderers} from "@cyntler/react-doc-viewer";
+import { ApiResponse } from '../../../Api';
 
-const ApiResponse = 'https://dev-nodejs.cuongnd.work/api/v1/'
 
 const DetailContributionG = () => {
     // State

@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import FormGroup from '../../components/FormGroup';
-
-const ApiResponse = 'https://dev-nodejs.cuongnd.work/api/v1/';
+import { ApiResponse } from '../../Api';
 
 const Data = {
     oldPassword: '',

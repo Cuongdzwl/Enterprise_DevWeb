@@ -3,13 +3,12 @@ import useFetch from '../../../CustomHooks/useFetch';
 import {useNavigate, useParams} from 'react-router-dom';
 import Loading from '../../../components/Loading';
 import FormGroup from '../../../components/FormGroup';
+import { ApiResponse } from '../../../Api';
 
 const Data = {
     Name: '',
     Description: '',
 }
-
-const ApiResponse = 'https://dev-nodejs.cuongnd.work/api/v1/'
 
 const UpdateRole = () => {
     // State

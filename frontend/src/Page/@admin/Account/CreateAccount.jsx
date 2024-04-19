@@ -3,8 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Loading from '../../../components/Loading';
 import FormGroup from '../../../components/FormGroup';
 import useFetch from '../../../CustomHooks/useFetch';
-
-const ApiResponse = 'https://dev-nodejs.cuongnd.work/api/v1/'
+import { ApiResponse } from '../../../Api';
 
 const Data = {
     Name: '',

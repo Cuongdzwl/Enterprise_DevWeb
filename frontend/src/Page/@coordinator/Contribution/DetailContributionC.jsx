@@ -4,14 +4,13 @@ import Loading from '../../../components/Loading';
 import useFetch from '../../../CustomHooks/useFetch';
 import {jwtDecode} from 'jwt-decode';
 import DocViewer, {DocViewerRenderers} from "@cyntler/react-doc-viewer";
+import { ApiResponse } from '../../../Api';
 
 const Data = {
     IsPublic: false,
     IsApproved: false,
     StatusID: 1
 }
-
-const ApiResponse = 'https://dev-nodejs.cuongnd.work/api/v1/'
 
 const UpdateContributionC = () => {
     const [formData, setFormData] = useState(Data);

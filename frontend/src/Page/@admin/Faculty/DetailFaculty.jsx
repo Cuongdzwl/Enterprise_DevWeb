@@ -3,14 +3,13 @@ import useFetch from '../../../CustomHooks/useFetch';
 import { useNavigate, useParams } from 'react-router-dom';
 import FormGroup from '../../../components/FormGroup';
 import Loading from '../../../components/Loading';
+import { ApiResponse } from '../../../Api';
 
 const Data = {
     Name: '',
     Description: '',
     IsEnabledGuest: false,
 }
-
-const ApiResponse = 'https://dev-nodejs.cuongnd.work/api/v1/'
 
 const DetailFaculty = () => {
     // State
