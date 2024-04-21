@@ -16,7 +16,7 @@ jobs:
         key: ${{ secrets.PRIVATE_KEY }}
         port: 22
         script: |
-          cd ~/usr/src/Enterprise_DevWeb/backend/webAPI
+          cd /usr/src/Enterprise_DevWeb/backend/webAPI
           git pull origin master
           echo "Create .env file"
           rm -rf .env
