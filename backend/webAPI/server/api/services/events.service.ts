@@ -233,10 +233,14 @@ export class EventsService implements ISuperService<Event> {
       });
       for (const contribution of contributions) {
         console.log(contribution.ID);
-        await contributionsService.delete(contribution.ID);
+        await contributionsService.delete(contribution.ID).catch((err)=>{
+          L.error(`delete contributions failed: ${err}`);
+        });
       }
       await prisma.scheduledNotifications.deleteMany({
         where: { EventID: id },
+      }).catch((err)=>{
+        L.error(`delete notification failed: ${err}`);
       });
       return prisma.events
         .delete({

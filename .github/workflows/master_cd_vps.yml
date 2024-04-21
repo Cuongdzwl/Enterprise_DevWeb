@@ -17,7 +17,10 @@ jobs:
         port: 22
         script: |
           cd /usr/src/Enterprise_DevWeb/backend/webAPI
+          sudo npm install -g pm2
+          echo "Installing dependencies..."
           git pull origin master
+          npm i
           echo "Create .env file"
           rm -rf .env
           touch .env
@@ -32,8 +35,7 @@ jobs:
           echo 'GOOGLE_CLIENT_ID="${{ secrets.GOOGLE_CLIENT_ID}}"' >> .env
           echo 'NOVU_API_KEY="${{ secrets.NOVU_API_KEY}}"' >> .env
           echo 'NOVU_IDENTIFIER="${{ secrets.NOVU_IDENTIFIER}}"' >> .env
-          echo "Installating..."
-          npm install 
+          echo "Installing..."
           npm run compile --if-present
           echo "Restarting..."
           pm2 restart webapi ecosystem.config.js
