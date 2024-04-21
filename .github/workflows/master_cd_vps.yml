@@ -46,4 +46,4 @@ jobs:
           echo "Installing..."
           npm run compile --if-present
           echo "Restarting..."
-          pm2 restart webapi ecosystem.config.js
+          pm2 restart ecosystem.config.js
