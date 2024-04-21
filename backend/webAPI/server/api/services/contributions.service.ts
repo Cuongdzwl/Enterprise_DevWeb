@@ -12,6 +12,7 @@ import { User } from '../models/User';
 import { NotificationSentThrough } from '../models/NotificationSentThrough';
 import { NotificationSentTypeEnum } from '../models/NotificationSentType';
 import path from 'path';
+import { Event } from '../models/Event';
 
 const prisma = new PrismaClient();
 const model = 'contributions';
@@ -182,10 +183,10 @@ export class ContributionsService implements ISuperService<Contribution> {
     // Featch Contribution
     var where: any = { ID: id };
     if (facultyID) {
-      var eventList : number[] = await prisma.events.findMany({select: { ID: true}, where: { FacultyID: facultyID}}).then((r)=>{
-        return r.map((e)=> e.ID);
+      var eventList: number[] = await prisma.events.findMany({ select: { ID: true }, where: { FacultyID: facultyID } }).then((r) => {
+        return r.map((e) => e.ID);
       })
-      where.EventID = {in: eventList};
+      where.EventID = { in: eventList };
     }
     if (userID) {
       where.UserID = userID;
@@ -222,19 +223,23 @@ export class ContributionsService implements ISuperService<Contribution> {
   }
 
   async create(contribution: Contribution): Promise<any> {
+    const isvalid = await this.validateSubmissionAlreadySubmited(contribution);
+    if (isvalid){
+      return Promise.reject({message: "You can only submited once."})
+    }
     return prisma.contributions
-    .create({
-      data: {
-        Name: contribution.Name,
-        Content: contribution.Content,
-        IsPublic: false,
-        IsApproved: false,
-        EventID: Number(contribution.EventID),
-        UserID: Number(contribution.UserID),
-        StatusID: Status.PENDING as number,
-      },
-    })
-    .then(async (contribution) => {
+      .create({
+        data: {
+          Name: contribution.Name,
+          Content: contribution.Content,
+          IsPublic: false,
+          IsApproved: false,
+          EventID: Number(contribution.EventID),
+          UserID: Number(contribution.UserID),
+          StatusID: Status.PENDING as number,
+        },
+      })
+      .then(async (contribution) => {
         L.info(`create ${model} with id ${contribution.ID}`);
         // Sent create success notification
         // find faculty
@@ -271,7 +276,7 @@ export class ContributionsService implements ISuperService<Contribution> {
         if (coordinator || coordinator == null) {
           // prepare notification
           var send: any = {
-            Event:{
+            Event: {
               ID: contribution.EventID,
             },
             Contribution: {
@@ -308,7 +313,7 @@ export class ContributionsService implements ISuperService<Contribution> {
         return Promise.resolve(false);
       });
   }
-  delete(id: number): Promise<any> {
+  async delete(id: number): Promise<any> {
     L.info(`delete ${model} with id ${id}`);
     // First, attempt to delete related files to avoid foreign key constraint issues
     return prisma.files
@@ -354,18 +359,18 @@ export class ContributionsService implements ISuperService<Contribution> {
       if (current) {
         // validate time
 
-        // const isBefore: boolean = await prisma.events
-        //   .findUnique({ where: { ID: current.EventID } })
-        //   .then((event) => {
-        //     if (!event) return false;
-        //     if (event.FinalDate) {
-        //       if (new Date(event.FinalDate) < new Date()) {
-        //         L.info('User tried to updated the contribution after final date');
-        //         return false;
-        //       }
-        //     }
-        //     return true;
-        //   });
+        const isBefore: boolean = await prisma.events
+          .findUnique({ where: { ID: current.EventID } })
+          .then((event) => {
+            if (!event) return false;
+            if (event.FinalDate) {
+              if (new Date(event.FinalDate) < new Date()) {
+                L.info('User tried to updated the contribution after final date');
+                return false;
+              }
+            }
+            return true;
+          });
 
         return prisma.contributions
           .update({
@@ -376,35 +381,38 @@ export class ContributionsService implements ISuperService<Contribution> {
               IsPublic: contribution.IsPublic == true ? true : false,
               IsApproved:
                 contribution.StatusID === Status.ACCEPTED ? true : false,
-              StatusID: Number(contribution.StatusID),  
+              StatusID: Number(contribution.StatusID),
               LastEditByID: contribution.LastEditByID,
             },
           })
           .then((updated) => {
             // Handle notify to teacher when resubmit
-            if (
-              !(
-                current.LastEditByID === updated.LastEditByID &&
-                updated.LastEditByID === current.UserID
-              )
-            ) {
-              //Resubmit
-              L.info("Sent re-submit notification")
-              notificationsService.trigger(
-                { ID: updated.LastEditByID } as User,
-                {
-                  Contribution: {
-                    User: {
-                      Name: updated.Name,
-                    },
-                    ID: id,
-                    Name: updated.Name,
-                  },
-                },
-                NotificationSentTypeEnum.NEWCONTRIBUTION,
-                NotificationSentThrough.InApp
-              )
-            }
+            // if (
+            //   !(
+            //     current.LastEditByID === updated.LastEditByID &&
+            //     updated.LastEditByID === current.UserID
+            //   )
+            // ) {
+            //   //Resubmit
+            //   L.info("Sent re-submit notification")
+            //   notificationsService.trigger(
+            //     { ID: updated.LastEditByID } as User,
+            //     {
+            //       Event:{
+            //         ID: current.EventID
+            //       },
+            //       Contribution: {
+            //         User: {
+            //           Name: updated.Name,
+            //         },
+            //         ID: id,
+            //         Name: updated.Name,
+            //       },
+            //     },
+            //     NotificationSentTypeEnum.NEWCONTRIBUTION,
+            //     NotificationSentThrough.InApp
+            //   )
+            // }
 
             // Handle Status update
             if (
@@ -416,7 +424,7 @@ export class ContributionsService implements ISuperService<Contribution> {
               };
 
               Contribution.IsApproved = updated.StatusID == Status.ACCEPTED ? true : false;
-              if (!(updated.IsPublic === current.IsPublic && current.IsPublic ===  true)) {
+              if (!(updated.IsPublic === current.IsPublic && current.IsPublic === true)) {
                 Contribution.IsPublic = updated.IsPublic;
               }
               L.info('Hereeeeeeeeeeeeeeeeeeeeeeeeeee');
@@ -558,8 +566,45 @@ export class ContributionsService implements ISuperService<Contribution> {
     }
   }
 
-  validateFinalDate(contribution: Contribution): Promise<boolean> {
-    return prisma.events
+  async validateSubmissionAlreadyApproved(id : number):Promise<boolean>{
+    return await prisma.contributions.findFirst({
+      where: {
+        ID : Number(id)
+      }
+    }).then((r) => {
+      const approve = r?.IsApproved
+      const publicc = r?.IsPublic
+      if (!r || r == null)
+        return Promise.resolve(false)
+      else
+        return Promise.resolve(approve === true || publicc === true )
+    }).catch((err) => {
+      L.error(err)
+      return Promise.resolve(false)
+    }
+    )
+  }
+  async validateSubmissionAlreadySubmited(contribution: Contribution): Promise<boolean> {
+    return await prisma.contributions.findFirst({
+      where: {
+        UserID: Number(contribution.UserID),
+        EventID: Number(contribution.EventID)
+      }
+    }).then((r) => {
+      L.info(r)
+      if (!r || r == null)
+        return Promise.resolve(false)
+      else
+        return Promise.resolve(true)
+    }).catch((err) => {
+      L.error(err)
+      return Promise.resolve(false)
+    }
+    )
+
+  }
+  async validateFinalDate(contribution: Contribution): Promise<boolean> {
+    return await prisma.events
       .findUnique({ where: { ID: contribution.EventID } })
       .then((r) => {
         if (!r) {
@@ -587,8 +632,8 @@ export class ContributionsService implements ISuperService<Contribution> {
           });
       });
   }
-  validateClosureDate(contribution: Contribution): Promise<boolean> {
-    return prisma.events
+  async validateClosureDate(contribution: Contribution): Promise<boolean> {
+    return await prisma.events
       .findUnique({ where: { ID: contribution.EventID } })
       .then((r) => {
         if (!r) {

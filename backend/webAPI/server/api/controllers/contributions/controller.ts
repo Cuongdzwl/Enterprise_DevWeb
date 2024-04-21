@@ -104,6 +104,9 @@ export class ContributionsController implements ISuperController {
         .end();
       return;
     }
+
+    // Check if student is already submit
+
     try {
       contributionsService
         .create(req.body)
@@ -139,18 +142,23 @@ export class ContributionsController implements ISuperController {
             .status(201)
             .json({ message: 'Contribution and files created successfully' });
         })
-        .catch(() => {
-          res.status(400).json({ message: 'Created Failed' });
+        .catch((err) => {
+          res.status(400).json(err);
         });
     } catch (error) {
       res.status(500).json({ error: error.message });
     }
   }
 
-  delete(req: Request, res: Response): void {
+  async delete(req: Request, res: Response): Promise<void> {
     const id = Number.parseInt(req.params['id']);
     try {
       // cancel notification
+      if (!(await ContributionsService.validateSubmissionAlreadyApproved(id))) {
+        L.error("Failed to delete. Contrubution Accepted")
+        res.status(400).json({ message: "This contribution has been accepted. No further action needed!" })
+        return
+      }
       // delete notification
       // delete contribution
       ContributionsService.delete(id).then((r) => {
@@ -158,7 +166,7 @@ export class ContributionsController implements ISuperController {
         else res.status(404).end();
       });
     } catch (error) {
-      res.status(400).json({ error: error.message }).end();
+      res.status(400).json(error).end();
     }
   }
 
