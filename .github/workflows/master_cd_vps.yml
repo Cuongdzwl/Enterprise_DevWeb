@@ -1,0 +1,53 @@
+name: Backend CD to VPS
+on:
+  push:
+    branches: [ master ]
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: 18.x
+
+    - name: SSH Deploying
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.VPSIP }}
+        username: ${{ secrets.VPSUSERNAME }}
+        key: ${{ secrets.PRIVATE_KEY }}
+        port: 22
+        script: |
+          cd /usr/src/Enterprise_DevWeb/backend/webAPI
+          curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash
+          export NVM_DIR="$HOME/.nvm"
+          [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" 
+          node --version
+          nvm install 18
+          nvm use 18       
+          node --version
+          sudo npm install -g pm2
+          echo "Installing dependencies..."
+          git pull origin master
+          npm i
+          echo "Create .env file"
+          rm -rf .env
+          touch .env
+          echo 'OPENAPI_SPEC="${{ secrets.OPENAPI_SPEC}}"' >> .env
+          echo 'PORT= ${{ secrets.PORT}}' >> .env
+          echo 'DATABASE_URL="${{ secrets.DATABASE_URL}}"' >> .env
+          echo 'AZURE_STORAGE_CONNECTION_STRING="${{ secrets.AZURE_STORAGE_CONNECTION_STRING}}"' >> .env
+          echo 'AZURE_STORAGE_CONTAINER_NAME="${{ secrets.AZURE_STORAGE_CONTAINER_NAME}}"' >> .env
+          echo 'JWT_SECRET="${{ secrets.JWT_SECRET}}"' >> .env
+          echo 'SESSION_SECRET="${{ secrets.SESSION_SECRET}}"' >> .env
+          echo 'GOOGLE_CLIENT_SECRET="${{ secrets.GOOGLE_CLIENT_SECRET}}"' >> .env
+          echo 'GOOGLE_CLIENT_ID="${{ secrets.GOOGLE_CLIENT_ID}}"' >> .env  
+          echo 'NOVU_API_KEY="${{ secrets.NOVU_API_KEY}}"' >> .env
+          echo 'NOVU_IDENTIFIER="${{ secrets.NOVU_IDENTIFIER}}"' >> .env
+          echo "Installing..."
+          npm run compile --if-present
+          echo "Restarting..."
+          pm2 restart ecosystem.config.js

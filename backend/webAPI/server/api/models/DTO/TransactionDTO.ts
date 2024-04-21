@@ -1,5 +1,5 @@
 export class TransactionDTO{
-    transactionID: string;
+    transactionId: string;
     acknowledged: boolean;
     status: string;
 }

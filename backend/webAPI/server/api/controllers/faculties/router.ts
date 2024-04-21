@@ -4,8 +4,14 @@ import { authenticateToken, authorizeRole } from '../../middlewares/authenticati
 export default express
   .Router()
   .post('/',authenticateToken,authorizeRole("admin"), controller.create)
-  .get('/',authenticateToken,authorizeRole("admin,manager"), controller.all)
-  .get('/public', controller.all)
+  .get('/', controller.all)
+  .get('/public', controller.guest)
+  .get('/public/:id', controller.guestById)
+  .get('/public/:id/contribution/:contributionid', controller.guestEventContributions)
+  .get('/report', controller.downloadReport)
   .get('/:id',authenticateToken, controller.byId)
   .delete('/:id',authenticateToken,authorizeRole("admin"), controller.delete)
+  .get('/:id/dashboard', controller.dashboard)
+  .get('/:id/dashboardManager', controller.dashboardManager)
   .put('/:id',authenticateToken,authorizeRole("admin"), controller.update);
+

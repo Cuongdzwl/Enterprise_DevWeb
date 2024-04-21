@@ -33,7 +33,7 @@ export class RolesService implements ISuperService<Role> {
   }
 
   create(role: Role): Promise<any> {
-    if (!this.validateConstraints(role)) {
+    if (!this.validateConstraints(role, false)) {
       return Promise.resolve({
         error: ExceptionMessage.INVALID,
         message: ExceptionMessage.BAD_REQUEST,
@@ -66,7 +66,7 @@ export class RolesService implements ISuperService<Role> {
   }
 
   update(id: number, role: Role): Promise<any> {
-    if (!this.validateConstraints(role)) {
+    if (!this.validateConstraints(role, true)) {
       return Promise.resolve({
         error: ExceptionMessage.INVALID,
         message: ExceptionMessage.BAD_REQUEST,
@@ -89,16 +89,36 @@ export class RolesService implements ISuperService<Role> {
       });
     }
   }
-  async validateConstraints(role: Role): Promise<{isValid: boolean, error?: string, message?: string}> {
+  async validateConstraints(role: Role, update: boolean): Promise<{isValid: boolean, error?: string, message?: string}> {
     // Validate Content
-    if (!role.Name || !/^[A-Za-z\s]{1,15}$/.test(role.Name)) {
+    if (!role.Name || !/^[A-Za-z\s]{1,50}$/.test(role.Name)) {
         return {
           isValid: false,
           error: ExceptionMessage.INVALID,
           message:
-            'Role name is invalid, cannot contain numbers or special characters, and must have a maximum of 15 characters.',
+            'Role name is invalid, cannot contain numbers or special characters, and must have a maximum of 50 characters.',
         };
       }
+    const existName = await prisma.roles.findFirst({
+      where: {Name: role.Name}
+    })
+    if(existName != null && update == false){
+      return {
+        isValid: false,
+        error: RoleExceptionMessage.ROLE_NAME_EXISTED,
+        message:
+            'This role name already exists ',
+      }
+    }
+        // Validate Content
+        if (!role.Description || role.Description .length > 3000) {
+          return {
+            isValid: false,
+            error: RoleExceptionMessage.INVALID,
+            message:
+              'Description is invalid or too long, with a maximum of 3000 characters.',
+          };
+        }
     return { isValid: true };
 }
 }

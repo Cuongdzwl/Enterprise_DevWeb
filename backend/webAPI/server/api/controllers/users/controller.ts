@@ -32,7 +32,7 @@ export class UsersController implements ISuperController {
     }
   }
   async create(req: Request, res: Response): Promise<void> {
-    const validations = await UsersService.validateConstraints(req.body);
+    const validations = await UsersService.validateConstraints(req.body, false);
     if (!validations.isValid) {
       res
         .status(400)
@@ -53,6 +53,11 @@ export class UsersController implements ISuperController {
 
   delete(req: Request, res: Response): void {
     const id = Number.parseInt(req.params['id']);
+    const userid = res.locals.user.user.ID;
+    if(userid === id){
+      res.status(400).json({ error: 'You cannot delete yourself' }).end();
+      return;
+    }
     try {
       UsersService.delete(id).then((r) => {
         if (r) res.json(r);
@@ -64,14 +69,14 @@ export class UsersController implements ISuperController {
   }
 
   async update(req: Request, res: Response): Promise<void> {
-    const validations = await UsersService.validateConstraints(req.body);
-    if (!validations.isValid) {
-      res
-        .status(400)
-        .json({ error: validations.error, message: validations.message })
-        .end();
-      return;
-    }
+    // const validations = await UsersService.validateConstraints(req.body, true);
+    // if (!validations.isValid) {
+    //   res
+    //     .status(400)
+    //     .json({ error: validations.error, message: validations.message })
+    //     .end();
+    //   return;
+    // }
     const id = Number.parseInt(req.params['id']);
     if (!/^\d{1,20}$/.test(id.toString())) {
       res

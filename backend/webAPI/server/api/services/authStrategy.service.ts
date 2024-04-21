@@ -39,7 +39,7 @@ const localStrategy = new Local(
       L.info(users);
       const user: User = users[0];
       if (!user) {
-        return done(null, false, { message: 'Invalid email.' });
+        return done(null, false, { message: 'Invalid User.' });
       }
       const validPassword = bcrypt.compareSync(password, user.Password);
       if (!validPassword) {
@@ -54,37 +54,6 @@ const localStrategy = new Local(
   }
 );
 
-const googleStrategy = new Google(
-  {
-    clientID: process.env.GOOGLE_CLIENT_ID || '',
-    clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
-    callbackURL: 'api/v1/auth/google/callback',
-    passReqToCallback: true, // Pass the entire request to callback
-  },
-  async (req : Request, accessToken: string, refreshToken: string, profile: any, done: any) => {
-    try {
-      L.info(req)
-      L.info(accessToken)
-      L.info(refreshToken)
-      L.info(profile)
-
-      const existingUser = await usersService.filter('GoogleID',profile.id);
-      const user = existingUser[0]
-      if (user) {
-        return done(null, user); // User already exists
-      }
-      // Handle bind email to existing account
-      
-      done(null, user); 
-    } catch (error) {
-      console.error(error);
-      done(error, null);
-    }
-  }
-);
-if(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET){
-  passport.use(googleStrategy);
-}
 
 // Export
 

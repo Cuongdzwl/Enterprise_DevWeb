@@ -3,20 +3,16 @@ import { PrismaClient } from '@prisma/client';
 import { File } from '../models/File';
 import { ExceptionMessage, FileExceptionMessage } from '../common/exception';
 import { ISuperService } from '../interfaces/ISuperService.interface';
+import { FileDTO } from '../models/DTO/File.DTO';
 import { BlobServiceClient } from '@azure/storage-blob';
 import * as path from 'path';
 import * as fs from 'fs';
 import axios from 'axios';
-import stream from 'stream';
-import { promisify } from 'util';
 
 
 const prisma = new PrismaClient();
 const model = 'files';
-const AZURE_STORAGE_CONNECTION_STRING = "DefaultEndpointsProtocol=https;AccountName=ducddsa;AccountKey=2sCmFG1XWdtvp7uj7jCnfdM5MZmi8JNIe0xm41wVaU426sC7v5mJqiIJgTuXdaUN1xzk5JV+bws6+AStqN/Tcw==;EndpointSuffix=core.windows.net";
-const containerName = "ducddsa";
-const pipeline = promisify(stream.pipeline);
-const archiver = require('archiver');
+const JSZip = require('jszip');
 
 
 export class FilesService implements ISuperService<File> {
@@ -27,7 +23,8 @@ export class FilesService implements ISuperService<File> {
   }
   // Filter
   async byId(id: number): Promise<any> {
-    L.info(`fetch ${model} with id ${id}`);
+    const zip = new JSZip();
+    // L.info(`fetch ${model} with id ${id}`);
     const file = await prisma.files.findUnique({
       where: { ID: id },
     })
@@ -35,8 +32,6 @@ export class FilesService implements ISuperService<File> {
       L.error(`File with ID ${id} not found or does not have a URL`);
       return Promise.reject(`File with ID ${id} not found or does not have a URL`);
     }
-    const outputPath = `downloads/${file.ID}.pdf`;
-    await this.downloadBlobToFile(file.Url, outputPath);
     return Promise.resolve(file);
   }
 
@@ -50,30 +45,45 @@ export class FilesService implements ISuperService<File> {
     return Promise.resolve(files);
   }
   private async uploadFileToBlob(file: Express.Multer.File): Promise<string> {
-    const blobServiceClient = BlobServiceClient.fromConnectionString(AZURE_STORAGE_CONNECTION_STRING);
-    const containerClient = blobServiceClient.getContainerClient(containerName);
-    const blobName = `${Date.now()}-${file.originalname}`;
-    const blockBlobClient = containerClient.getBlockBlobClient(blobName);
-    await blockBlobClient.uploadData(fs.readFileSync(file.path), {
-      blobHTTPHeaders: { blobContentType: file.mimetype }
-    });
-    fs.unlinkSync(file.path);
-
-    return blockBlobClient.url;
-  }
-async downloadBlobToFile(url: string, outputPath: string): Promise<void> {
-  try {
-      const response = await axios({
-          method: 'GET',
-          url: url,
-          responseType: 'stream',
+    try{
+      L.info("Uploading file....")
+      const blobServiceClient = BlobServiceClient.fromConnectionString(process.env.AZURE_STORAGE_CONNECTION_STRING|| '');
+      const containerClient = blobServiceClient.getContainerClient(process.env.AZURE_STORAGE_CONTAINER_NAME|| '');
+      const blobName = `${Date.now()}-${file.originalname}`;
+      const blockBlobClient = containerClient.getBlockBlobClient(blobName);
+      await blockBlobClient.uploadData(fs.readFileSync(file.path), {
+        blobHTTPHeaders: { blobContentType: file.mimetype }
       });
-      await pipeline(response.data, fs.createWriteStream(outputPath));
-      L.info(`Downloaded file from ${url} to ${outputPath}`);
-  } catch (error) {
-      L.error(`Error downloading file from ${url}: ${error}`);
-      throw error;
+      L.info("Uploaded:" + file.filename);
+      // fs.unlinkSync(file.path);
+      return Promise.resolve(blockBlobClient.url);
+
+    }catch(error){
+      L.error(error)
+      return Promise.reject("");
+    }
+
   }
+async downloadBlobToFile(file: FileDTO) {
+  const zip = new JSZip();
+  try {
+    if(!file.Url)
+    {
+      return null
+    }
+    const response = await axios.get(file.Url, { responseType: 'arraybuffer' });
+    const fileName = path.basename(new URL(file.Url).pathname);
+    L.info({ fileName });
+    L.info({ response });
+    const fileData = Buffer.from(response.data);
+    zip.file(fileName, fileData);
+  } catch (error) {
+    console.error(`Failed to download file: ${file.Url}`, error);
+    return null;
+  }
+
+  const zipContent = await zip.generateAsync({ type: 'nodebuffer' });
+  return zipContent;
 }
 
   // Create
@@ -112,47 +122,83 @@ async downloadBlobToFile(url: string, outputPath: string): Promise<void> {
       return Promise.resolve(createdFile);
     } catch (error) {
       L.error(`create ${model} failed: ${error}`);
-      return Promise.resolve({
+      return Promise.reject({
         error: ExceptionMessage.INVALID,
         message: ExceptionMessage.BAD_REQUEST,
       });
     }
   }
 
-  async createfile(file: Express.Multer.File, ContributionID: number): Promise<any> {
-    const url = await this.uploadFileToBlob(file);
-    const stats = fs.statSync(file.path);
-    const fileSizeInBytes = stats.size;
-    const fileSizeInMegabytes = fileSizeInBytes / (1024*1024);
-    if (fileSizeInMegabytes > 5) {
-      return { isValid: false, error: FileExceptionMessage.INVALID, message: "File size exceeds 5 MB limit." };
+  async createfile(file: Express.Multer.File, contributionID: number): Promise<any> {
+    try{
+      const url = await this.uploadFileToBlob(file);
+      const stats = fs.statSync(file.path);
+      const fileSizeInBytes = stats.size;
+      const fileSizeInMegabytes = fileSizeInBytes / (1024*1024);
+      if (fileSizeInMegabytes > 5) {
+        return { isValid: false, error: FileExceptionMessage.INVALID, message: "File size exceeds 5 MB limit." };
+      }
+      L.info(`create ${model} with id`)
+      L.info(`Contribution: ${contributionID} | Url: ${url}`)
+      
+      const createdFile = await prisma.files.create({
+        data: {
+          Url: url,
+          ContributionID: contributionID,
+        },
+      }).then((e)=>{
+        L.info(`File created with ID ${e.ID}`);
+        return e;
+      }).catch((err)=>{
+        L.error(`File creation failed: ${err}`);
+      });
+      return createdFile;
+    }catch(error){  
+      L.error(`File creation failed: ${error}`);
+      return Promise.reject({
+        error: ExceptionMessage.INVALID,
+        message: ExceptionMessage.BAD_REQUEST,
+      });
     }
-    const createdFile = await prisma.files.create({
-      data: {
-        Url: url,
-        ContributionID: ContributionID,
-      },
-    });
 
-    return createdFile;
+
   }
   // Delete
-  delete(id: number): Promise<any> {
-    L.info(`delete ${model} with id ${id}`);
-    return prisma.files
-      .delete({
+  async delete(id: number): Promise<any> {
+    try {
+      const fileMetadata = await prisma.files.findUnique({
         where: { ID: id },
-      })
-      .then((r) => {
-        return Promise.resolve(r);
-      })
-      .catch((err) => {
-        L.error(`delete ${model} failed: ${err}`);
-        return Promise.resolve({
-          error: ExceptionMessage.INVALID,
-          message: ExceptionMessage.BAD_REQUEST,
-        });
       });
+  
+      if (!fileMetadata) {
+        throw new Error(`File with ID ${id} not found.`);
+      }
+      const decodedUrl = decodeURIComponent(fileMetadata.Url);
+      console.log(decodedUrl);
+      const blobServiceClient = BlobServiceClient.fromConnectionString(process.env.AZURE_STORAGE_CONNECTION_STRING|| '');
+      const containerClient = blobServiceClient.getContainerClient(process.env.AZURE_STORAGE_CONTAINER_NAME|| '');
+  
+      const blobName = decodedUrl.split('/').pop();
+      if(blobName){
+        const blockBlobClient = containerClient.getBlockBlobClient(blobName);
+        await blockBlobClient.delete();
+      }
+
+      L.info(`File deleted from Azure Blob Storage: ${blobName}`);
+  
+      await prisma.files.delete({
+        where: { ID: id },
+      });
+      L.info(`File metadata deleted from database: ${id}`);
+  
+      return { message: "File and its metadata successfully deleted" };
+    } catch (err) {
+      L.error(`Error during file deletion process: ${err}`);
+      return Promise.resolve({
+        error: ExceptionMessage.INVALID,
+        message: ExceptionMessage.BAD_REQUEST,
+      });
+    }
   }
   // Update
   async update(id: number, file: File): Promise<any> {
@@ -183,6 +229,34 @@ async downloadBlobToFile(url: string, outputPath: string): Promise<void> {
         data: {
           Url: file.Url,
           ContributionID: file.ContributionID,
+        },
+      });
+      return Promise.resolve(updatedFile);
+    } catch (error) {
+      L.error(`update ${model} failed: ${error}`);
+      return Promise.resolve({
+        error: ExceptionMessage.INVALID,
+        message: ExceptionMessage.BAD_REQUEST,
+      });
+    }
+  }
+  async updateFile(id: number, file: Express.Multer.File): Promise<any> {
+    // Validate
+    const url = await this.uploadFileToBlob(file);
+    const stats = fs.statSync(file.path);
+    const fileSizeInBytes = stats.size;
+    const fileSizeInMegabytes = fileSizeInBytes / (1024*1024);
+    if (fileSizeInMegabytes > 5) {
+      return { isValid: false, error: FileExceptionMessage.INVALID, message: "File size exceeds 5 MB limit." };
+    }
+    L.info(`update ${model} with id`)
+    L.info(` Url: ${url}`)
+    fs.unlinkSync(file.path);
+    try {
+      const updatedFile = prisma.files.update({
+        where: { ID: id },
+        data: {
+          Url: url,
         },
       });
       return Promise.resolve(updatedFile);

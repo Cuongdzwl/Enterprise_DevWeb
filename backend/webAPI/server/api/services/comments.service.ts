@@ -5,7 +5,7 @@ import { ISuperService } from '../interfaces/ISuperService.interface';
 import { CommentExceptionMessage, ExceptionMessage } from '../common/exception';
 import notificationsService from './notifications.service';
 import userServices from './users.service'; // Import the userServices module
-import { NotificationSentType } from '../models/NotificationSentType';
+import { NotificationSentTypeEnum } from '../models/NotificationSentType';
 import { NotificationSentThrough } from '../models/NotificationSentThrough';
 import { User } from '../models/User';
 import contributionsService from './contributions.service';
@@ -76,29 +76,33 @@ export class CommentsService implements ISuperService<Comment> {
     }
     try {
       L.info(`create ${model} with id ${comment.ID}`);
+      // Create Comment
       const createdComment = prisma.comments
         .create({
           data: {
             Content: comment.Content,
-            ContributionID: comment.ContributionID,
-            UserID: comment.UserID,
+            ContributionID: Number(comment.ContributionID),
+            UserID: Number(comment.UserID),
           },
         })
         .then(async (r) => {
-          const contribution = await contributionsService
-            .byId(r.ContributionID)
-            .then((contribution: Contribution) => {
-              if (r.UserID == contribution.UserID) return contribution;
-              return;
-            })
-            .catch((_) => {
-              return;
-            });
-          if (await contribution) {
+          // Fetch Commented Contribution
+          const contribution: Contribution | undefined =
+            await contributionsService
+              .byId(r.ContributionID)
+              .then((contribution: Contribution) => {
+                // Check if the user is commenting on their own contribution
+                if (r.UserID == contribution.UserID) return undefined;
+                return contribution;
+              })
+              .catch((_) => {
+                return undefined;
+              });
+          if (!contribution) {
             return r;
           }
-
-          userServices.byId(r.UserID).then((user: User) => {
+          // Send comment to contribution owner
+          userServices.byId(contribution.UserID).then((user: User) => {
             notificationsService.trigger(
               user,
               {
@@ -106,10 +110,11 @@ export class CommentsService implements ISuperService<Comment> {
                   Name: user.Name,
                 },
                 Contribution: {
-                  Name: contribution?.Name || 'Student',
+                  ID : contribution.ID,
+                  Name: contribution?.Name,
                 },
               },
-              NotificationSentType.COMMENTONCONTRIBUTION,
+              NotificationSentTypeEnum.COMMENTONCONTRIBUTION,
               NotificationSentThrough.InApp
             );
           });
@@ -189,14 +194,10 @@ export class CommentsService implements ISuperService<Comment> {
       return {
         isValid: false,
         error: CommentExceptionMessage.INVALID_CONTRIBUTIONID,
-        message:
-          'Contribution ID must be a number with a maximum of 20 digits.',
+        message: 'Contribution ID must be provided',
       };
     }
-    if (
-      !/^\d{1,20}$/.test(comment.ContributionID.toString()) ||
-      !/^\d{1,20}$/.test(comment.UserID.toString())
-    ) {
+    if (!/^\d{1,20}$/.test(comment.ContributionID.toString())) {
       return {
         isValid: false,
         error: CommentExceptionMessage.INVALID_CONTRIBUTIONID,
@@ -204,46 +205,13 @@ export class CommentsService implements ISuperService<Comment> {
       };
     }
     const contributionExists = await prisma.contributions.findUnique({
-      where: { ID: comment.ContributionID },
+      where: { ID: Number(comment.ContributionID) },
     });
     if (!contributionExists) {
       return {
         isValid: false,
         error: CommentExceptionMessage.INVALID_CONTRIBUTIONID,
         message: 'Referenced Contribution does not exist.',
-      };
-    }
-    if (
-      comment.UserID === null ||
-      comment.UserID === undefined ||
-      !comment.UserID
-    ) {
-      return {
-        isValid: false,
-        error: CommentExceptionMessage.INVALID_CONTRIBUTIONID,
-        message: 'User ID must be a number with a maximum of 20 digits.',
-      };
-    }
-
-    if (
-      !/^\d{1,20}$/.test(comment.UserID.toString()) ||
-      !/^\d{1,20}$/.test(comment.UserID.toString())
-    ) {
-      return {
-        isValid: false,
-        error: CommentExceptionMessage.INVALID_CONTRIBUTIONID,
-        message: 'User ID must be numbers and not exceed 20 digits.',
-      };
-    }
-
-    const userExists = await prisma.users.findUnique({
-      where: { ID: comment.UserID },
-    });
-    if (!userExists) {
-      return {
-        isValid: false,
-        error: CommentExceptionMessage.INVALID_USERID,
-        message: 'Referenced User ID does not exist.',
       };
     }
 

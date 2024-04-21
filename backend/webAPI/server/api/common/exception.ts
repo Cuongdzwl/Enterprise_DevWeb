@@ -13,6 +13,7 @@ export class UserExceptionMessage extends ExceptionMessage{
     public static readonly ROLE_ALREADY_ASSIGNED_IN_FACULTY: string = "Faculty have only one user with role Marketing Coordinator"
     public static readonly ROLE_ALREADY_ASSIGNED_IN_SEVER: string = "Server have only one user with role Marketing Manager"
     public static readonly  EMAIL_EXISTED: string = "Email already exists"
+    public static readonly CONSTRAINT_VIOLATION: string = "Information already exists"
    
     
 }
@@ -42,6 +43,7 @@ export class NotificationExceptionMessage extends ExceptionMessage{
 }
 
 export class RoleExceptionMessage extends ExceptionMessage{
+    public static readonly ROLE_NAME_EXISTED: string = "This name already exists";
 }
 
 export class CommentExceptionMessage extends ExceptionMessage{
@@ -55,6 +57,7 @@ export class AuthExceptionMessage extends ExceptionMessage{
     public static readonly INVALID_TOKEN: string = "Invalid Token";
     public static readonly INVALID_OTP: string = "Invalid OTP";
     public static readonly INVALID_OTP_EXPIRED: string = "OTP has expired";
+    public static readonly INVALID_USER_NOT_BELONG_TO_FACULTY: string = "User does not belong to this faculty";
     public static readonly INVALID_OTP_USED: string = "OTP has already been used";
 }
 

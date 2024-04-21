@@ -1,93 +1,106 @@
 import { useState, useEffect } from 'react';
 import useFetch from '../../../CustomHooks/useFetch';
 import { useNavigate, useParams } from 'react-router-dom';
+import FormGroup from '../../../components/FormGroup';
+import Loading from '../../../components/Loading';
+import { ApiResponse } from '../../../Api';
+
+const Data = {
+    Name: '',
+    Email: '',
+    Phone: '',
+    Address: '',
+    RoleID: '',
+    FacultyID: ''
+}
 
 const DetailAccount = () => {
-    const [formData, setFormData] = useState({
-        name: '',
-        email: '',
-        phone: '',
-        address: '',
-        role: '',
-        faculty: ''
-    });
+    // State
+    const [formData, setFormData] = useState(Data);
     const [isLoading] = useState(false);
     const [error] = useState(null);
 
+    // ID and Redirect
     const navigate = useNavigate();
     const { id } = useParams();
 
-    const { data: account } = useFetch(`http://localhost:3000/account/${id}`);
-    const { data: roleData } = useFetch('http://localhost:3000/role');
-    const { data: facultyData } = useFetch('http://localhost:3000/faculty');
+    // Fetch data
+    const { data: account } = useFetch(`${ApiResponse}users/${id}?depth=1`);
 
+    // Set Data
     useEffect(() => {
         if (account) {
-            const { name, email, phone, address, role, faculty } = account;
-            setFormData({ name, email, phone, address, role, faculty });
+            setFormData(account);
         }
     }, [account]);
 
-    const getRoleName = (roleId) => {
-        if (roleData) {
-            const role = roleData.find(role => role.id === roleId);
-            return role ? role.name : '';
-        }
-        return '';
-    }
-
-    const getFacultyName = (facultyId) => {
-        if (facultyData) {
-            const faculty = facultyData.find(faculty => faculty.id === facultyId);
-            return faculty ? faculty.name : '';
-        }
-        return '';
-    }
-
+    // Handle Event
     const handleClick = () => {
         navigate('/admin/account');
+    }
+
+    if (!account) {
+        return (
+            <Loading />
+        )
     }
 
     return (
         <div className="box">
             <div className="row-1">
                 <div className="header">
-                    <div className="title">List Account</div>
+                    <div className="title">Detail Account</div>
                 </div>
             </div>
             <div className="row-2">
                 <div className="box">
                     <div className="box-content">
                         <form>
-                            <div className="form-group">
-                                <label>Name</label>
-                                <input readOnly type="text" className='form-control' value={formData.name} />
-                            </div>
-                            <div className="form-group">
-                                <label>Email</label>
-                                <input readOnly type="email" className='form-control' name="email" value={formData.email} />
-                            </div>
-                            <div className="form-group">
-                                <label>Phone</label>
-                                <input readOnly type="text" className='form-control' name="phone" value={formData.phone} />
-                            </div>
-                            <div className="form-group">
-                                <label>Address</label>
-                                <input readOnly type="text" className='form-control' name="address" value={formData.address} />
-                            </div>
+                            <FormGroup
+                                label={'Name'}
+                                inputType={'text'}
+                                inputName={'Name'}
+                                value={formData.Name}
+                                readOnly={true}
+                            />
+
+                            <FormGroup
+                                label={'Email'}
+                                inputType={'email'}
+                                inputName={'Email'}
+                                value={formData.Email}
+                                readOnly={true}
+                            />
+
+                            <FormGroup
+                                label={'Phone'}
+                                inputType={'text'}
+                                inputName={'Phone'}
+                                value={formData.Phone}
+                                readOnly={true}
+                            />
+
+                            <FormGroup
+                                label={'Address'}
+                                inputType={'text'}
+                                inputName={'Address'}
+                                value={formData.Address}
+                                readOnly={true}
+                            />
+
                             <div className="form-group">
                                 <label>Role</label>
-                                <input type="text" className='form-control' readOnly value={getRoleName(formData.role)} />
+                                <input type="text" className='form-control' readOnly value={account?.Role?.Name} />
                             </div>
                             <div className="form-group mb-input">
                                 <label>Faculty</label>
-                                <input type="text" className='form-control' readOnly value={getFacultyName(formData.faculty)} />
+                                <input type="text" className='form-control' readOnly value={account?.Faculty?.Name} />
                             </div>
 
                             <div className="form-action">
                                 <button type="button" className="btn" onClick={handleClick}>Back</button>
                             </div>
-                            {isLoading && <span>Loading...</span>}
+                            {isLoading && <Loading />}
                             {error && <div className="error">{error}</div>}
                         </form>
                     </div>

@@ -6,8 +6,14 @@ import filesService from '../../services/files.service';
 
 export class FilesController implements ISuperController {
   update(req: Request, res: Response): void {
+    const file = req.file;
+    console.log(req.file)
+    if (!file) {
+      res.status(400).send("Missing file");
+      return;
+    }
     const id = Number.parseInt(req.params['id']);
-    FileService.update(id, req.body).then((r) =>
+    FileService.updateFile(id, file).then((r) =>
       res.status(201).location(`/api/v1/files/${r.id}`).json(r)
     );
   }
@@ -28,6 +34,22 @@ export class FilesController implements ISuperController {
     FileService.byId(id).then((r) => {
       if (r) res.json(r);
       else res.status(404).end();
+    });
+  }
+  async download(req: Request, res: Response): Promise<void>{
+    const id = Number.parseInt(req.params.id);
+    const file = await FileService.byId(id);
+    FileService.downloadBlobToFile(file).then((zipContent) => {
+        if (zipContent) {
+            res.setHeader('Content-Type', 'application/zip');
+            res.setHeader('Content-Disposition', 'attachment; filename="download.zip"');
+            res.send(zipContent);
+        } else {
+            res.status(404).send('File not found or failed to create zip');
+        }
+    }).catch(error => {
+        console.error(error);
+        res.status(500).send('Server error');
     });
   }
 

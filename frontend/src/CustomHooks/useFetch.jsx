@@ -7,27 +7,36 @@ const useFetch = (url) => {
 
     useEffect(() => {
         const abortCont = new AbortController();
+        const fetchData = async () => {
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch(url, {
+                    headers: {
+                        'Content-type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    signal: abortCont.signal
+                });
 
-        fetch(url, { signal: abortCont.signal })
-            .then(res => {
-                if (!res.ok) {
+                if (!response.ok) {
                     throw Error('Could not fetch the data for that resource');
                 }
-                return res.json();
-            })
-            .then(data => {
+
+                const data = await response.json();
                 setData(data);
                 setIsPending(false);
                 setError(null);
-            })
-            .catch((err) => {
+            } catch (err) {
                 if (err.name === 'AbortError') {
                     console.log('Fetch aborted');
                 } else {
                     setIsPending(false);
                     setError(err.message);
                 }
-            });
+            }
+        };
+
+        fetchData();
 
         return () => abortCont.abort();
     }, [url]);

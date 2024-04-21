@@ -21,8 +21,12 @@ paths:
               type: object
               properties:
                 email:
+                  required: true                
                   type: string
                 password:
+                  required: true
+                  type: string
+                FacultyID:
                   type: string
       responses:
         '200':
@@ -44,8 +48,13 @@ paths:
       tags:
         - Authentication
       summary: Get user profile
+      responses:
+        '200':
+          description: User profile
 
-    put:
+        '401':
+          description: Unauthorized
+    patch:
       tags:
         - Authentication
       summary: Update user profile
@@ -54,14 +63,38 @@ paths:
        content:
          application/json:
            schema:
-             $ref: '#/components/schemas/User'
              type: object
+             properties:
+               Password:
+               type: string
+             $ref: '#/components/schemas/User'
       responses:
       '201':
         description: Updated
       '401':
         description: Unauthorized    
-  /auth/forgotPassword:
+  /auth/password/change:
+    post:
+      tags:
+        - Authentication
+      summary: Change password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                oldPassword:
+                  type: string
+                newPassword:
+                  type: string
+      responses:
+        '201':
+          description: Password changed
+        '401':
+          description: Unauthorized
+  /auth/password/forgot:
     post:
       tags:
         - Authentication
@@ -137,7 +170,7 @@ paths:
           description: Bad Request
         '401':
           description: Unauthorized
-  /auth/resetPassword:
+  /auth/password/reset:
     post:
       tags:
         - Authentication
@@ -250,7 +283,7 @@ paths:
                 $ref: '#/components/schemas/User'
         '404':
           description: User not found
-    put:
+    patch:
       tags:
         - Users
       summary: Update a user
@@ -338,7 +371,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Faculty'
+                $ref: '#/components/schemas/Contribution'
     put:
       tags:
         - Faculties
@@ -357,11 +390,11 @@ paths:
               $ref: '#/components/schemas/Faculty'
       responses:
         '200':
-          description: Faculty updated
+          description: OK
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Faculty'
+                $ref: '#/components/schemas/Contribution'
     delete:
       tags:
         - Faculties
@@ -375,6 +408,175 @@ paths:
       responses:
         '204':
           description: Faculty deleted
+  /faculties/{id}/dashboard:
+    get:
+      tags:
+        - Faculties
+      summary: Get faculty dashboard statistics for a given faculty ID and year
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: The ID of the faculty to get the dashboard statistics for.
+        - in: query
+          name: startYear
+          required: true
+          schema:
+            type: integer
+          description: The starting year of the range to get the dashboard statistics for.
+        - in: query
+          name: endYear
+          required: true
+          schema:
+            type: integer
+          description: The ending year of the range to get the dashboard statistics for.
+      responses:
+        '200':
+          description: Faculty dashboard statistics successfully retrieved.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  totalContributions:
+                    type: integer
+                    description: The total number of contributions made to the faculty in the given year.
+                  totalEvents:
+                    type: integer
+                    description: The total number of events organized by the faculty in the given year.
+                  activeContributors:
+                    type: integer
+                    description: The number of active contributors in the faculty for the given year.
+        '400':
+          description: Invalid input
+        '404':
+          description: Faculty not found
+  /faculties/{id}/dashboardManager:
+    get:
+      tags:
+        - Faculties
+      summary: Get faculty dashboard statistics for a given faculty ID and year
+      parameters:
+        - in: query
+          name: startYear
+          required: true
+          schema:
+            type: integer
+          description: The starting year of the range to get the dashboard statistics for.
+        - in: query
+          name: endYear
+          required: true
+          schema:
+            type: integer
+          description: The ending year of the range to get the dashboard statistics for.
+      responses:
+        '200':
+          description: Faculty dashboard statistics successfully retrieved.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  totalContributions:
+                    type: integer
+                    description: The total number of contributions made to the faculty in the given year.
+                  totalEvents:
+                    type: integer
+                    description: The total number of events organized by the faculty in the given year.
+                  activeContributors:
+                    type: integer
+                    description: The number of active contributors in the faculty for the given year.
+        '400':
+          description: Invalid input
+        '404':
+          description: Faculty not found
+  /faculties/report:
+    get:
+      tags:
+        - Faculties
+      summary: Get faculty report
+      parameters:
+        - in: query
+          name: id
+          schema:
+            type: integer
+          description: The ID of the faculty to get the report.
+        - in: query
+          name: year
+          schema:
+            type: integer
+          description: The year to get the report.
+      responses:
+        '200':
+          description: Faculty report.
+        '400':
+          description: Invalid input
+        '404':
+          description: Faculty not found
+  /faculties/public:
+    get:
+      tags:
+      - Faculties
+      summary: Get all public faculties
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                $ref: '#/components/schemas/Faculty'
+
+  /faculties/public/{id}:
+    get:
+      tags:
+      - Faculties
+      summary: Get a public faculty by ID
+      operationId: getPublicFacultyById
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: The ID of the faculty
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                $ref: '#/components/schemas/Contribution'
+  /faculties/public/{id}/contributions/{contributionid}:
+    get:
+      tags:
+      - Faculties
+      summary: Get contribution of a guest in a public faculty event
+      operationId: getGuestEventContribution
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: number
+          required: true
+          description: The ID of the faculty
+        - in: path
+          name: contributionid
+          schema:
+            type: number
+          required: true
+          description: The ID of the contribution
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                $ref: '#/components/schemas/Contribution'
   /events:
     get:
       tags:
@@ -500,6 +702,25 @@ paths:
       responses:
         '200':
           description: File deleted successfully
+  /files/{id}/download:
+    get:
+      tags:
+        - Files
+      summary: Download a file by ID as a zip
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: File downloaded successfully
+          content:
+            application/zip:
+              schema:
+                type: string
+                format: binary
   /files/upload/{id}:
     put:
       tags:
@@ -515,19 +736,16 @@ paths:
       requestBody:
         required: true
         content:
-          application/json:
+          multipart/form-data:
             schema:
               type: object
-              required:
-                - Path
-                - ContributionID
               properties:
-                Path:
+                file:
                   type: string
-                  description: New local file path for the uploaded file.
-                ContributionID:
-                  type: integer
+                  format: binary
                   description: Updated contribution identifier associated with the file.
+              required:
+                - ContributionID
       responses:
         '200':
           description: File information updated successfully.
@@ -661,6 +879,11 @@ paths:
           schema:
             type: boolean
           description: Include Contribution
+        - in: query
+          name: isPublic
+          schema:
+            type: boolean
+          description: Show Public Contribution
       responses:
         '200':
           description: An event object
@@ -782,7 +1005,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ContributionResponse'
+                $ref: '#/components/schemas/Contribution
         '400':
           description: Bad Request. Invalid input or missing required fields.
         '500':
@@ -803,6 +1026,16 @@ paths:
           schema:
             type: number
           description: JSON response depth parameter
+        - in: query
+          name: file
+          schema:
+            type: boolean
+          description: JSON response file parameter
+        - in: query
+          name: comment
+          schema:
+            type: boolean
+          description: JSON response comment parameter
       responses:
         '200':
           description: A contribution
@@ -810,7 +1043,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Contribution'
-    put:
+    patch:
       tags:
         - Contributions
       summary: Update a contribution and its files
@@ -823,7 +1056,7 @@ paths:
       requestBody:
         required: true
         content:
-          application/json:
+          multipart/form-data:
             schema:
               type: object
               properties:
@@ -835,28 +1068,24 @@ paths:
                   type: boolean
                 IsApproved:
                   type: boolean
-                EventID:
-                  type: integer
-                UserID:
-                  type: integer
                 StatusID:
                   type: integer
-                files:
-                  type: array
-                  items:
-                    type: object
-                    properties:
-                      Path:
-                        type: string
-                        description: String path of the file
+                filesPath:
+                  type: string
+                  format: binary
+                  description: The files to be uploaded.
+                file2:
+                  type: string
+                  format: binary
+                  description: The files to be uploaded.
               required:
                 - Name
                 - Content
                 - IsPublic
                 - IsApproved
-                - EventID
-                - UserID
                 - StatusID
+                - filesPath
+                - file2
       responses:
         '200':
           description: Contribution and its files updated
@@ -1001,6 +1230,26 @@ paths:
       responses:
         '204':
           description: Comment deleted
+  /status:
+    get:
+      tags:
+        - Status
+      summary: Get all statuses
+      responses:
+        '200':
+          description: A list of statuses
+          content:
+            application/json:
+              schema:
+                type: array
+  /status/{id}:
+    get:
+      tags:
+        - Status
+      summary: Get status
+      responses:
+        '200':
+          description: Status found
   /spec:
     get:
       tags:

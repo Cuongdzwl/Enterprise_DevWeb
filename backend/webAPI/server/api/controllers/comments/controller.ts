@@ -2,6 +2,8 @@ import CommentsService from '../../services/comments.service';
 import { Request, Response } from 'express';
 import { ISuperController } from '../../interfaces/ISuperController.interface';
 import { PrismaClient } from '@prisma/client';
+import { Comment } from 'server/api/models/Comment';
+import L from '../../../common/logger';
 
 const prisma = new PrismaClient();
 export class CommentsController implements ISuperController {
@@ -34,12 +36,16 @@ export class CommentsController implements ISuperController {
           return;
         }
         try {
-            CommentsService.create(req.body).then((r) =>
+            var comment : Comment = req.body
+            L.info(res.locals)
+            comment.UserID = res.locals.user.user.ID;
+            CommentsService.create(comment).then((r) =>
                 res.status(201).location(`/api/v1/comments/${r.id}`).json(r)
             );
         } catch (error) {
             res.status(400).json({ error: error.message }).end();
         }
+
     }
 
     delete(req: Request, res: Response): void {

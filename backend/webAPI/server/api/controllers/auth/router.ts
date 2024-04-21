@@ -5,10 +5,11 @@ export default express
   .Router()
   .post('/login', controller.login)
   .get('/user',authenticateToken, controller.profile)
-  .put('/user',authenticateToken, controller.updateProfile)
+  .patch('/user',authenticateToken, controller.updateProfile)
+  .post('/password/change',authenticateToken, controller.changePassword)
   .get('/logout',authenticateToken, controller.logout)
-  .post('/forgotPassword', controller.forgotPassword)
+  .post('/password/forgot', controller.forgotPassword)
   .post('/verify',authenticateToken, controller.verifyOTP)
   .post('/verify/phone',authenticateToken, controller.verifyPhone)
   .get('/otp',authenticateToken, controller.sendOTP)
-  .post('/resetPassword', controller.resetPassword);
+  .post('/password/reset', controller.resetPassword);

@@ -3,14 +3,15 @@ import L from '../../common/logger';
 import { EventExceptionMessage, ExceptionMessage } from '../common/exception';
 import { PrismaClient } from '@prisma/client';
 import { ISuperService } from '../interfaces/ISuperService.interface';
-import { error } from 'console';
 import notificationsService from './notifications.service';
 import usersService from './users.service';
 import { User } from '../models/User';
-import { NotificationSentType } from '../models/NotificationSentType';
+import { NotificationSentTypeEnum } from '../models/NotificationSentType';
 import { NotificationSentThrough } from '../models/NotificationSentThrough';
 import { TransactionDTO } from '../models/DTO/TransactionDTO';
 import { Notification } from '../models/Notification';
+import contributionsService from '../services/contributions.service';
+import { Contribution } from '../models/Contribution';
 
 const prisma = new PrismaClient();
 const model = 'event';
@@ -37,7 +38,13 @@ export class EventsService implements ISuperService<Event> {
     return Promise.resolve(events);
   }
 
-  byId(id: number, depth?: number, contribution?: boolean): Promise<any> {
+  async byId(
+    id: number,
+    depth?: number,
+    contribution?: boolean,
+    isPublic?: boolean,
+    userid?: number
+  ): Promise<any> {
     L.info(id + '');
     var select: any = {
       ID: true,
@@ -48,47 +55,143 @@ export class EventsService implements ISuperService<Event> {
       CreatedAt: true,
       UpdatedAt: true,
       FacultyID: true,
+      Contributions: contribution
+        ? {
+            select: {
+              ID: true,
+              Name: true,
+              Content: true,
+              StatusID: true,
+              Files: {
+                select: {
+                  ID: true,
+                  Url: true,
+                  CreatedAt: true,
+                  UpdatedAt: true,
+                  ContributionID: true,
+                },
+              },
+              Status: { select: { ID: true, Name: true } },
+            },
+          }
+        : undefined,
     };
 
     if (depth == 1) {
       select.Faculty = { select: { ID: true, Name: true } };
     }
-    if (contribution == true) {
-      select.Contributions = {
-        select: {
-          ID: true,
-          Name: true,
-          Content: true,
-          StatusID: true,
-          Files: {
-            select: { ID: true, Url: true },
-            where: { ContributionID: id },
-          },
-          Status: { select: { ID: true, Name: true } },
-        },
-        where: { EventID: id },
-      };
-    }
 
-    return prisma.events
+    var where: any = { ID: id };
+    if (userid) {
+      where.FacultyID = await prisma.users
+        .findUnique({ select: { FacultyID: true }, where: { ID: userid } })
+        .then((r) => {
+          return r?.FacultyID;
+        });
+    }
+    // categorize files
+    if (depth == 1 && contribution == true) {
+      let option: any = {};
+      if (userid) {
+        // option.FacultyID = await prisma.users
+        //   .findUnique({ select: { FacultyID: true }, where: { ID: userid } })
+        //   .then((r) => {
+        //     return r?.FacultyID;
+        //   });
+        option.UserID = userid;
+      }
+      if (isPublic) {
+        option.IsPublic = isPublic;
+      }
+      try {
+        const eventContributions = await prisma.events.findUnique({
+          select: {
+            ID: true,
+            Name: true,
+            Description: true,
+            ClosureDate: true,
+            FinalDate: true,
+            CreatedAt: true,
+            UpdatedAt: true,
+            FacultyID: true,
+            Contributions: {
+              select: {
+                ID: true,
+                Name: true,
+                Content: true,
+                StatusID: true,
+                UserID: true,
+                Files: {
+                  select: {
+                    ID: true,
+                    Url: true,
+                    CreatedAt: true,
+                    UpdatedAt: true,
+                    ContributionID: true,
+                  },
+                },
+                Status: { select: { ID: true, Name: true } },
+              },
+              where: option,
+            },
+          },
+          where,
+        });
+        //  Categorize file
+        if (eventContributions && eventContributions.Contributions) {
+          const contributionsWithFiles = await Promise.all(
+            eventContributions.Contributions.map(async (contribution) => {
+              const allFiles = contribution.Files;
+              const filesAsDTOs = contributionsService.toFileDTOArray(allFiles);
+              const { textFiles, imageFiles } =
+                contributionsService.classifyFiles(filesAsDTOs);
+
+              return Promise.resolve({
+                ...contribution,
+                TextFiles: textFiles,
+                ImageFiles: imageFiles,
+              });
+            })
+          );
+          return Promise.resolve({
+            ...eventContributions,
+            Contributions: contributionsWithFiles,
+          });
+        }
+      } catch (error) {
+        L.error(`Failed to fetch event with id ${id}: ${error}`);
+        Promise.reject({
+          message: `Failed to fetch event with id ${id}}`,
+        });
+      }
+    }
+    // Fectch
+    return await prisma.events
       .findUnique({
         select,
-        where: { ID: id },
+        where,
       })
-      .then((r) => {
-        L.info(`fetch ${model} with id ${id}`);
-        return Promise.resolve(r);
+      .then((event) => {
+        return Promise.resolve(event);
       })
-      .catch((err) => {
-        return Promise.reject(err);
+      .catch((error) => {
+        L.error(`Failed to fetch event with id ${id}: ${error}`);
+        return Promise.reject({
+          message: `Failed to fetch event with id ${id}`,
+        });
       });
   }
+
   filter(filter: string, key: string): Promise<any> {
-    const events = prisma.events.findMany({
-      where: {
-        [filter]: key,
-      },
-    });
+    const events = prisma.events
+      .findMany({
+        where: {
+          [filter]: key,
+        },
+      })
+      .catch((error) => {
+        L.error(`Failed to fetch events: ${error}`);
+      });
     L.info(events, `fetch all ${model}(s)`);
     return Promise.resolve(events);
   }
@@ -101,7 +204,6 @@ export class EventsService implements ISuperService<Event> {
         message: validations.message,
       });
     }
-
     return prisma.events
       .create({
         data: {
@@ -113,7 +215,8 @@ export class EventsService implements ISuperService<Event> {
         },
       })
       .then((event) => {
-        return this.createNotification(event);
+        L.info(`create ${model} `)
+        return this.schedule(event);
       })
       .catch((error) => {
         L.error(`create ${model} failed: ${error}`);
@@ -123,22 +226,33 @@ export class EventsService implements ISuperService<Event> {
         });
       });
   }
-  delete(id: number): Promise<any> {
+  async delete(id: number): Promise<any> {
     L.info(`delete ${model} with id ${id}`);
-    return prisma.events
-      .delete({
-        where: { ID: id },
-      })
-      .then((r) => {
-        return Promise.resolve(r);
-      })
-      .catch((err) => {
-        L.error(`delete ${model} failed: ${err}`);
-        return Promise.resolve({
-          error: ExceptionMessage.INVALID,
-          message: ExceptionMessage.BAD_REQUEST,
-        });
+      const contributions = await prisma.contributions.findMany({
+        where: { EventID: id },
       });
+      for (const contribution of contributions) {
+        console.log(contribution.ID);
+        await contributionsService.delete(contribution.ID).catch((err)=>{
+          L.error(`delete contributions failed: ${err}`);
+        });
+      }
+      await prisma.scheduledNotifications.deleteMany({
+        where: { EventID: id },
+      }).catch((err)=>{
+        L.error(`delete notification failed: ${err}`);
+      });
+      return prisma.events
+        .delete({
+          where: { ID: id },
+        })
+        .then((r) => {
+          return Promise.resolve(r);
+        }).catch((err)=>{
+          L.error(`delete ${model} failed: ${err}`);
+          return Promise.reject(err);
+        });
+     
   }
   async update(id: number, event: Event): Promise<any> {
     const validations = await this.validateConstraints(event);
@@ -151,35 +265,50 @@ export class EventsService implements ISuperService<Event> {
     }
     try {
       L.info(`update ${model} with id ${event.ID}`);
-      prisma.events.findMany({ where: { ID: id } }).then((r) => {
-        r
-      })
-      return prisma.events.update({
-        where: { ID: id },
-        data: {
-          Name: event.Name,
-          Description: event.Description,
-          ClosureDate: event.ClosureDate,
-          FinalDate: event.FinalDate,
-          FacultyID: event.FacultyID,
-        },
-      }).then((event) => {
-        // cancel previous notifications
-        // prisma.scheduledNotifications.findMany({ where: { EventID: id } }).then((r) => {
-        //   r.forEach((element) => {
-        //     this.createNotification(event);
-        //     prisma.scheduledNotifications.update({
-        //       where: { ID: element.ID },
-        //       data: {
-        //         IsCancelled: true,
-        //       },
-        //     });
-        //   });
-        // });
-        return this.createNotification(event);
-      }).catch((error) => {
-        return Promise.reject(error);
-      });
+      return prisma.events
+        .update({
+          where: { ID: id },
+          data: {
+            Name: event.Name,
+            Description: event.Description,
+            ClosureDate: event.ClosureDate,
+            FinalDate: event.FinalDate,
+            FacultyID: event.FacultyID,
+          },
+        })
+        .then((event) => {
+          // cancel previous notifications
+          prisma.scheduledNotifications
+            .findMany({
+              select: { TransactionID: true },
+              where: { EventID: id, IsCancelled: false },
+            })
+            .then(async (notifications) => {
+              if (notifications != null) {
+                L.info(`bulk cancel ${notifications.length} notifications`);
+                var transactions: string[] = notifications.map((n) =>
+                  n.TransactionID == null ? '' : n.TransactionID
+                );
+                L.info(transactions);
+                await notificationsService.bulkCancel(transactions);
+              }
+            })
+            .then(() => {
+              this.schedule(event);
+            })
+            .catch((e) => {
+              Promise.reject({
+                isSuccess: false,
+                error: e,
+                message: ExceptionMessage.BAD_REQUEST,
+              });
+            });
+
+          return Promise.resolve({ isSuccess: true });
+        })
+        .catch((error) => {
+          return Promise.reject(error);
+        });
     } catch (error) {
       L.error(`create ${model} failed: ${error}`);
       return Promise.reject({
@@ -189,10 +318,10 @@ export class EventsService implements ISuperService<Event> {
     }
   }
 
-  private createNotification(event: Event){
+  private schedule(event: Event) {
     if (event) {
       L.info(`create ${model} with id ${event.ID}`);
-      prisma.users
+      const created =  prisma.users
         .findMany({ where: { FacultyID: event.FacultyID } })
         .then((users: any) => {
           if (users) var user: User[] = users;
@@ -207,88 +336,75 @@ export class EventsService implements ISuperService<Event> {
                 ID: event.ID,
               },
             },
-            NotificationSentType.NEWEVENT,
+            NotificationSentTypeEnum.NEWEVENT,
             NotificationSentThrough.InApp
-          );
+          )
           // Scheduled Email Due Date
-          // notificationsService
-          //   .bulkTrigger(
-          //     users,
-          //     {
-          //       Event: {
-          //         ClosureDate: event.ClosureDate.getDate().toString(),
-          //         ClosureTime: event.ClosureDate.getTime().toString(),
-          //         Name: event.Name,
-          //       },
-          //       Name: event.Name,
-          //       sendAt: event.ClosureDate.toISOString(),
-          //     },
-          //     NotificationSentType.CLOSUREDATE,
-          //     NotificationSentThrough.Email
-          //   )
-          //   .then((rr) => {
-          //     L.info(rr.data.data);
-          //     // save to database
-          //     // save to database
-          //     for (let i = 0; i < rr.data.data.length ;i++) {
-          //       L.info(rr.data.data[i]);
-          //       L.info(rr.data.data[i].status);
-          //       L.info(rr.data.data[i]["status"]);
-
-          //       var u = prisma.scheduledNotifications.create({
-          //         data: {
-          //           EventID: event.ID!,
-          //           Status: rr.data.data[i].status,
-          //           TransactionID: rr.data.data[i].transactionID,
-          //           NotificationSentTypeID: 1,
-          //           SentTo: user[i].ID,
-          //           SentAt: event.ClosureDate,
-          //           IsCancelled: false,
-          //         },
-          //       });
-          //       L.info("created: " + u)
-          //     }
-          //   });
+          notificationsService
+            .bulkTrigger(
+              users,
+              {
+                Event: {
+                  Name: event.Name,
+                  ID: event.ID,
+                  ClosureDate: event.ClosureDate.toLocaleDateString('en-US', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric',
+                  }),
+                  ClosureTime: event.ClosureDate.toLocaleTimeString('en-US', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  }),
+                },
+                Name: event.Name,
+                sendAt: event.ClosureDate.toISOString(),
+              },
+              NotificationSentTypeEnum.CLOSUREDATE,
+              NotificationSentThrough.Email
+            )
+            .then((rr) => {
+              L.info("Create scheduled notification for event's closure date Success: " +  rr?.data);
+            }).catch((err) => {
+              L.error(err);
+            });;
           // Scheduled Email Final Date
-          // notificationsService
-          //   .bulkTrigger(
-          //     users,
-          //     {
-          //       Event: {
-          //         Name: event.Name,
-          //       },
-          //       Name: event.Name,
-          //       sendAt: event.FinalDate.toISOString(),
-          //     },
-          //     NotificationSentType.FINALDATE,
-          //     NotificationSentThrough.Email
-          //   )
-          //   .then((r) => {
-          //     for (let i = 0; i < r.data.data.length ;i++) {
-          //       L.info(r.data.data[i]);
-          //       L.info(r.data.data[i].status + "2");
-          //       L.info(r.data.data[i]["status"] + "3");
-
-          //       var u = prisma.scheduledNotifications.create({
-          //         data: {
-          //           EventID: event.ID!,
-          //           Status: r.data.data[i].status,
-          //           TransactionID: r.data.data[i].transactionId,
-          //           NotificationSentTypeID: 1,
-          //           SentTo: user[i].ID,
-          //           SentAt: event.FinalDate,
-          //           IsCancelled: false,
-          //         },
-          //       })
-          //       L.info("created: " + u)
-          //     }
-          //   });
+          notificationsService
+            .bulkTrigger(
+              users,
+              {
+                Event: {
+                  ID: event.ID,
+                  Name: event.Name,
+                  FinalDate: event.FinalDate.toLocaleDateString('en-US', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric',
+                  }),
+                  FinalTime: event.FinalDate.toLocaleTimeString('en-US', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  }),
+                },
+                Name: event.Name,
+                sendAt: event.FinalDate.toISOString(),
+              },
+              NotificationSentTypeEnum.FINALDATE,
+              NotificationSentThrough.Email
+            )
+            .then((r) => {
+              L.info("Create scheduled notification for event's final date Success" +  r?.data);
+            }).catch((err) => {
+              L.error(err);
+            });;
           return true;
         })
         .catch((error) => {
           L.error(error);
+          return false;
         });
-    }
+        L.info("Created notifications for event's closure and final date: " + created)
+      }
     return Promise.resolve(event);
   }
 
@@ -296,12 +412,12 @@ export class EventsService implements ISuperService<Event> {
     event: Event
   ): Promise<{ isValid: boolean; error?: string; message?: string }> {
     // Validate Name
-    if (!event.Name || !/^[A-Za-z\s]{1,15}$/.test(event.Name)) {
+    if (!event.Name || !/^[A-Za-z\s]{1,50}$/.test(event.Name)) {
       return {
         isValid: false,
         error: EventExceptionMessage.INVALID,
         message:
-          'Event name is invalid, cannot contain numbers or special characters, and must have a maximum of 15 characters.',
+          'Event name is invalid, cannot contain numbers or special characters, and must have a maximum of 50 characters.',
       };
     }
 

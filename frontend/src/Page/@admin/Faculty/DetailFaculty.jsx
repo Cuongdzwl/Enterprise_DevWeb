@@ -1,30 +1,43 @@
 import { useState, useEffect } from 'react';
 import useFetch from '../../../CustomHooks/useFetch';
 import { useNavigate, useParams } from 'react-router-dom';
+import FormGroup from '../../../components/FormGroup';
+import Loading from '../../../components/Loading';
+import { ApiResponse } from '../../../Api';
+
+const Data = {
+    Name: '',
+    Description: '',
+    IsEnabledGuest: false,
+}
 
 const DetailFaculty = () => {
-    const [formData, setFormData] = useState({
-        name: '',
-        description: '',
-        guest: false
-    });
+    // State
+    const [formData, setFormData] = useState(Data);
     const [isLoading] = useState(false);
     const [error] = useState(null);
 
+    // ID, Redirect
     const navigate = useNavigate();
     const { id } = useParams();
 
-    const { data: faculty } = useFetch('http://localhost:3000/faculty/' + id);
+    // Fetch data
+    const { data: faculty } = useFetch(`${ApiResponse}faculties/${id}`);
 
+    // Set form data
     useEffect(() => {
         if (faculty) {
-            const { name, description, guest } = faculty;
-            setFormData({ name, description, guest });
+            setFormData(faculty);
         }
     }, [faculty]);
 
-    const handleBack = () => {
-        navigate('/admin/faculty');
+    // Handle Event
+    const handleBack = () => navigate('/admin/faculty')
+
+    if (!faculty) {
+        return (
+            <Loading />
+        )
     }
 
     return (
@@ -35,27 +48,34 @@ const DetailFaculty = () => {
                 </div>
             </div>
             <div className="row-2">
-                <div className="box">
+                <div className="box"
+                     style={{
+                         height: 'calc(100vh - 150px)'
+                     }}
+                >
                     <div className="box-content">
                         <form>
-                            <div className="form-group">
-                                <label>Name</label>
-                                <input type="text" className='form-control' required name="name" value={formData.name} />
-                            </div>
+                            <FormGroup
+                                label={'Name'}
+                                inputType={'text'}
+                                inputName={'Name'}
+                                value={formData?.Name}
+                            />
+
                             <div className="form-group">
                                 <label>Description</label>
-                                <textarea required name="description" cols="30" rows="10" value={formData.description}></textarea>
+                                <textarea required name="Description" readOnly cols="30" rows="10"
+                                          value={formData?.Description}></textarea>
                             </div>
 
                             <div className="form-group mb-input">
                                 <label>Guest</label>
-                                <input type="text" className='select-guest' readOnly value={formData.guest} />
+                                <input type="text" className='select-guest' readOnly value={formData.IsEnabledGuest}/>
                             </div>
 
                             <div className="form-action">
                                 <button type="submit" onClick={handleBack} className="btn">Cancel</button>
                             </div>
-                            {isLoading && <span>Loading...</span>}
                             {error && <div className="error">{error}</div>}
                         </form>
                     </div>

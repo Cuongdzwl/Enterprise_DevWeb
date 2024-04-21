@@ -8,8 +8,9 @@ import {
 import { ISuperService } from '../interfaces/ISuperService.interface';
 import { IBulkEvents, Novu } from '@novu/node';
 import { NotificationSentThrough } from '../models/NotificationSentThrough';
-import { NotificationSentType } from '../models/NotificationSentType';
+import { NotificationSentTypeEnum } from '../models/NotificationSentType';
 import { User } from '../models/User';
+import { TransactionDTO } from '../models/DTO/TransactionDTO';
 
 const novu = new Novu(process.env.NOVU_API_KEY as string);
 
@@ -23,12 +24,13 @@ export class NotificationService implements ISuperService<Notification> {
   async bulkTrigger(
     user: User[],
     payload: any,
-    type: NotificationSentType,
+    type: NotificationSentTypeEnum,
     through: NotificationSentThrough
   ): Promise<any> {
     if (!this.checkAPIKEY()) {
       throw new Error('NOVU_API_KEY is not set');
     }
+    // Build the payload
     const events: IBulkEvents[] = [];
     for (const u of user) {
       let upayload = payload;
@@ -46,7 +48,7 @@ export class NotificationService implements ISuperService<Notification> {
         sendType.inapp = 'true';
       }
       upayload.sentType = sendType;
-      payload.Name = u.Name;
+      upayload.Name = u.Name;
       events.push({
         name: type,
         to: {
@@ -58,65 +60,207 @@ export class NotificationService implements ISuperService<Notification> {
         payload: upayload,
       });
     }
-    return Promise.resolve(novu.bulkTrigger(events));
+    // Send Payload
+    try {
+      if (events[0].payload.sendAt) {
+        novu.events.bulkTrigger(events).then(async (r) => {
+          var data: TransactionDTO[] = r.data.data;
+          prisma.notificationSentTypes
+            .findFirstOrThrow({ where: { Name: type as string } })
+            .then((notiType) => {
+              for (let i = 0; i < user.length; i++) {
+                const u = user[i];
+                const d = data[i];
+                var notification: Notification = {
+                  NotificationSentTypeID: notiType.ID,
+                  EventID: payload.Event.ID,
+                  SentTo: u.ID,
+                  SentAt: payload.sendAt,
+                  TransactionID: d.transactionId,
+                  Acknowledged: d.acknowledged,
+                  Status: d.status,
+                  IsCancelled: false,
+                };
+                this.create(notification).catch((err) => {
+                  L.error(err);
+                });
+              }
+              L.info('Scheduled Notifications Created');
+              return Promise.resolve({ success: true });
+            })
+            .catch((_) => {
+              // Create new if doesn't exist
+              prisma.notificationSentTypes
+                .create({
+                  data: {
+                    Name: type as string,
+                  },
+                })
+                .then((notiType) => {
+                  for (let i = 0; i < user.length; i++) {
+                    const u = user[i];
+                    const d = data[i];
+                    var notification: Notification = {
+                      NotificationSentTypeID: notiType.ID,
+                      EventID: payload.Event.ID,
+                      SentTo: u.ID,
+                      SentAt: payload.sendAt,
+                      TransactionID: d['transactionId'],
+                      Acknowledged: d['acknowledged'],
+                      Status: d['status'],
+                      IsCancelled: false,
+                    };
+                    this.create(notification).catch((err) => {
+                      L.error(err);
+                    });
+                  }
+
+                  return Promise.resolve({ success: true });
+                });
+            });
+        }).catch((err) => {L.error(err); Promise.reject(err.data)});
+        // this.create({});
+        return Promise.resolve({ success: true });
+      } else {
+        novu.events.bulkTrigger(events).catch((error) => {
+          L.error(error.data);
+        });
+        return Promise.resolve({ success: true });
+      }
+    } catch (err) {
+      return Promise.resolve({ success: true , message: "Faculty Empty"});
+    }
   }
   async trigger(
     user: User,
     payload: any,
-    type: NotificationSentType,
+    type: NotificationSentTypeEnum,
     through: NotificationSentThrough
   ): Promise<any> {
-    var to: any = {
-      subscriberId: user.ID,
-      email: through === NotificationSentThrough.Email ? user.Email : undefined,
-    };
+    try {
+      var to: any = {
+        subscriberId: user.ID,
+        email:
+          through === NotificationSentThrough.Email ? user.Email : undefined,
+      };
 
-    var phone: string | undefined = undefined;
-    //
-    if (user.Phone || through === NotificationSentThrough.SMS)
-      to.phone = user.Phone;
-    if (user.NewPhone || through === NotificationSentThrough.NewSMS)
-      to.phone = user.NewPhone;
+      var phone: string | undefined = undefined;
+      //
+      if (user.Phone || through === NotificationSentThrough.SMS)
+        to.phone = user.Phone;
+      if (user.NewPhone || through === NotificationSentThrough.NewSMS)
+        to.phone = user.NewPhone;
 
-    var sendType: any = {};
-    if (
-      through === NotificationSentThrough.SMS ||
-      (through === NotificationSentThrough.NewSMS && !to.phone)
-    ) {
-      sendType.sms = 'true';
+      var sendType: any = {};
+      if (
+        through === NotificationSentThrough.SMS ||
+        (through === NotificationSentThrough.NewSMS && !to.phone)
+      ) {
+        sendType.sms = 'true';
+      }
+      if (through === NotificationSentThrough.Email) {
+        sendType.email = 'true';
+      }
+      if (through === NotificationSentThrough.InApp) {
+        sendType.inapp = 'true';
+      }
+      payload.sentType = sendType;
+      L.info(to);
+      L.info(payload);
+      if (payload.sendAt) {
+        novu
+          .trigger(type as string, {
+            to,
+            payload: payload,
+          })
+          .then((r) => {
+            L.info(r.data);
+
+            const data: TransactionDTO = r.data;
+            prisma.notificationSentTypes
+              .findFirstOrThrow({ where: { Name: type as string } })
+              .then((notiType) => {
+                var notification: Notification = {
+                  NotificationSentTypeID: notiType.ID,
+                  EventID: payload.EventID,
+                  SentTo: user.ID,
+                  SentAt: payload.sendAt,
+                  TransactionID: data.transactionId,
+                  Acknowledged: data.acknowledged,
+                  Status: data.status,
+                  IsCancelled: false,
+                };
+                this.create(notification);
+              })
+              .catch((_) => {
+                // Create new if doesn't exist
+                prisma.notificationSentTypes
+                  .create({
+                    data: {
+                      Name: type as string,
+                    },
+                  })
+                  .then((notiType) => {
+                    var notification: Notification = {
+                      NotificationSentTypeID: notiType.ID,
+                      EventID: payload.EventID,
+                      SentTo: user.ID,
+                      SentAt: payload.sendAt,
+                      TransactionID: data.transactionId,
+                      Acknowledged: data.acknowledged,
+                      Status: data.status,
+                      IsCancelled: false,
+                    };
+                    this.create(notification);
+                  });
+              });
+            return Promise.resolve({ success: true });
+          }).catch(error => {L.error(error); Promise.reject(error.data);});
+      } else {
+        novu.trigger(type as string, { to, payload }).catch((error) => {
+          L.error(error.data);
+        });
+        return Promise.resolve({ success: true });
+      }
+    } catch (error) {
+      Promise.reject({ success: false, error: error });
     }
-    if (through === NotificationSentThrough.Email) {
-      sendType.email = 'true';
-    }
-    if (through === NotificationSentThrough.InApp) {
-      sendType.inapp = 'true';
-    }
-    payload.sentType = sendType;
-    L.info(to);
-    L.info(payload);
-    Promise.resolve(
-      novu
-        .trigger(type as string, {
-          to,
-          payload: payload,
-        })
-        .then((_) => {
-          if (payload.SendAt) {
-            // save to db
-          }
-        })
-    );
   }
-  cancel(transactionID: string): Promise<any> {
-    return Promise.resolve(novu.events.cancel(transactionID));
-  }
-  bulkCancel(transactionID: string[]) {
-    transactionID.forEach((element) => {
-      novu.events.cancel(element);
+  cancel(transactionid : string): Promise<any>{
+    return novu.events.cancel(transactionid).then((r) => {
+      L.info(r);
+      return Promise.resolve({ success: true });
     });
   }
-  broadcast(payload: any, type: NotificationSentType) {
-    payload.sentType = type;
+  async bulkCancel(transactions: string[]): Promise<any> {
+    var cancelled: string[] = [];
+    L.info(`Start mass cancelling....`);
+    for (const id of transactions) {
+      if (typeof id === 'string') {
+        novu.events
+          .cancel(id)
+          .then((_) => {
+            cancelled.push(id);
+            L.info(`Cancelled ${model} with transactionID ${id}`);
+          })
+          .catch((err) => {
+            L.error(err);
+          });
+      }
+    }
+
+    prisma.scheduledNotifications
+      .updateMany({
+        where: { TransactionID: { in: cancelled } },
+        data: { IsCancelled: true },
+      })
+      .then((r) => {
+        L.info(r);
+      })
+      .catch((err) => {
+        L.error(err);
+      });
+    return Promise.resolve({ success: true });
   }
   all(): Promise<any> {
     const scheduledNotifications = prisma.scheduledNotifications.findMany();
@@ -156,46 +300,44 @@ export class NotificationService implements ISuperService<Notification> {
   // Create
   create(notification: Notification): Promise<any> {
     // TODO: VALIDATE CONSTRAINTss
-    if (!this.validateConstraints(notification)) {
-      return Promise.resolve({
-        error: ExceptionMessage.INVALID,
-        message: ExceptionMessage.BAD_REQUEST,
+    L.info(notification);
+    return prisma.scheduledNotifications
+      .create({
+        data: {
+          NotificationSentTypeID: notification.NotificationSentTypeID,
+          EventID: notification.EventID,
+          SentTo: notification.SentTo,
+          SentAt: notification.SentAt,
+          TransactionID: notification.TransactionID,
+          Acknowledged: notification.Acknowledged,
+          Status: notification.Status,
+          IsCancelled: notification.IsCancelled || false,
+        },
+      })
+      .then((result) => {
+        L.info(`create ${model} with id ${result.ID}`);
+        return Promise.resolve(result);
+      })
+      .catch((err) => {
+        return Promise.reject(err);
       });
-    }
-    //
-    try {
-      // Validate Constraint
-      L.info(`create ${model} with id ${notification.ID}`);
-      // const createdNotification = prisma.scheduledNotifications.create({
-      //   data: {
-
-      //   },
-      // });
-      const createdNotification = null;
-      return Promise.resolve(createdNotification);
-    } catch (error) {
-      L.error(`create ${model} failed: ${error}`);
-      return Promise.resolve({
-        error: ExceptionMessage.INVALID,
-        message: ExceptionMessage.BAD_REQUEST,
-      });
-    }
   }
   // Delete
   delete(id: number): Promise<any> {
-    try {
-      L.info(`delete ${model} with id ${id}`);
-      const deletedNotification = prisma.scheduledNotifications.delete({
+    L.info(`delete ${model} with id ${id}`);
+    return prisma.scheduledNotifications
+      .delete({
         where: { ID: id },
+      })
+      .then((r) => {
+        return Promise.resolve(r);
+      })
+      .catch((_) => {
+        return Promise.resolve({
+          error: ExceptionMessage.INVALID,
+          message: ExceptionMessage.BAD_REQUEST,
+        });
       });
-      return Promise.resolve(deletedNotification);
-    } catch (error) {
-      L.error(`delete ${model} failed: ${error}`);
-      return Promise.resolve({
-        error: ExceptionMessage.INVALID,
-        message: ExceptionMessage.BAD_REQUEST,
-      });
-    }
   }
   // Update
   update(id: number, notification: Notification): Promise<any> {

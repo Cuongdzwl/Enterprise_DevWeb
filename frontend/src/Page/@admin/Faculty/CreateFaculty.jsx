@@ -1,34 +1,37 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import FormGroup from '../../../components/FormGroup';
+import Loading from '../../../components/Loading';
+import { ApiResponse } from '../../../Api';
+
+const Data = {
+    Name: '',
+    Description: '',
+    IsEnabledGuest: false,
+}
 
 const CreateFaculty = () => {
-    const [formData, setFormData] = useState({
-        name: '',
-        description: '',
-        guest: false
-    });
+    // State
+    const [formData, setFormData] = useState(Data);
     const [isFormValid, setIsFormValid] = useState(false);
-    const [validationErrors, setValidationErrors] = useState({
-        name: '',
-        description: ''
-    });
+    const [validationErrors, setValidationErrors] = useState(Data);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
-
     const navigate = useNavigate();
 
+    // Validate form
     useEffect(() => {
-        setIsFormValid(Object.values(validationErrors).every(error => error === '') && Object.values(formData).every(value => value !== ''));
+        setIsFormValid(Object.values(validationErrors).every(error => error === ''));
     }, [validationErrors, formData]);
 
     const validateField = (name, value) => {
         let errorMessage = '';
         switch (name) {
-            case 'name':
-                errorMessage = value.trim() ? '' : 'Name is required.';
+            case 'Name':
+                errorMessage = value.trim() && /^[A-Za-z\s]{1,50}$/.test(value) ? '' : 'Invalid faculty name: no numbers or special characters, max 15 chars';
                 break;
-            case 'description':
-                errorMessage = value.trim() ? '' : 'Description is required.';
+            case 'Description':
+                errorMessage = value.length < 3000 ? '' : 'Description is invalid, must have a maximum of 3000 characters.'
                 break;
             default:
                 break;
@@ -36,47 +39,45 @@ const CreateFaculty = () => {
         setValidationErrors(prevState => ({ ...prevState, [name]: errorMessage }));
     };
 
+
+    // Handle Event
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData(prevState => ({ ...prevState, [name]: value }));
         validateField(name, value);
-        const inputElement = e.target;
-        if (validationErrors[name]) {
-            inputElement.classList.remove('valid');
-            inputElement.classList.add('invalid');
-        } else {
-            inputElement.classList.remove('invalid');
-            inputElement.classList.add('valid');
-        }
     };
 
-    const handleBack = () => {
-        navigate(-1);
-    }
+    const handleBack = () => navigate('/admin/faculty')
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-
         if (!isFormValid) {
             setError("Please fill in all fields correctly.");
             return;
+        }
+        const newFormData = {
+            ...formData,
+            IsEnabledGuest: formData.IsEnabledGuest === 'true' ? true : false,
         }
 
         setIsLoading(true);
         setError(null);
 
         try {
-            const response = await fetch('http://localhost:3000/faculty', {
+            const response = await fetch(`${ApiResponse}faculties`, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + localStorage.getItem('token')
                 },
-                body: JSON.stringify(formData)
+                body: JSON.stringify(newFormData)
             });
             if (!response.ok) {
-                throw new Error('Failed to create faculty');
+                const data = await response.json();
+                setError(data.message);
+                return;
             }
-            navigate(-1);
+            navigate('/admin/faculty');
         } catch (error) {
             console.error('Error creating faculty:', error);
             setError('Failed to create faculty. Please try again later.');
@@ -93,34 +94,41 @@ const CreateFaculty = () => {
                 </div>
             </div>
             <div className="row-2">
-                <div className="box">
+                <div className="box"
+                style={{
+                    height: 'calc(100vh - 150px)'
+                }}
+                >
                     <div className="box-content">
                         <form onSubmit={handleSubmit}>
-                            <div className="form-group">
-                                <label>Name</label>
-                                <input type="text" className='form-control' required name="name" value={formData.name} onChange={handleChange} />
-                                {validationErrors.name && <div className="error">{validationErrors.name}</div>}
-                            </div>
+                            <FormGroup
+                                label={'Name'}
+                                inputType={'text'}
+                                inputName={'Name'}
+                                value={formData.Name}
+                                onChange={handleChange}
+                            />
+                            {validationErrors.Name && <div className="error">{validationErrors.Name}</div>}
+
                             <div className="form-group">
                                 <label>Description</label>
-                                <textarea required name="description" cols="30" rows="10" value={formData.description} onChange={handleChange}></textarea>
-                                {validationErrors.description && <div className="error">{validationErrors.description}</div>}
+                                <textarea required name="Description" cols="30" rows="10" value={formData.Description} onChange={handleChange}></textarea>
+                                {validationErrors.Description && <div className="error">{validationErrors.Description}</div>}
                             </div>
 
                             <div className="form-group mb-input">
                                 <label>Guest</label>
-                                <select value={formData.guest} onChange={handleChange} className='form-control' required name="guest">
+                                <select value={formData.IsEnabledGuest} onChange={handleChange} className='form-control' name="IsEnabledGuest">
                                     <option value="" hidden>Select Guest</option>
-                                    <option value={true}>True</option>
-                                    <option value={false}>False</option>
+                                    <option value='true'>True</option>
+                                    <option value='false'>False</option>
                                 </select>
                             </div>
 
                             <div className="form-action">
                                 <button type="submit" onClick={handleBack} className="btn">Cancel</button>
-                                <button type="submit" disabled={!isFormValid || isLoading} className="btn">Create</button>
+                                <button type="submit" className="btn" disabled={!isFormValid}>Create</button>
                             </div>
-                            {isLoading && <span>Loading...</span>}
                             {error && <div className="error">{error}</div>}
                         </form>
                     </div>

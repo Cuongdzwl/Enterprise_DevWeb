@@ -10,8 +10,9 @@ import bcrypt from 'bcrypt';
 import utils from '../common/utils';
 import { UserDTO } from '../models/DTO/User.DTO';
 import { NotificationSentThrough } from '../models/NotificationSentThrough';
-import { NotificationSentType } from '../models/NotificationSentType';
+import { NotificationSentTypeEnum } from '../models/NotificationSentType';
 import { Faculty } from '../models/Faculty';
+import contributionsService from '../services/contributions.service';
 
 const prisma = new PrismaClient();
 const model = 'user';
@@ -87,14 +88,6 @@ export class UsersService implements ISuperService<User> {
 
   // Create
   async create(user: User): Promise<any> {
-    const validations = await this.validateConstraints(user);
-    if (!validations.isValid) {
-      L.error(`create ${model} failed: invalid constraints`);
-      return Promise.resolve({
-        error: validations.error,
-        message: validations.message,
-      });
-    }
     try {
       L.info(`create ${model} with id ${user.ID}`);
 
@@ -113,30 +106,32 @@ export class UsersService implements ISuperService<User> {
           Phone: user.Phone,
           Address: user.Address,
           RoleID: user.RoleID,
-          FacultyID: user.FacultyID,
+          FacultyID: user.FacultyID || null,
         },
       });
       // Send email
-      var faculty: Faculty | null = await prisma.faculties.findUnique({
-        where: { ID: user.FacultyID },
-      });
-      if (!(faculty == null)) {
-        const payload: any = {
-          Faculty: { Name: faculty.Name },
-          Name: user.Name,
-          Password: password,
-        };
-        NotificationService.trigger(
-          createdUser as User,
-          payload,
-          NotificationSentType.EMAILPASSWORD,
-          NotificationSentThrough.Email
-        );
-      } else
-        return Promise.reject({
-          error: UserExceptionMessage.INVALID,
-          message: UserExceptionMessage.INVALID_FACULTYID,
+      var fName: string = '';
+      if (user.FacultyID) {
+        var faculty: Faculty | null = await prisma.faculties.findUnique({
+          where: { ID: user.FacultyID },
         });
+
+        if (!(faculty == null)) {
+          fName = faculty.Name;
+        }
+      }
+      const payload: any = {
+        Faculty: { Name: fName },
+        Name: user.Name,
+        Password: password,
+      };
+      NotificationService.trigger(
+        createdUser as User,
+        payload,
+        NotificationSentTypeEnum.EMAILPASSWORD,
+        NotificationSentThrough.Email
+      );
+
       return Promise.resolve(createdUser);
     } catch (error) {
       L.error(`create ${model} failed: ${error}`);
@@ -147,9 +142,16 @@ export class UsersService implements ISuperService<User> {
     }
   }
   // Delete
-  delete(id: number): Promise<any> {
+  async delete(id: number): Promise<any> {
     L.info(`delete ${model} with id ${id}`);
-    return prisma.comments
+    const contributions = await prisma.contributions.findMany({
+      where: { UserID: id },
+    });
+    for (const contribution of contributions) {
+      console.log(contribution.ID)
+      await contributionsService.delete(contribution.ID)
+    }
+    return prisma.users
       .delete({
         where: { ID: id },
       })
@@ -163,76 +165,86 @@ export class UsersService implements ISuperService<User> {
           message: ExceptionMessage.BAD_REQUEST,
         });
       });
-      
   }
   // Update
   async update(id: number, user: User, updateProfile?: boolean): Promise<any> {
-    L.info(`update ${model} with id ${id}`);
-
-    const result = await prisma.users.findUnique({ where: { ID: id } });
-
-    if (!result)
-      return Promise.reject({
-        error: UserExceptionMessage.INVALID,
-        message: UserExceptionMessage.BAD_REQUEST,
-      });
-
-    if (user.Password) {
-      var hashedPassword: string = utils.hashedPassword(
-        user.Password,
-        result.Salt
-      );
-    } else {
-      hashedPassword = result.Password;
-    }
-    L.info(result);
-    L.info(user);
-    var data: any = {
-      Name: user.Name,
-      Password: hashedPassword,
-      Email: user.Email,
-      Phone: user.Phone,
-      Address: user.Address,
-      RoleID: user.RoleID,
-      FacultyID: user.FacultyID,
-    };
-    L.info(data);
-    L.info(result.ID + ' updated');
-    if (updateProfile && updateProfile == true) {
-      (data.RoleID = result.RoleID), (data.FacultyID = result.FacultyID);
-    }
-    const updatedUser = await prisma.users.update({
-      where: { ID: id },
-      data,
+    L.info(`updating ${model} with id ${id}`);
+    // find user
+    return prisma.users.findUnique({ where: { ID: id } }).then(async (result) => {
+      if (!result) {
+        return Promise.reject({
+          error: UserExceptionMessage.USER_NOT_FOUND,
+          message: 'Not Found',
+        });
+      }
+      // hashed password
+      if (user.Password) {
+        var hashedPassword: string = utils.hashedPassword(
+          user.Password,
+          result.Salt
+        );
+      } else {
+        hashedPassword = result.Password;
+      }
+      // Update
+      // Parse Faculty ID
+      
+      var data: any = {
+        Name: user.Name,
+        Password: hashedPassword,
+        Email: user.Email,
+        Phone: user.Phone,
+        Address: user.Address,
+        RoleID: user.RoleID,
+        FacultyID: user.FacultyID || undefined,
+      };
+      // updateProfile
+      if (updateProfile && updateProfile == true) {
+        (data.RoleID = result.RoleID), (data.FacultyID = result.FacultyID);
+      }
+      return prisma.users
+        .update({
+          where: { ID: id },
+          data,
+        })
+        .then((updatedUser) => {
+          L.info(`updated ${model} with id ${id} : ${updatedUser}`);
+          return Promise.resolve(new UserDTO().map(updatedUser as User));
+        })
+        .catch((error) => {
+          L.info(`updated ${model} error: ${error}`);
+          if (error.code === 'P2002') {
+            // Handle unique constraint violation
+            return Promise.reject({
+              error: UserExceptionMessage.CONSTRAINT_VIOLATION,
+              message: 'A user with the provided email already exists.',
+            });
+          }
+          // Handle other errors
+          return Promise.reject(error);
+        });
     });
-    return Promise.resolve(new UserDTO().map(updatedUser as User));
   }
 
   async validateConstraints(
-    user: User
+    user: User,
+    update: boolean
   ): Promise<{ isValid: boolean; error?: string; message?: string }> {
-    {
-      // Validate Name
-      if (!user.Name || !/^[A-Za-z\s]{1,15}$/.test(user.Name)) {
+    user;
+
+    //  Validate Password
+    if (user.Password) {
+      if (!/(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}/.test(user.Password)) {
         return {
           isValid: false,
           error: UserExceptionMessage.INVALID,
           message:
-            'User name is invalid, cannot contain numbers or special characters, and must have a maximum of 15 characters.',
+            'Password must be at least 8 characters long and contain both letters and numbers.',
         };
       }
-
-      //  Validate Password
-      if (user.Password) {
-        if (!/(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}/.test(user.Password)) {
-          return {
-            isValid: false,
-            error: UserExceptionMessage.INVALID,
-            message:
-              'Password must be at least 8 characters long and contain both letters and numbers.',
-          };
-        }
-      }
+    }
+    console.log(user.ID);
+    if (!update) {
       // Validate Email
       if (!user.Email || !/\S+@\S+\.\S+/.test(user.Email)) {
         return {
@@ -242,49 +254,70 @@ export class UsersService implements ISuperService<User> {
             "Email must contain '@' and cannot contain other special characters.",
         };
       }
-
       // Validate Uniquely Existing Fields
       const userNameExisted = await prisma.users.findFirst({
         where: {
-          Email: user.Email,  // Name Email only have 1 in server
+          Email: user.Email, // Name Email only have 1 in server
         },
       });
       if (userNameExisted) {
         return {
           isValid: false,
           error: UserExceptionMessage.EMAIL_EXISTED,
-          message: `A ${userNameExisted} already exists.`,
+          message: `A ${userNameExisted.Email} already exists.`,
         };
       }
-      
-      // Validate Role ID
-      if(user.RoleID === null || user.RoleID === undefined || !user.FacultyID){
-        return {
-          isValid: false,
-          error: UserExceptionMessage.INVALID_ROLEID,
-          message: 'Role ID must be a number with a maximum of 20 digits.',
-        };
-      }
-      if (!/^\d{1,20}$/.test(user.RoleID.toString())) {
-        return {
-          isValid: false,
-          error: UserExceptionMessage.INVALID_ROLEID,
-          message: 'Invalid Contribution ID format.',
-        };
-      }
+    }
+    // Validate Role ID
+    if (
+      user.RoleID === null ||
+      user.RoleID === undefined ||
+      !user.RoleID ||
+      !Number.isInteger(user.RoleID) ||
+      typeof user.RoleID !== 'number'
+    ) {
+      return {
+        isValid: false,
+        error: UserExceptionMessage.INVALID_ROLEID,
+        message: 'Role ID must be a number with a maximum of 20 digits.',
+      };
+    }
+    if (!/^\d{1,20}$/.test(user.RoleID.toString())) {
+      return {
+        isValid: false,
+        error: UserExceptionMessage.INVALID_ROLEID,
+        message: 'Invalid Contribution ID format.',
+      };
+    }
+    //     // Validate Role ID
+    //     if(user.RoleID === null || user.RoleID === undefined || !user.FacultyID){
+    //       return {
+    //         isValid: false,
+    //         error: UserExceptionMessage.INVALID_ROLEID,
+    //         message: 'Role ID must be a number with a maximum of 20 digits.',
+    //       };
+    //     }
+    //     if (!/^\d{1,20}$/.test(user.RoleID.toString())) {
+    //       return {
+    //         isValid: false,
+    //         error: UserExceptionMessage.INVALID_ROLEID,
+    //         message: 'Invalid Contribution ID format.',
+    //       };
+    //     }
 
-      const roleExists = await prisma.roles.findUnique({
-        where: { ID: user.RoleID },
-      });
-      if (!roleExists) {
-        return {
-          isValid: false,
-          error: UserExceptionMessage.INVALID_ROLEID,
-          message: 'Referenced Role does not exist.',
-        };
-      }
+    const roleExists = await prisma.roles.findUnique({
+      where: { ID: user.RoleID },
+    });
+    if (!roleExists) {
+      return {
+        isValid: false,
+        error: UserExceptionMessage.INVALID_ROLEID,
+        message: 'Referenced Role does not exist.',
+      };
+    }
 
-      // Validate Faculty ID
+    // Validate Faculty ID
+    if(user.RoleID && (user.RoleID == 3 || user.RoleID == 4)){
       if (
         user.FacultyID != null &&
         !/^\d{1,20}$/.test(user.FacultyID.toString())
@@ -295,27 +328,34 @@ export class UsersService implements ISuperService<User> {
           message: 'Faculty ID must be a number with a maximum of 20 digits.',
         };
       }
-      const facultyexists = await prisma.faculties.findUnique({
-        where: { ID: user.FacultyID },
-      });
-      if (!facultyexists) {
-        return {
-          isValid: false,
-          error: UserExceptionMessage.INVALID_FACULTYID,
-          message: 'Referenced Faculty does not exist.',
-        };
+      
+      if (user.FacultyID) {
+        const facultyexists = await prisma.faculties.findUnique({
+          where: { ID: user.FacultyID },
+        });
+        if (!facultyexists) {
+          return {
+            isValid: false,
+            error: UserExceptionMessage.INVALID_FACULTYID,
+            message: 'Referenced Faculty does not exist.',
+          };
+        }
       }
-
+    }
+      if (user.Phone) {
       // Validate Phone
       if (!user.Phone || !/^\+?[0-9]\d{1,20}$/.test(user.Phone)) {
         return {
           isValid: false,
           error: UserExceptionMessage.INVALID,
-          message: "Phone number must start with an optional '+' and be followed by 1 to 20 digits."
+          message:
+            "Phone number must start with an optional '+' and be followed by 1 to 20 digits.",
         };
       }
+    }
 
-      // Validate Address
+    // Validate Address
+    if (user.Address) {
       if (user.Address && user.Address.length > 300) {
         return {
           isValid: false,
@@ -324,67 +364,74 @@ export class UsersService implements ISuperService<User> {
             'Address cannot be longer than 300 characters and cannot contain special characters.',
         };
       }
-
-
-          //validate role name and relationship
-          if (roleExists.Name === 'Marketing Manager' || roleExists.Name === 'Marketing Coordinator' || roleExists.Name === 'Admin' || roleExists.Name === 'Student') {
-            if(roleExists.Name === 'Marketing Manager'){
-              const userWithRoleMarketingManager = await prisma.users.findFirst({
-                where: {
-                  RoleID: user.RoleID,  // Server only have 1 Marketing Manager
-                },
-              });
-              if (userWithRoleMarketingManager) {
-                return {
-                  isValid: false,
-                  error: UserExceptionMessage.ROLE_ALREADY_ASSIGNED_IN_SEVER,
-                  message: `A ${roleExists.Name} already exists in this server.`,
-                };
-              }
-            }
-            if(roleExists.Name === 'Marketing Coordinator'){
-    
-            const userWithRoleInFaculty = await prisma.users.findFirst({
-              where: {
-                RoleID: user.RoleID,
-                FacultyID: user.FacultyID, // Faculty only have 1 Marketing Coordinator
-              },
-            });
-            if (userWithRoleInFaculty) {
-              return {
-                isValid: false,
-                error: UserExceptionMessage.ROLE_ALREADY_ASSIGNED_IN_FACULTY,
-                message: `A ${roleExists.Name} already exists in this faculty.`,
-              };
-            }
-          }
-          } else {
-            return {
-              isValid: false,
-              error: UserExceptionMessage.INVALID_FACULTYID,
-              message: 'Role name must be belong to the allowed names like Marketing Manager , Marketing Coordinator , Admin , Student.',
-            };
-          };
-    
-      // If all validations pass
-      return { isValid: true };
     }
-  }
-  async validateConstraintsForPassword(
-    user: User
-  ): Promise<{ isValid: boolean; error?: string; message?: string }> {
-    //validate password
-    if (!user.Password){
-      if (!/(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}/.test(user.Password)) {
+
+    //validate role name and relationship
+    if (
+      roleExists.Name === 'Marketing Manager' ||
+      roleExists.Name === 'Marketing Coordinator' ||
+      roleExists.Name === 'Admin' ||
+      roleExists.Name === 'Student'
+    ) {
+      if (roleExists.Name === 'Marketing Manager') {
+        const userWithRoleMarketingManager = await prisma.users.findFirst({
+          where: {
+            RoleID: user.RoleID, // Server only have 1 Marketing Manager
+          },
+        });
+        if (userWithRoleMarketingManager) {
           return {
             isValid: false,
-            error: UserExceptionMessage.INVALID,
-            message:
-              'Password must be at least 8 characters long and contain both letters and numbers.',
+            error: UserExceptionMessage.ROLE_ALREADY_ASSIGNED_IN_SEVER,
+            message: `A ${roleExists.Name} already exists in this server.`,
           };
         }
       }
-     return { isValid: true };}
+      if (roleExists.Name === 'Marketing Coordinator') {
+        const userWithRoleInFaculty = await prisma.users.findFirst({
+          where: {
+            RoleID: user.RoleID,
+            FacultyID: user.FacultyID, // Faculty only have 1 Marketing Coordinator
+          },
+        });
+        if (userWithRoleInFaculty) {
+          return {
+            isValid: false,
+            error: UserExceptionMessage.ROLE_ALREADY_ASSIGNED_IN_FACULTY,
+            message: `A ${roleExists.Name} already exists in this faculty.`,
+          };
+        }
+      }
+    } else {
+      return {
+        isValid: false,
+        error: UserExceptionMessage.INVALID_FACULTYID,
+        message:
+          'Role name must be belong to the allowed names like Marketing Manager , Marketing Coordinator , Admin , Student.',
+      };
+    }
+
+    // If all validations pass
+    return { isValid: true };
+  }
+  validatePassword(password: string): {
+    isValid: boolean;
+    error?: string;
+    message?: string;
+  } {
+    //validate password
+
+    if (!/(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}/.test(password)) {
+      return {
+        isValid: false,
+        error: UserExceptionMessage.INVALID,
+        message:
+          'Password must be at least 8 characters long and contain both letters and numbers.',
+      };
+    }
+
+    return { isValid: true };
+  }
 }
 
 export default new UsersService();
