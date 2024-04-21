@@ -50,25 +50,11 @@ npm run compile
 npm start
 ```
 
-## Test It
-
-Run the Mocha unit tests
-
-```shell
-npm test
-```
-
-or debug them
-
-```shell
-npm run test:debug
-```
-
 ## Try It
 * Open your browser to [http://localhost:3000](http://localhost:3000)
-* Invoke the `/examples` endpoint 
+* Invoke the `/spec` endpoint 
   ```shell
-  curl http://localhost:3000/api/v1/examples
+  curl http://localhost:3000/api/v1/spec
   ```
 
 
