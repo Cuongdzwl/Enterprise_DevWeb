@@ -29,9 +29,7 @@
 ![Azure](https://img.shields.io/badge/-Azure-0089D6?logo=microsoft-azure&logoColor=white) ![Azure Blob Storage](https://img.shields.io/badge/-Azure%20Blob%20Storage-0078D4?logo=azuredevops&logoColor=white) ![SQL Server](https://img.shields.io/badge/-SQL%20Server-CC2927?logo=microsoft-sql-server&logoColor=white)
 
 #### Other:
-<img src="https://assets.super.so/1e9f5a51-c4c6-4fca-b6e8-25fa0186f139/images/0f550019-16db-4a65-90d1-1bdb7d3c5f20/novu-logo-gradient-light-background2x.png" alt="Novu Logo" width="10%"/>
-<img src="https://corp-backend.brevo.com/wp-content/uploads/2023/04/Brevo-Logo-1.png" alt="Brevo Logo" width="10%"/>
-<img src="[https://corp-backend.brevo.com/wp-content/uploads/2023/04/Brevo-Logo-1.png](https://cf-assets.www.cloudflare.com/slt3lc6tev37/7bIgGp4hk4SFO0o3SBbOKJ/b48185dcf20c579960afad879b25ea11/CF_logo_stacked_blktype.jpg)" alt="Cloudflared Logo" width="10%"/>]
+<img src="https://assets.super.so/1e9f5a51-c4c6-4fca-b6e8-25fa0186f139/images/0f550019-16db-4a65-90d1-1bdb7d3c5f20/novu-logo-gradient-light-background2x.png" alt="Novu Logo" width="5%"/> <img src="https://corp-backend.brevo.com/wp-content/uploads/2023/04/Brevo-Logo-1.png" alt="Brevo Logo" width="5%"/> <img src="https://corp-backend.brevo.com/wp-content/uploads/2023/04/Brevo-Logo-1.png](https://cf-assets.www.cloudflare.com/slt3lc6tev37/7bIgGp4hk4SFO0o3SBbOKJ/b48185dcf20c579960afad879b25ea11/CF_logo_stacked_blktype.jpg" alt="Cloudflared Logo" width="5%"/>
 
 
 
