@@ -22,9 +22,13 @@ jobs:
         port: 22
         script: |
           cd /usr/src/Enterprise_DevWeb/backend/webAPI
+          curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash
+          export NVM_DIR="$HOME/.nvm"
+          [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" 
           node --version
           nvm install 18
           nvm use 18       
+          node --version
           sudo npm install -g pm2
           echo "Installing dependencies..."
           git pull origin master
@@ -33,7 +37,7 @@ jobs:
           rm -rf .env
           touch .env
           echo 'OPENAPI_SPEC="${{ secrets.OPENAPI_SPEC}}"' >> .env
-          echo 'PORT=' >> ${{ secrets.PORT}} >> .env
+          echo 'PORT= ${{ secrets.PORT}}' >> .env
           echo 'DATABASE_URL="${{ secrets.DATABASE_URL}}"' >> .env
           echo 'AZURE_STORAGE_CONNECTION_STRING="${{ secrets.AZURE_STORAGE_CONNECTION_STRING}}"' >> .env
           echo 'AZURE_STORAGE_CONTAINER_NAME="${{ secrets.AZURE_STORAGE_CONTAINER_NAME}}"' >> .env
