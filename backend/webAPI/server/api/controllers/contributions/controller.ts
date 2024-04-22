@@ -171,11 +171,6 @@ export class ContributionsController implements ISuperController {
     }
     try {
       // cancel notification
-      if (!(await ContributionsService.validateSubmissionAlreadyApproved(id))) {
-        L.error("Failed to delete. Contrubution Accepted")
-        res.status(400).json({ message: "This contribution has been accepted. No further action needed!" })
-        return
-      }
       // delete notification
       // delete contribution
       ContributionsService.delete(id).then((r) => {
