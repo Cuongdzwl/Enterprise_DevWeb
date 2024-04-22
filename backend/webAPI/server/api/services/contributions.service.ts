@@ -474,7 +474,23 @@ export class ContributionsService implements ISuperService<Contribution> {
       });
     }
   }
-
+  async submit (idContribution: number):Promise< {submitCheck:boolean, message?:string}>{
+    try {
+    const contribution = await prisma.contributions.findUnique({
+      where: { ID: idContribution },
+    })
+    if(contribution)
+      {
+    if(contribution.StatusID === 1){
+      return {submitCheck: false, message:'This contribution is pending'}
+    }
+    return {submitCheck: true, message:'This contribution was graded bay Marketing Coordinator'}
+  }
+  return {submitCheck: true, message:'This contribution is not exist'}
+  } catch (error) {
+      return {submitCheck: true, message:'Erros while check this submit'}
+  }
+  }
   async validateConstraints(
     contribution: Contribution
   ): Promise<{ isValid: boolean; error?: string; message?: string }> {
