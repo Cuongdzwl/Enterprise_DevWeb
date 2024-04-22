@@ -474,7 +474,23 @@ export class ContributionsService implements ISuperService<Contribution> {
       });
     }
   }
-
+  async submit (idContribution: number):Promise< {submitCheck:boolean, message?:string}>{
+    try {
+    const contribution = await prisma.contributions.findUnique({
+      where: { ID: idContribution },
+    })
+    if(contribution)
+      {
+    if(contribution.StatusID === 1){
+      return {submitCheck: false, message:'This contribution is pending'}
+    }
+    return {submitCheck: true, message:'This contribution was graded bay Marketing Coordinator'}
+  }
+  return {submitCheck: true, message:'This contribution is not exist'}
+  } catch (error) {
+      return {submitCheck: true, message:'Erros while check this submit'}
+  }
+  }
   async validateConstraints(
     contribution: Contribution
   ): Promise<{ isValid: boolean; error?: string; message?: string }> {
@@ -566,27 +582,6 @@ export class ContributionsService implements ISuperService<Contribution> {
     }
   }
 
-  async validateSubmissionAlreadyApproved(id : number):Promise<boolean>{
-    return await prisma.contributions.findFirst({
-      where: {
-        ID : Number(id)
-      }
-    }).then((r) => {
-      L.info(r)
-      if (r == null || r == undefined){
-        L.info("here1");
-        return Promise.resolve(false)
-      }
-      else{
-        L.info(`here 2: ${r.IsApproved} ${r.IsPublic}`);
-        return Promise.resolve(!(r.IsApproved || r.IsPublic  || r.StatusID == 3))
-      }
-    }).catch((err) => {
-      L.error(err)
-      return Promise.resolve(false)
-    }
-    )
-  }
   async validateSubmissionAlreadySubmited(contribution: Contribution): Promise<boolean> {
     return await prisma.contributions.findFirst({
       where: {

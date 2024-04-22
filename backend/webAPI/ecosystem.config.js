@@ -5,8 +5,8 @@ module.exports = {
       {
         name: 'webapi',
         script: 'dist/index.js', // Compiled JavaScript file
-        watch: true,
-        ignore_watch: ['node_modules'],
+        watch: false,
+        ignore_watch: ['node_modules',],
         max_restarts: 10, // Maximum restarts within 60 seconds
         restart_delay: 1000, // Delay between restarts in milliseconds (1 second)
         instances: '2',

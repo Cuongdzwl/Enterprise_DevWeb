@@ -104,27 +104,31 @@ export class ContributionsController implements ISuperController {
         .end();
       return;
     }
-
+    //check Graded
+    const filesObject = req.files as {
+      [fieldname: string]: Express.Multer.File[];
+    };
+    for (const fieldName in filesObject) {
+      if (Object.prototype.hasOwnProperty.call(filesObject, fieldName)) {
+        const files = filesObject[fieldName];
+        for (const file of files) {
+          L.info(file.size + 'bytes');
+          if (file.size > 5 * 1024 * 1024) {
+            res.status(400).json({error:'Invalid File', message: 'File too large. (5mb)' }).end();
+            return;
+          }
+        }
+      }
+    }
     // Check if student is already submit
 
     try {
       contributionsService
         .create(req.body)
         .then((createdContribution) => {
-          const filesObject = req.files as {
-            [fieldname: string]: Express.Multer.File[];
-          };
           for (const fieldName in filesObject) {
             if (Object.prototype.hasOwnProperty.call(filesObject, fieldName)) {
               const files = filesObject[fieldName];
-              for (const file of files) {
-                L.info(file.size + 'bytes');
-                if (file.size > 5 * 1024 * 1024) {
-                  res.status(400).json({ message: 'File too large. (5mb)' });
-                  return;
-                }
-              }
-
               for (const file of files) {
                 L.info(`Processing file: ${file.originalname}`);
                 L.info(`Contribution ID: ${createdContribution.ID}`);
@@ -152,13 +156,20 @@ export class ContributionsController implements ISuperController {
 
   async delete(req: Request, res: Response): Promise<void> {
     const id = Number.parseInt(req.params['id']);
+    const submitCheck = await contributionsService.submit(id)
+    if ((submitCheck).submitCheck ===true){
+      res
+        .status(400)
+        .json({
+          error: 'Can not delete this file',
+          message:
+            submitCheck.message,
+        })
+        .end();
+      return;
+    }
     try {
       // cancel notification
-      if (!(await ContributionsService.validateSubmissionAlreadyApproved(id))) {
-        L.error("Failed to delete. Contrubution Accepted")
-        res.status(400).json({ message: "This contribution has been accepted. No further action needed!" })
-        return
-      }
       // delete notification
       // delete contribution
       ContributionsService.delete(id).then((r) => {
@@ -171,6 +182,22 @@ export class ContributionsController implements ISuperController {
   }
 
   async update(req: Request, res: Response): Promise<void> {
+    const filesObject = req.files as {
+      [fieldname: string]: Express.Multer.File[];
+    };
+    L.info(filesObject);
+    for (const fieldName in filesObject) {
+      if (Object.prototype.hasOwnProperty.call(filesObject, fieldName)) {
+        const files = filesObject[fieldName];
+        for (const file of files) {
+          L.info(file.size + 'bytes');
+          if (file.size > 5 * 1024 * 1024) {
+            res.status(400).json({error:'Invalid File', message: 'File too large. (5mb)' }).end();
+            return;
+          }
+        }
+      }
+    }
     // contribution.LastEditByID = Number(res.locals.user.user.ID);
     // L.info(contributionData);
     // const validations = await ContributionsService.validateConstraints(
@@ -198,7 +225,18 @@ export class ContributionsController implements ISuperController {
     const contributionFound = await prisma.contributions.findUnique({
       where: { ID: id },
     });
-
+    const submitCheck = await contributionsService.submit(id)
+    if ((submitCheck).submitCheck ===true){
+      res
+        .status(400)
+        .json({
+          error: 'Can not update this file',
+          message:
+            submitCheck.message,
+        })
+        .end();
+      return;
+    }
     if (!contributionFound) {
       res
         .status(400)
@@ -261,10 +299,6 @@ export class ContributionsController implements ISuperController {
       .update(id, contribution as Contribution)
       .then(async () => {
         L.info(req.files);
-        const filesObject = req.files as {
-          [fieldname: string]: Express.Multer.File[];
-        };
-        L.info(filesObject);
         let textFiles: Express.Multer.File[] = [];
         let imageFiles: Express.Multer.File[] = [];
         for (const fieldName in filesObject) {
