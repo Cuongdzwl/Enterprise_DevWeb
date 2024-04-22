@@ -25,8 +25,6 @@ import DetailEvent from './Page/@admin/Event/DetailEvent';
 
 // Admin - Role
 import ListRole from './Page/@admin/Role/ListRole';
-import CreateRole from './Page/@admin/Role/CreateRole';
-import UpdateRole from './Page/@admin/Role/UpdateRole';
 import DetailRole from './Page/@admin/Role/DetailRole';
 
 // Student - Event
@@ -196,12 +194,6 @@ function App() {
                                             {/* Role */}
                                             <Route path='/admin/role'
                                                 element={<PrivateRoute element={<ListRole />}
-                                                    allowedRoles={[UserRole.ADMIN]} />} />
-                                            <Route path='/admin/role/create'
-                                                element={<PrivateRoute element={<CreateRole />}
-                                                    allowedRoles={[UserRole.ADMIN]} />} />
-                                            <Route path='/admin/role/update/:id'
-                                                element={<PrivateRoute element={<UpdateRole />}
                                                     allowedRoles={[UserRole.ADMIN]} />} />
                                             <Route path='/admin/role/detail/:id'
                                                 element={<PrivateRoute element={<DetailRole />}

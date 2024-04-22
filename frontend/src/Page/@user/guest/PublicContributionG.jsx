@@ -87,9 +87,9 @@ const ListContributionG = () => {
                                         <img
                                             width={50 + 'px'}
                                             height={50 + 'px'}
-                                            src={row?.Files[1]?.Url}/>
+                                            src={row?.Files[0]?.Url}/>
                                     </td>
-                                    <td>{(splitFiles(row?.Files[0]?.Url))}</td>
+                                    <td>{(splitFiles(row?.Files[1]?.Url))}</td>
 
                                 </tr>
                             ))

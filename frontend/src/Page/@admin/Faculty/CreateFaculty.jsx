@@ -1,13 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import FormGroup from '../../../components/FormGroup';
-import Loading from '../../../components/Loading';
 import { ApiResponse } from '../../../Api';
 
 const Data = {
     Name: '',
     Description: '',
-    IsEnabledGuest: false,
+    IsEnabledGuest: '',
 }
 
 const CreateFaculty = () => {
@@ -119,7 +118,7 @@ const CreateFaculty = () => {
                             <div className="form-group mb-input">
                                 <label>Guest</label>
                                 <select value={formData.IsEnabledGuest} onChange={handleChange} className='form-control' name="IsEnabledGuest">
-                                    <option value="" hidden>Select Guest</option>
+                                <option value="" defaultValue hidden>Choose here</option>
                                     <option value='true'>True</option>
                                     <option value='false'>False</option>
                                 </select>

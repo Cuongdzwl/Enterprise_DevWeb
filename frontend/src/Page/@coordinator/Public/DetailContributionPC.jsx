@@ -11,7 +11,8 @@ const DetailContributionPC = () => {
     const { id } = useParams();
 
     // Fetch data
-    const {data: contribution} = useFetch(`${ApiResponse}contributions/${id}?depth=1&file=true`);
+    const { data: contribution } = useFetch(`${ApiResponse}contributions/${id}?depth=1&file=true`);
+    const EventID = contribution?.EventID;
 
     var textFile = contribution?.TextFiles[0]?.Url
     var imageFile = contribution?.ImageFiles[0]?.Url
@@ -35,7 +36,7 @@ const DetailContributionPC = () => {
     }
 
     const handleBack = () => {
-        navigate(-1) // Go back | Need to fix
+        navigate(`/coordinator/public/${EventID}`)
     }
 
 

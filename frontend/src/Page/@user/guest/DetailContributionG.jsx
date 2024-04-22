@@ -1,9 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import Loading from '../../../components/Loading';
 import DocViewer, {DocViewerRenderers} from "@cyntler/react-doc-viewer";
-import { ApiResponse } from '../../../Api';
-
 
 const DetailContributionG = () => {
     // State
@@ -14,6 +12,8 @@ const DetailContributionG = () => {
     // Fetch data
     const location = useLocation();
     const contribution = location.state;
+
+    console.log(contribution)
 
     if (!contribution) {
         return (
@@ -43,12 +43,10 @@ const DetailContributionG = () => {
 
     })
 
-    // console.log(oneContribution[0])
-
     const {Name, Content, Files} = oneContribution[0];
 
-    const textFile = Files[0]?.Url
-    const imageFile = Files[1]?.Url
+    const imageFile = Files[0]?.Url
+    const textFile = Files[1]?.Url
 
     const docs = [
         { uri: `${textFile}` },
@@ -82,7 +80,7 @@ const DetailContributionG = () => {
                             </div>
 
                             <div className="form-group">
-                                <label>Description</label>
+                                <label>Content</label>
                                 <textarea readOnly={true} value={Content} cols="30" rows="10"></textarea>
                             </div>
 

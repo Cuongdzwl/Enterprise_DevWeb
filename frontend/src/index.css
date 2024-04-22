@@ -729,6 +729,12 @@ select {
   font-weight: 700;
 }
 
+.term-conditions .content{
+  overflow: auto;
+  height: 320px;
+  margin-bottom: 50px;
+}
+
 .term-conditions .content div {
   color: #000;
   font-size: 2rem;
@@ -1228,9 +1234,8 @@ input[type="file"]::content {
   background: #FFF;
 }
 
-.Accept {
+.Accepted {
   border-color: #2FC247;
-  ;
   color: #2FC247;
 }
 
@@ -1439,4 +1444,8 @@ input[type="file"]::content {
 .categoryCard {
   width: 40%;
   height: 40rem;
+}
+
+.center{
+  justify-content: center!important;
 }

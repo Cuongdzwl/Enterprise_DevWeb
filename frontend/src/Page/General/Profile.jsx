@@ -36,7 +36,7 @@ const Profile = () => {
 
     // Validate form
     useEffect(() => {
-        setIsFormValid(Object.values(validationErrors).every(error => error === '') && Object.values(formData).every(value => value !== ''));
+        setIsFormValid(Object.values(validationErrors).every(error => error === ''))
     }, [validationErrors, formData]);
 
     const validateField = (name, value) => {
@@ -176,7 +176,7 @@ const Profile = () => {
 
                             <div className="form-group mb-input">
                                 <label>Faculty</label>
-                                <select value={formData.FacultyID} required onChange={handleChange} className='form-control' name="FacultyID">
+                                <select value={formData.FacultyID} onChange={handleChange} className='form-control' name="FacultyID">
                                     <option value="" hidden>Select Faculty</option>
                                     {facultyData && Array.isArray(facultyData.data) && facultyData.data.map((faculty) => (
                                         <option key={faculty.ID} value={faculty.ID}>{faculty.Name}</option>

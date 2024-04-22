@@ -124,7 +124,10 @@ const CreateContributionS = () => {
                 return;
             }
 
-            navigate(`/student/event/contribution/${id}`);
+            setTimeout(() => {
+                navigate(`/student/event/contribution/${id}`);
+            },1000)
+            
         } catch (error) {
             console.error('Error creating contribution:', error);
             setError('Failed to create contribution. Please try again later.');
@@ -205,39 +208,32 @@ const CreateContributionS = () => {
 
                             <div className={`term-conditions ${isActive ? 'active' : ''}`}>
                                 <div className="title">
-                                    Term and conditions
+                                Terms and Conditions
                                 </div>
                                 {/* Content of terms and conditions */}
                                 <div className="content">
-                                    <div>General Site Usage</div>
-                                    <div>Last Revised: December 16, 2013</div>
-                                    <span>Lorem Ipsum is simply dummy text of the printing and typesetting
-                                        industry.
-                                        Lorem Ipsum has been the industry s standard dummy text ever since the
-                                        1500s, when an unknown printer took a galley of type and scrambled it to
-                                        make a type specimen book. It has survived not only five centuries, but
-                                        also
-                                        the leap into electronic typesetting, remaining essentially unchanged.
-                                        It
-                                        was popularised in the 1960s with the release of Letraset sheets
-                                        containing
-                                        Lorem Ipsum passages, and more recently with desktop publishing software
-                                        like Aldus PageMaker including versions of Lorem Ipsum.</span>
-                                    <div>1. Your Agreement</div>
-                                    <span>It is a long established fact that a reader will be distracted by the
-                                        readable content of a page when looking at its layout. The point of
-                                        using
-                                        Lorem Ipsum is that it has a more-or-less normal distribution of
-                                        letters, as
-                                        opposed to using Content here, content here, making it look like
-                                        readable
-                                        English.</span>
+                                    <div>Last Revised: April 16, 2024</div>
+                                    <div>1. Introduction</div>
+                                    <span>By using the University Greenwich Contribution System, you agree to these Terms and Conditions. If you do not agree with these Terms and Conditions, please do not use the System</span>
+                                    <div>2. Eligibility</div>
+                                    <span>The System is intended for use by students of the University for the purpose of submitting contributions to the annual University Greenwich.</span>
+                                    <div>3. User Responsibilities</div>
+                                    <span>Users are responsible for the content of their contributions. Users agree not to submit any content that is illegal, defamatory, or infringes on the rights of others.</span>
+                                    <div>4. Submission Guidelines</div>
+                                    <span>Users can submit one or more articles as Word documents and/or high-quality images. All submissions must be original work by the user.</span>
+                                    <div>5. Review Process</div>
+                                    <span>Once a contribution is submitted, it will be reviewed by the Faculty’s Marketing Coordinator. The Marketing Coordinator may interact with the user to edit the contributions and select those for publication.</span>
+                                    <div>6. Deadlines</div>
+                                    <span>All new contributions are disabled after a closure date for new entries, but updates can continue to be done until a final closure date. Users are responsible for adhering to these deadlines.</span>
+                                    <div>7. Privacy</div>
+                                    <span>The University respects the privacy of its students. Please refer to our Privacy Policy for more information on how we collect, use, and protect your personal information.</span>
+                                    <div>8. Changes to Terms and Conditions</div>
+                                    <span>The University reserves the right to change these Terms and Conditions at any time. Users will be notified of any changes and continued use of the System constitutes acceptance of the changes.</span>
+                                    <div>9. Contact</div>
+                                    <span>If you have any questions about these Terms and Conditions, please contact the University Marketing Manager.</span>
+
                                     <span>
-                                        PLEASE NOTE: Many desktop publishing packages and web page editors now
-                                        use
-                                        Lorem Ipsum as their default model text, and a search for lorem ipsum
-                                        will
-                                        uncover many web sites still in their infancy.
+                                        PLEASE NOTE: By submitting a contribution to the System, you confirm that you have read, understood, and agree to these Terms and Conditions.
                                     </span>
                                 </div>
                                 <div className="form-action">

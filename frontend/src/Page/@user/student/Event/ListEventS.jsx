@@ -8,9 +8,11 @@ import { jwtDecode } from 'jwt-decode';
 const ListEventS = () => {
     // Fetch data
     const { data: eventData, error } = useFetch(`${ApiResponse}events/?depth=1`);
+    const { data: facultyData } = useFetch(`${ApiResponse}faculties`);
 
     // State
     const [events, setEvents] = useState([]);
+    const [facultyNames, setFacultyNames] = useState({});
     const [searchDate, setSearchDate] = useState('');
     const [noEvent, setNoEvent] = useState(false);
     const token = localStorage.getItem('token');
@@ -26,14 +28,17 @@ const ListEventS = () => {
                 setNoEvent(true);
             }
         }
-    }, [eventData]);
 
+        // Create a mapping of FacultyID to Faculty Name
+        const facultyNamesMapping = {};
+        if (facultyData) {
+            facultyData.forEach(faculty => {
+                facultyNamesMapping[faculty.ID] = faculty.Name;
+            });
+            setFacultyNames(facultyNamesMapping);
+        }
+    }, [eventData, facultyData]);
 
-    if (!events) {
-        return (
-            <Loading />
-        )
-    }
 
     // Handle Event
     const handleDateChange = (event) => {
@@ -82,7 +87,7 @@ const ListEventS = () => {
                                 filteredEvents.map((row, index) => (
                                     <Link key={index} to={`detail/${row.ID}`}>
                                         <div className="event-item" key={index}>
-                                            <div className="time-now">Today</div>
+                                            <div className="time-now">{facultyNames[row?.FacultyID] ?? null}</div>
                                             <div className="event-title">{row.Name}</div>
                                             <div className="event-description text-truncate">
                                                 <div dangerouslySetInnerHTML={{ __html: row.Description }} />

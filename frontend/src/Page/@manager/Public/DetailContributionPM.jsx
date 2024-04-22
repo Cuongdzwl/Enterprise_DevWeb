@@ -1,5 +1,5 @@
 import {useState} from 'react';
-import {useNavigate, useParams, useLocation} from 'react-router-dom';
+import {useNavigate, useParams} from 'react-router-dom';
 import useFetch from '../../../CustomHooks/useFetch';
 import DocViewer, {DocViewerRenderers} from "@cyntler/react-doc-viewer";
 import { ApiResponse } from '../../../Api';
@@ -8,15 +8,11 @@ const DetailContributionPM = () => {
     // State
     const [isActive, setIsActive] = useState(false);
     const navigate = useNavigate();
-    const location = useLocation();
     const {id} = useParams();
 
-
-    const EventID = location.state?.EventID
-
-
     // Fetch data
-    const {data: contribution} = useFetch(`${ApiResponse}contributions/${id}?depth=1&file=true`);
+    const { data: contribution } = useFetch(`${ApiResponse}contributions/${id}?depth=1&file=true`);
+    const EventID = contribution?.EventID
 
     var textFile = contribution?.TextFiles[0]?.Url
     var imageFile = contribution?.ImageFiles[0]?.Url
@@ -66,7 +62,7 @@ const DetailContributionPM = () => {
     }
 
     const handleBack = () => {
-        navigate(-1)
+        navigate(`/manager/public/${EventID}`)
     }
 
     return (<div className="box">
