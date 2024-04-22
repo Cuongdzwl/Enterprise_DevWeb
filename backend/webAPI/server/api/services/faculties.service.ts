@@ -5,6 +5,7 @@ import { ISuperService } from '../interfaces/ISuperService.interface';
 import { ExceptionMessage, FacultyExceptionMessage } from '../common/exception';
 import l from '../../common/logger';
 import { DashBoard } from '../models/DashBoard';
+import eventsService from './events.service';
 
 const prisma = new PrismaClient();
 const model = 'faculties';
@@ -188,6 +189,13 @@ export class FacultiesService implements ISuperService<Faculty> {
   // Delete
   async delete(id: number): Promise<any> {
     L.info(`delete ${model} with id ${id}`);
+    const events = await prisma.events.findMany({where:{FacultyID:id}})
+    for (const event of events) {
+      console.log(event.ID);
+      await eventsService.delete(event.ID).catch((err)=>{
+        L.error(`delete contributions failed: ${err}`);
+      });
+    }
     await prisma.users.deleteMany({where:{FacultyID:id}})
     return prisma.faculties
       .delete({
