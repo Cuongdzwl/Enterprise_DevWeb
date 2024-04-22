@@ -1,9 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import FormGroup from '../../../components/FormGroup';
 import Loading from '../../../components/Loading';
 import useFetch from '../../../CustomHooks/useFetch';
-import { jwtDecode } from 'jwt-decode';
 import DocViewer, { DocViewerRenderers } from "@cyntler/react-doc-viewer";
 import { ApiResponse } from '../../../Api';
 

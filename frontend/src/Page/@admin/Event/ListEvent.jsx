@@ -6,7 +6,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { ApiResponse } from '../../../Api';
 import Loading from '../../../components/Loading';
 
-const headings = ['Name', 'Description', 'Faculty', 'Closure Date', 'Due Date', 'Action'];
+const headings = ['Name', 'Faculty', 'Closure Date', 'Due Date', 'Action'];
 
 const ListEvent = () => {
     // Fetch data
@@ -95,7 +95,6 @@ const ListEvent = () => {
                                 filteredEvents.map((row, index) => (
                                     <tr key={index}>
                                         <td>{row.Name}</td>
-                                        <td><div className='text-truncate' dangerouslySetInnerHTML={{ __html: row.Description }} /></td>
                                         <td>{row.Faculty?.Name}</td>
                                         <td>{formatDate(row.ClosureDate)}</td>
                                         <td>{formatDate(row.FinalDate)}</td>

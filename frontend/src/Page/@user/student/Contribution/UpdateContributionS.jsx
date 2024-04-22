@@ -108,7 +108,7 @@ const UpdateContributionS = () => {
                 return;
             }
 
-            navigate(-1);
+            navigate(`/student/event/contribution/${EventID}/`);
         } catch (error) {
             console.error('Error update contribution:', error);
             setError('Failed to update contribution. Please try again later.');

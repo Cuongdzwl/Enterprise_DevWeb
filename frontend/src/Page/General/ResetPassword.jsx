@@ -26,6 +26,7 @@ const ResetPassword = () => {
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData(prevState => ({ ...prevState, [name]: value }));
+        setValidationErrors(prevState => ({ ...prevState, [name]: value ? '' : 'This field is required.' }));
     };
 
     const url = window.location.href;
@@ -35,8 +36,6 @@ const ResetPassword = () => {
     } else {
         console.log('Not Found in URL');
     }
-
-
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -55,7 +54,7 @@ const ResetPassword = () => {
                 })
                 window.location.href = '/'
             } else {
-                setError(data.message.message);
+                setError(data.message);
             }
         } catch (error) {
             setError('An error occurred while forgot password in. Please try again later.');
@@ -75,7 +74,7 @@ const ResetPassword = () => {
                             <label>New Password</label>
                             <input type="password" required name="newPassword" value={formData.newPassword} onChange={handleChange} autoComplete='auto' placeholder="Enter your password" />
                         </div>
-                        {validationErrors.email && <div className="error">{validationErrors.email}</div>}
+                        {validationErrors.newPassword && <div className="error">{validationErrors.newPassword}</div>}
                         <div className="form-submit">
                             {error && <div className="error">{error}</div>}
                             {message && <div className="error">{message}</div>}

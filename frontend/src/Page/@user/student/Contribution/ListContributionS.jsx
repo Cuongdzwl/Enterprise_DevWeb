@@ -11,20 +11,26 @@ const headings = ['Name', 'Content', 'Image', 'File', 'Status', 'Action'];
 const ListContribution = () => {
     // Fetch data
     const { id } = useParams();
-    const { data: contributionData, error } = useFetch(`${ApiResponse}events/${id}?depth=1&contribution=true`);
+    const { data: contributionData } = useFetch(`${ApiResponse}events/${id}?depth=1&contribution=true`);
     // State
     const navigate = useNavigate();
     const [contribution, setContribution] = useState([]);
+    const [error, setError] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [isBeforeClosureDate, setIsBeforeClosureDate] = useState(true);
+    const [showAction, setShowAction] = useState(true);
 
     // Set Data
     useEffect(() => {
         if (contributionData) {
             setContribution(contributionData);
             setIsBeforeClosureDate(new Date(contributionData?.ClosureDate) >= new Date());
+            // Turn off create when contribution accepted or contribution length > 1
+            const acceptedContribution = contributionData.Contributions.some(item => item.Status?.Name === 'Accepted');
+            setShowAction(isBeforeClosureDate && !acceptedContribution && contributionData.Contributions.length < 1);
         }
-    }, [contributionData]);
+    }, [contributionData, isBeforeClosureDate]);
+
 
     // Handle Event
     const handleDelete = async (id) => {
@@ -38,19 +44,20 @@ const ListContribution = () => {
             });
 
             if (!response.ok) {
-                throw new Error('Failed to delete contribution');
+                const data = await response.json();
+                setError(data.message);
+                return;
             }
-            setContribution(prevContribution => {
-                const updatedContributions = prevContribution.Contributions.filter(contribution => contribution.ID !== id);
-                return {
-                    ...prevContribution,
-                    Contributions: updatedContributions
-                };
-            });
+
+            setContribution(prevContribution => ({
+                ...prevContribution,
+                Contributions: prevContribution.Contributions.filter(contribution => contribution.ID !== id)
+            }));
         } catch (error) {
             console.error('Error deleting contribution:', error);
         }
     };
+
 
     const handleSearchChange = (contribution) => {
         setSearchTerm(contribution.target.value);
@@ -75,7 +82,7 @@ const ListContribution = () => {
         <div className="box">
             <div className="row-1">
                 <div className="header">
-                    <div className="title">List Contribution <p style={{
+                    <div className="title">My Contribution <p style={{
                         color: 'red'
                     }}>{!isBeforeClosureDate && 'Expired deadline for new submissions'}</p></div>
                 </div>
@@ -83,7 +90,7 @@ const ListContribution = () => {
                 <Search placeholder={'Search Contribution'} value={searchTerm} onChange={handleSearchChange} />
 
                 <div className="create">
-                    {isBeforeClosureDate && (
+                    {isBeforeClosureDate && showAction && (
                         <button className="custom-button" onClick={handleCreate}>Create</button>
                     )}
                 </div>
@@ -108,7 +115,6 @@ const ListContribution = () => {
                                                 src={row?.ImageFiles[0]?.Url} />
                                         </td>
 
-
                                         <td>{(splitFiles(row?.TextFiles[0]?.Url))}</td>
                                         <td>
                                             <div className={`status-contribution ${row?.Status?.Name}`}>
@@ -117,24 +123,28 @@ const ListContribution = () => {
                                         </td>
 
                                         <td colSpan="2">
-                                            <ul className="menu-action">
+                                            <ul className={`menu-action ${!showAction ? "center" : ""}`}>
                                                 <li>
                                                     <Link to={`detail/${row.ID}`}>
                                                         <i className="fa-solid fa-circle-info"></i>
                                                     </Link>
                                                 </li>
-                                                <li>
-                                                    <Link to={`update/${row.ID}`}>
-                                                        <i className="fa-solid fa-pen-to-square"></i>
-                                                    </Link>
-                                                </li>
-                                                <li>
-                                                    {
-                                                        isBeforeClosureDate && (<Link onClick={() => handleDelete(row.ID)}>
-                                                            <i className="fa-solid fa-trash"></i>
-                                                        </Link>)
-                                                    }
-                                                </li>
+                                                {!["Accepted"].includes(row.Status?.Name) && (
+                                                    <>
+                                                        <li>
+                                                            <Link to={`update/${row.ID}`}>
+                                                                <i className="fa-solid fa-pen-to-square"></i>
+                                                            </Link>
+                                                        </li>
+                                                        <li>
+                                                            {isBeforeClosureDate && (
+                                                                <Link onClick={() => handleDelete(row.ID)}>
+                                                                    <i className="fa-solid fa-trash"></i>
+                                                                </Link>
+                                                            )}
+                                                        </li>
+                                                    </>
+                                                )}
                                             </ul>
                                         </td>
                                     </tr>
@@ -144,6 +154,7 @@ const ListContribution = () => {
                                     <td colSpan={headings?.length}>Not Found</td>
                                 </tr>
                             )}
+                            {error && <div className="error">{error}</div>}
                         </tbody>
                     </table>
                 </div>

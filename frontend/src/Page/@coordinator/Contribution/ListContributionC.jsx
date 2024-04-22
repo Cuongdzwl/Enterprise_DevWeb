@@ -11,7 +11,7 @@ const headings = ['Name', 'Content', 'Image', 'File', 'Status', 'Action'];
 const ListContributionS = () => {
     // Fetch data
     const { id } = useParams();
-    const { data: contributionData, error } = useFetch(`${ApiResponse}events/${id}?depth=1&contribution=true`);
+    const { data: contributionData } = useFetch(`${ApiResponse}events/${id}?depth=1&contribution=true`);
 
     // State
     const navigate = useNavigate();
@@ -46,12 +46,11 @@ const ListContributionS = () => {
         return files?.[files?.length - 1]
     }
 
-    // Turn off Grade if the final date is expired after 7days
+    // Turn off Grade if the final date is expired after 14days
     const finalDate = new Date(contribution.FinalDate);
-    finalDate.setDate(finalDate.getDate() + 7);
+    finalDate.setDate(finalDate.getDate() + 14);
     const currentDate = new Date();
     const expired = currentDate.getTime() <= finalDate.getTime();
-    console.log("Expired:", expired);
 
     return (
         <div className="box">

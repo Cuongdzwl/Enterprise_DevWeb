@@ -26,8 +26,6 @@ const UpdateContributionC = () => {
     const {data: status} = useFetch(`${ApiResponse}status`);
     const EventID = contribution?.EventID;
 
-
-
     // Set Data
     useEffect(() => {
         if (contribution) {
@@ -99,12 +97,8 @@ const UpdateContributionC = () => {
     // Handle Event
 
     const handleBack = () => {
-        navigate(-1) // Go back | Need to fix
+        navigate(`/coordinator/event/contribution/${EventID}`)
     }
-
-    const token = localStorage.getItem('token');
-    const decodedToken = jwtDecode(token);
-    const UserID = decodedToken.id;
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -114,8 +108,6 @@ const UpdateContributionC = () => {
             StatusID: parseInt(formData.StatusID),
             IsApproved: formData.StatusID === '3' ? true : false
         };
-
-        console.log(newFormData);
 
         setIsLoading(true);
         setError(null);

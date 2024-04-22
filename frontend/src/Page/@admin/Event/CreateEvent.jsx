@@ -104,6 +104,7 @@ const CreateEvent = () => {
             });
             if (!response.ok) {
                 const data = await response.json();
+                console.log(data.error.message)
                 setError(data.message);
                 return;
             }

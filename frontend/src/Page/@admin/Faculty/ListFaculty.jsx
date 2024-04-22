@@ -6,7 +6,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import Loading from '../../../components/Loading';
 import { ApiResponse } from '../../../Api';
 
-const headings = ['Name', 'Description', 'Number event', 'Guest', 'Action'];
+const headings = ['Name', 'Number event', 'Guest', 'Action'];
 
 const ListFaculty = () => {
     // Fetch data
@@ -93,8 +93,7 @@ const ListFaculty = () => {
                             {filteredFaculty.length > 0 ? (
                                 filteredFaculty.map((row, index) => (
                                     <tr key={index}>
-                                        <td>{row.Name}</td>
-                                        <td className="description">{row?.Description}</td>
+                                        <td>{row.Name}</td>                                        
                                         <td className="number-event">{facultyEvents[row.ID] || 0}</td>
                                         <td>
                                             <span className={`guest-status ${row.IsEnabledGuest ? "active" : ""}`}>
