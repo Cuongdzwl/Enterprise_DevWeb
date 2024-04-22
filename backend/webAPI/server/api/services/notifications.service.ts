@@ -49,6 +49,8 @@ export class NotificationService implements ISuperService<Notification> {
       }
       upayload.sentType = sendType;
       upayload.Name = u.Name;
+      upayload.User.ID = u.ID.toString();
+      upayload.User.RoleID = u.RoleID.toString();
       events.push({
         name: type,
         to: {
