@@ -140,17 +140,20 @@ export class EventsService implements ISuperService<Event> {
         //  Categorize file
         if (eventContributions && eventContributions.Contributions) {
           const contributionsWithFiles = await Promise.all(
-            eventContributions.Contributions.map(async (contribution) => {
+            await eventContributions.Contributions.map(async (contribution) => {
               const allFiles = contribution.Files;
               const filesAsDTOs = contributionsService.toFileDTOArray(allFiles);
+              L.info(filesAsDTOs)
               const { textFiles, imageFiles } =
                 contributionsService.classifyFiles(filesAsDTOs);
+                L.info(textFiles)
+                L.info(imageFiles)
 
-              return Promise.resolve({
+              return {
                 ...contribution,
                 TextFiles: textFiles,
                 ImageFiles: imageFiles,
-              });
+              };
             })
           );
           return Promise.resolve({

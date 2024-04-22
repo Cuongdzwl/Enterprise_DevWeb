@@ -1,3 +1,4 @@
+import { dalService } from './../../../../../../novu/packages/application-generic/src/custom-providers/index';
 import { Status } from '../models/Status';
 import { Contribution } from '../models/Contribution';
 import L from '../../common/logger';
@@ -54,13 +55,18 @@ export class ContributionsService implements ISuperService<Contribution> {
     });
     L.info(`fetch all ${model}(s)`);
 
-    // return Promise.resolve(contributions);;
+    // return Promise.resolve(contributions);;  
 
     return contributions.map((contribution) => {
       if (contribution.Files) {
         try {
           const filesAsDTOs = this.toFileDTOArray(contribution.Files || []);
+
+          L.info(filesAsDTOs)
           const { textFiles, imageFiles } = this.classifyFiles(filesAsDTOs);
+          L.info(textFiles)
+          L.info(imageFiles)
+
           return {
             ...contribution,
             TextFiles: textFiles,
