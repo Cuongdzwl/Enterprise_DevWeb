@@ -111,12 +111,13 @@ export class ContributionsController implements ISuperController {
     for (const fieldName in filesObject) {
       if (Object.prototype.hasOwnProperty.call(filesObject, fieldName)) {
         const files = filesObject[fieldName];
-        for (const file of files) {
-          L.info(file.size + 'bytes');
-          if (file.size > 5 * 1024 * 1024) {
-            res.status(400).json({error:'Invalid File', message: 'File too large. (5mb)' }).end();
-            return;
-          }
+        for (const file of files) { 
+          const fileCheck = await contributionsService.validateFile(file)
+          if(fileCheck.checkFile = true)
+            {
+              res.status(400).json({error:fileCheck.error, message: fileCheck.message}).end();
+              return;
+            }
         }
       }
     }
@@ -156,7 +157,7 @@ export class ContributionsController implements ISuperController {
 
   async delete(req: Request, res: Response): Promise<void> {
     const id = Number.parseInt(req.params['id']);
-    const submitCheck = await contributionsService.submit(id)
+    const submitCheck = await contributionsService.submit(id, false)
     if ((submitCheck).submitCheck ===true){
       res
         .status(400)
@@ -195,11 +196,12 @@ export class ContributionsController implements ISuperController {
       if (Object.prototype.hasOwnProperty.call(filesObject, fieldName)) {
         const files = filesObject[fieldName];
         for (const file of files) {
-          L.info(file.size + 'bytes');
-          if (file.size > 5 * 1024 * 1024) {
-            res.status(400).json({error:'Invalid File', message: 'File too large. (5mb)' }).end();
-            return;
-          }
+          const fileCheck = await contributionsService.validateFile(file)
+          if(fileCheck.checkFile = true)
+            {
+              res.status(400).json({error:fileCheck.error, message: fileCheck.message}).end();
+              return;
+            }
         }
       }
     }
@@ -230,7 +232,7 @@ export class ContributionsController implements ISuperController {
     const contributionFound = await prisma.contributions.findUnique({
       where: { ID: id },
     });
-    const submitCheck = await contributionsService.submit(id)
+    const submitCheck = await contributionsService.submit(id, true)
     if ((submitCheck).submitCheck ===true){
       res
         .status(400)
@@ -298,10 +300,42 @@ export class ContributionsController implements ISuperController {
       res.status(400).json({ error: error.message }).end();
       return;
     }
-
+    const {
+      Name,
+      Content,
+      IsPublic,
+      IsApproved,
+      EventID,
+      UserID,
+      StatusID,
+      LastEditByID,
+      CreatedAt,
+      UpdatedAt,
+    } = req.body;
+    console.log({ IsPublic, IsApproved });
+    let isPublic = true;
+    let isApproved = true;
+    if (IsPublic === 'false') {
+      isPublic = false;
+    }
+    if (IsApproved === 'false') {
+      isApproved = false;
+    }
+    const contributionData = {
+      Name,
+      Content,
+      IsPublic: isPublic,
+      IsApproved: isApproved,
+      EventID: parseInt(EventID),
+      UserID: parseInt(UserID),
+      StatusID: parseInt(StatusID),
+      LastEditByID,
+      CreatedAt,
+      UpdatedAt,
+    };
     L.info(contribution);
     contributionsService
-      .update(id, contribution as Contribution)
+      .update(id, contributionData as Contribution)
       .then(async () => {
         L.info(req.files);
         let textFiles: Express.Multer.File[] = [];

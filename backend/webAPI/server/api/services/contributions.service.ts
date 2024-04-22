@@ -316,6 +316,17 @@ export class ContributionsService implements ISuperService<Contribution> {
   async delete(id: number): Promise<any> {
     L.info(`delete ${model} with id ${id}`);
     // First, attempt to delete related files to avoid foreign key constraint issues
+    const files = await prisma.files.findMany({
+      where: {
+        ContributionID: id,
+      },
+    })
+    for (const file of files) {
+      console.log(file.ID);
+      await this.fileService.delete(file.ID).catch((err)=>{
+        L.error(`delete contributions failed: ${err}`);
+      });
+    }
     return prisma.files
       .deleteMany({
         where: {
@@ -474,13 +485,56 @@ export class ContributionsService implements ISuperService<Contribution> {
       });
     }
   }
-  async submit (idContribution: number):Promise< {submitCheck:boolean, message?:string}>{
+  async submit (idContribution: number, update: boolean, idUser?: number):Promise< {submitCheck:boolean, message?:string}>{
     try {
     const contribution = await prisma.contributions.findUnique({
       where: { ID: idContribution },
     })
     if(contribution)
       {
+    const event = await prisma.events.findUnique({
+      where: { ID: contribution?.EventID },
+    })
+    L.info("event")
+    if(!event){
+      return {submitCheck: false, message:'Event related contribution not fonud'}
+    }
+    if(event && update===true){
+      L.info(event)
+      const finalDate = new Date(event.FinalDate);
+      const currentDate = new Date(); 
+      const newFinalDate = new Date(finalDate);
+      newFinalDate.setDate(newFinalDate .getDate() + 14);
+      if(!idUser){
+        return {submitCheck: true, message:'Invalid User update Contribution'}
+      }
+      const user = await prisma.users.findUnique({
+        where: { ID: idUser },
+      })
+      L.info("update "+user?.RoleID+" "+idUser)
+      if(!user){
+        return {submitCheck: true, message:'User update contribution is not found'}
+      }
+      if(contribution.StatusID === 2 && user?.RoleID === 4 && currentDate <= finalDate){
+        return {submitCheck: false, message:'This contribution is declined but student still can update until final date'}
+      }
+      if(contribution.StatusID === 2 && user?.RoleID === 3 && currentDate <= newFinalDate){
+        return {submitCheck: false, message:'This contribution is declined but coordinator still can update after 14 daysfrom final date'}
+      }
+      if(contribution.StatusID === 2 && currentDate > finalDate){
+        return {submitCheck: true, message:'This contribution was rejected and the grading period expired'}
+      }
+      if(contribution.StatusID === 2 && currentDate <= finalDate){
+        return {submitCheck: false, message:'This contribution is declined but user still can update until final date'}        
+      }
+    }
+    if(event && update===false){
+      L.info("update")
+      L.info(event)
+      if(contribution.StatusID === 2){
+        return {submitCheck: true, message:'This contribution is declined and student can not remove it'}
+      }
+    }
     if(contribution.StatusID === 1){
       return {submitCheck: false, message:'This contribution is pending'}
     }
@@ -581,7 +635,19 @@ export class ContributionsService implements ISuperService<Contribution> {
       };
     }
   }
-
+  async validateFile(file:Express.Multer.File):Promise<{checkFile: boolean, error?: string, message?:string}>{
+    L.info(file.size + 'bytes');
+    if (file.size > 5 * 1024 * 1024) {
+      return{
+        checkFile: true,
+        error: 'Invalid File',
+        message: 'File too large. (5mb)',
+      };
+    }
+    return {
+      checkFile: false,
+    }
+  }
   async validateSubmissionAlreadyApproved(id : number):Promise<boolean>{
     return await prisma.contributions.findFirst({
       where: {
