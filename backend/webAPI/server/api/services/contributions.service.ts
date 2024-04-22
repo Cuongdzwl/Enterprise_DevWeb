@@ -640,13 +640,13 @@ export class ContributionsService implements ISuperService<Contribution> {
     L.info(file.size + 'bytes');
     if (file.size > 5 * 1024 * 1024) {
       return{
-        checkFile: true,
+        checkFile: false,
         error: 'Invalid File',
         message: 'File too large. (5mb)',
       };
     }
     return {
-      checkFile: false,
+      checkFile: true,
     }
   }
   async validateSubmissionAlreadyApproved(id : number):Promise<boolean>{

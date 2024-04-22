@@ -113,9 +113,9 @@ export class ContributionsController implements ISuperController {
         const files = filesObject[fieldName];
         for (const file of files) { 
           const fileCheck = await contributionsService.validateFile(file)
-          if(fileCheck.checkFile = true)
+          if(!fileCheck.checkFile)
             {
-              res.status(400).json({error:fileCheck.error, message: fileCheck.message}).end();
+              res.status(400).json(fileCheck).end();
               return;
             }
         }
