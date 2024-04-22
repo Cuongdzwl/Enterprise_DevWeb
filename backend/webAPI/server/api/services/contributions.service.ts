@@ -572,12 +572,15 @@ export class ContributionsService implements ISuperService<Contribution> {
         ID : Number(id)
       }
     }).then((r) => {
-      const approve = r?.IsApproved
-      const publicc = r?.IsPublic
-      if (!r || r == null)
+      L.info(r)
+      if (r == null || r == undefined){
+        L.info("here1");
         return Promise.resolve(false)
-      else
-        return Promise.resolve(approve === true || publicc === true )
+      }
+      else{
+        L.info(`here 2: ${r.IsApproved} ${r.IsPublic}`);
+        return Promise.resolve(!(r.IsApproved || r.IsPublic  || r.StatusID == 3))
+      }
     }).catch((err) => {
       L.error(err)
       return Promise.resolve(false)
