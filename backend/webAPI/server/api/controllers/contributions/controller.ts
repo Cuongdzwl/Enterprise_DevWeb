@@ -104,24 +104,28 @@ export class ContributionsController implements ISuperController {
         .end();
       return;
     }
+    const filesObject = req.files as {
+      [fieldname: string]: Express.Multer.File[];
+    };
+    for (const fieldName in filesObject) {
+      if (Object.prototype.hasOwnProperty.call(filesObject, fieldName)) {
+        const files = filesObject[fieldName];
+        for (const file of files) {
+          L.info(file.size + 'bytes');
+          if (file.size > 5 * 1024 * 1024) {
+            res.status(400).json({error:'Invalid File', message: 'File too large. (5mb)' }).end();
+            return;
+          }
+        }
+      }
+    }
     try {
       contributionsService
         .create(req.body)
         .then((createdContribution) => {
-          const filesObject = req.files as {
-            [fieldname: string]: Express.Multer.File[];
-          };
           for (const fieldName in filesObject) {
             if (Object.prototype.hasOwnProperty.call(filesObject, fieldName)) {
               const files = filesObject[fieldName];
-              for (const file of files) {
-                L.info(file.size + 'bytes');
-                if (file.size > 5 * 1024 * 1024) {
-                  res.status(400).json({ message: 'File too large. (5mb)' });
-                  return;
-                }
-              }
-
               for (const file of files) {
                 L.info(`Processing file: ${file.originalname}`);
                 L.info(`Contribution ID: ${createdContribution.ID}`);
@@ -147,8 +151,20 @@ export class ContributionsController implements ISuperController {
     }
   }
 
-  delete(req: Request, res: Response): void {
+  async delete(req: Request, res: Response): Promise<void> {
     const id = Number.parseInt(req.params['id']);
+    const submitCheck = await contributionsService.submit(id)
+    if ((submitCheck).submitCheck ===true){
+      res
+        .status(400)
+        .json({
+          error: 'Can not delete this file',
+          message:
+            submitCheck.message,
+        })
+        .end();
+      return;
+    }
     try {
       // cancel notification
       // delete notification
@@ -163,6 +179,22 @@ export class ContributionsController implements ISuperController {
   }
 
   async update(req: Request, res: Response): Promise<void> {
+    const filesObject = req.files as {
+      [fieldname: string]: Express.Multer.File[];
+    };
+    L.info(filesObject);
+    for (const fieldName in filesObject) {
+      if (Object.prototype.hasOwnProperty.call(filesObject, fieldName)) {
+        const files = filesObject[fieldName];
+        for (const file of files) {
+          L.info(file.size + 'bytes');
+          if (file.size > 5 * 1024 * 1024) {
+            res.status(400).json({error:'Invalid File', message: 'File too large. (5mb)' }).end();
+            return;
+          }
+        }
+      }
+    }
     // contribution.LastEditByID = Number(res.locals.user.user.ID);
     // L.info(contributionData);
     // const validations = await ContributionsService.validateConstraints(
@@ -201,6 +233,18 @@ export class ContributionsController implements ISuperController {
         .end();
       return;
     }
+    const submitCheck = await contributionsService.submit(id)
+    if ((submitCheck).submitCheck ===true){
+      res
+        .status(400)
+        .json({
+          error: 'Can not update this file',
+          message:
+            submitCheck.message,
+        })
+        .end();
+      return;
+    }
     // var { ID, IsPublic, StatusID, Content, Name } = req.body;
     // var contribution: any = {
     //   IsPublic: IsPublic === 'true' ? true : false || Boolean(IsPublic),
@@ -210,53 +254,49 @@ export class ContributionsController implements ISuperController {
     // };
     var contribution = req.body;
 
-    const isValid = contributionsService.validateFinalDate(contribution);
-    if (!isValid) {
-      res.status(400).json({ error: 'The event this closed' }).end();
-      return;
-    }
-    contribution.LastEditByID = Number(res.locals.user.user.ID + '');
-    try {
-      if (res.locals.user.user.RoleID === 4) {
-        // Student
-        contribution.IsApproved = false;
-        contribution.IsPublic = false;
-        contribution.StatusID = Status.PENDING;
-        // Block Other Student update other contribution
-        if (contributionFound.UserID !== res.locals.user.user.ID) {
-          res.status(403).json({ error: 'Forbidden' }).end();
-          return;
-        }
-      } else if (res.locals.user.user.RoleID === 3) {
-        // Coordinator
-        //contribution.Content = contributionFound.Content as string;
-        // contribution.Name = contributionFound.Name as string;
-        if (contribution.StatusID == (Status.ACCEPTED as Number)) {
-          contribution.IsApproved = true;
-          contribution.IsPublic = req.body.IsPublic === 'true' ? true : false;
-        } else {
-          contribution.IsApproved = false;
-          contribution.IsPublic = false;
-        }
-      } else {
-        res.status(403).json({ error: 'Forbidden' }).end();
-        return;
-      }
-    } catch (error) {
-      L.error(error);
-      res.status(400).json({ error: error.message }).end();
-      return;
-    }
+    // const isValid = contributionsService.validateFinalDate(contribution);
+    // if (!isValid) {
+    //   res.status(400).json({ error: 'The event this closed' }).end();
+    //   return;
+    // }
+    // contribution.LastEditByID = Number(res.locals.user.user.ID + '');
+    // try {
+    //   if (res.locals.user.user.RoleID === 4) {
+    //     // Student
+    //     contribution.IsApproved = false;
+    //     contribution.IsPublic = false;
+    //     contribution.StatusID = Status.PENDING;
+    //     // Block Other Student update other contribution
+    //     if (contributionFound.UserID !== res.locals.user.user.ID) {
+    //       res.status(403).json({ error: 'Forbidden' }).end();
+    //       return;
+    //     }
+    //   } else if (res.locals.user.user.RoleID === 3) {
+    //     // Coordinator
+    //     //contribution.Content = contributionFound.Content as string;
+    //     // contribution.Name = contributionFound.Name as string;
+    //     if (contribution.StatusID == (Status.ACCEPTED as Number)) {
+    //       contribution.IsApproved = true;
+    //       contribution.IsPublic = req.body.IsPublic === 'true' ? true : false;
+    //     } else {
+    //       contribution.IsApproved = false;
+    //       contribution.IsPublic = false;
+    //     }
+    //   } else {
+    //     res.status(403).json({ error: 'Forbidden' }).end();
+    //     return;
+    //   }
+    // } catch (error) {
+    //   L.error(error);
+    //   res.status(400).json({ error: error.message }).end();
+    //   return;
+    // }
 
     L.info(contribution);
     contributionsService
       .update(id, contribution as Contribution)
       .then(async () => {
         L.info(req.files);
-        const filesObject = req.files as {
-          [fieldname: string]: Express.Multer.File[];
-        };
-        L.info(filesObject);
         let textFiles: Express.Multer.File[] = [];
         let imageFiles: Express.Multer.File[] = [];
         for (const fieldName in filesObject) {
