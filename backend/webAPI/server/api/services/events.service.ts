@@ -215,7 +215,7 @@ export class EventsService implements ISuperService<Event> {
         },
       })
       .then((event) => {
-        L.info(`create ${model} `)
+        L.info(`create ${model} `);
         return this.schedule(event);
       })
       .catch((error) => {
@@ -228,31 +228,33 @@ export class EventsService implements ISuperService<Event> {
   }
   async delete(id: number): Promise<any> {
     L.info(`delete ${model} with id ${id}`);
-      const contributions = await prisma.contributions.findMany({
-        where: { EventID: id },
+    const contributions = await prisma.contributions.findMany({
+      where: { EventID: id },
+    });
+    for (const contribution of contributions) {
+      console.log(contribution.ID);
+      await contributionsService.delete(contribution.ID).catch((err) => {
+        L.error(`delete contributions failed: ${err}`);
       });
-      for (const contribution of contributions) {
-        console.log(contribution.ID);
-        await contributionsService.delete(contribution.ID).catch((err)=>{
-          L.error(`delete contributions failed: ${err}`);
-        });
-      }
-      await prisma.scheduledNotifications.deleteMany({
+    }
+    await prisma.scheduledNotifications
+      .deleteMany({
         where: { EventID: id },
-      }).catch((err)=>{
+      })
+      .catch((err) => {
         L.error(`delete notification failed: ${err}`);
       });
-      return prisma.events
-        .delete({
-          where: { ID: id },
-        })
-        .then((r) => {
-          return Promise.resolve(r);
-        }).catch((err)=>{
-          L.error(`delete ${model} failed: ${err}`);
-          return Promise.reject(err);
-        });
-     
+    return prisma.events
+      .delete({
+        where: { ID: id },
+      })
+      .then((r) => {
+        return Promise.resolve(r);
+      })
+      .catch((err) => {
+        L.error(`delete ${model} failed: ${err}`);
+        return Promise.reject(err);
+      });
   }
   async update(id: number, event: Event): Promise<any> {
     const validations = await this.validateConstraints(event);
@@ -317,15 +319,27 @@ export class EventsService implements ISuperService<Event> {
       });
     }
   }
+  private formatISODateToHHMM(date: Date): string {
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${hours}:${minutes}`;
+  }
 
+  private formatISODateToDDMMYYYY(date: Date): string {
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = String(date.getFullYear());
+    return `${day}-${month}-${year}`;
+  }
   private schedule(event: Event) {
     if (event) {
       L.info(`create ${model} with id ${event.ID}`);
-      const created =  prisma.users
+      const created = prisma.users
         .findMany({ where: { FacultyID: event.FacultyID } })
         .then((users: any) => {
           if (users) var user: User[] = users;
           else return false;
+
           // InApp Notify
           notificationsService.bulkTrigger(
             user,
@@ -338,24 +352,17 @@ export class EventsService implements ISuperService<Event> {
             },
             NotificationSentTypeEnum.NEWEVENT,
             NotificationSentThrough.InApp
-          )
+          );
           // Scheduled Email Due Date
           notificationsService
             .bulkTrigger(
-              users,
+              user,
               {
                 Event: {
                   Name: event.Name,
                   ID: event.ID,
-                  ClosureDate: event.ClosureDate.toLocaleDateString('en-US', {
-                    day: '2-digit',
-                    month: '2-digit',
-                    year: 'numeric',
-                  }),
-                  ClosureTime: event.ClosureDate.toLocaleTimeString('en-US', {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  }),
+                  ClosureDate: this.formatISODateToDDMMYYYY(event.ClosureDate),
+                  ClosureTime: this.formatISODateToHHMM(event.ClosureDate),
                 },
                 Name: event.Name,
                 sendAt: event.ClosureDate.toISOString(),
@@ -364,27 +371,24 @@ export class EventsService implements ISuperService<Event> {
               NotificationSentThrough.Email
             )
             .then((rr) => {
-              L.info("Create scheduled notification for event's closure date Success: " +  rr?.data);
-            }).catch((err) => {
+              L.info(
+                "Create scheduled notification for event's closure date Success: " +
+                  rr?.data
+              );
+            })
+            .catch((err) => {
               L.error(err);
-            });;
+            });
           // Scheduled Email Final Date
           notificationsService
             .bulkTrigger(
-              users,
+              user,
               {
                 Event: {
                   ID: event.ID,
                   Name: event.Name,
-                  FinalDate: event.FinalDate.toLocaleDateString('en-US', {
-                    day: '2-digit',
-                    month: '2-digit',
-                    year: 'numeric',
-                  }),
-                  FinalTime: event.FinalDate.toLocaleTimeString('en-US', {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  }),
+                  ClosureDate: this.formatISODateToDDMMYYYY(event.FinalDate),
+                  ClosureTime: this.formatISODateToHHMM(event.FinalDate),
                 },
                 Name: event.Name,
                 sendAt: event.FinalDate.toISOString(),
@@ -393,18 +397,24 @@ export class EventsService implements ISuperService<Event> {
               NotificationSentThrough.Email
             )
             .then((r) => {
-              L.info("Create scheduled notification for event's final date Success" +  r?.data);
-            }).catch((err) => {
+              L.info(
+                "Create scheduled notification for event's final date Success" +
+                  r?.data
+              );
+            })
+            .catch((err) => {
               L.error(err);
-            });;
+            });
           return true;
         })
         .catch((error) => {
           L.error(error);
           return false;
         });
-        L.info("Created notifications for event's closure and final date: " + created)
-      }
+      L.info(
+        "Created notifications for event's closure and final date: " + created
+      );
+    }
     return Promise.resolve(event);
   }
 
@@ -458,7 +468,7 @@ export class EventsService implements ISuperService<Event> {
       };
     }
     const facultyExists = await prisma.faculties.findUnique({
-      where: { ID: event.FacultyID },
+      where: { ID: Number(event.FacultyID) },
     });
     if (!facultyExists) {
       return {

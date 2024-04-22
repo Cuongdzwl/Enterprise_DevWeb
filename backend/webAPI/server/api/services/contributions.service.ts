@@ -247,6 +247,7 @@ export class ContributionsService implements ISuperService<Contribution> {
           .byId(contribution.UserID)
           .then((student: User) => {
             // Send notify to coordinator
+
             this.notifyCoordinator(student, contribution).catch((e) => {
               L.error(e);
             });
@@ -269,13 +270,13 @@ export class ContributionsService implements ISuperService<Contribution> {
   }
 
   private notifyCoordinator(student: any, contribution: any): Promise<boolean> {
-
     return prisma.users
       .findFirst({ where: { FacultyID: student.FacultyID, RoleID: 3 } })
       .then((coordinator) => {
-        if (coordinator || coordinator == null) {
+        L.info(`Notify Coordinator : ${coordinator?.Name} (id: ${coordinator?.ID})`);
+        if (coordinator || coordinator != null) {
           // prepare notification
-          var send: any = {
+          var payload: any = {
             Event: {
               ID: contribution.EventID,
             },
@@ -287,12 +288,12 @@ export class ContributionsService implements ISuperService<Contribution> {
               Name: contribution.Name,
             },
           };
-          L.info(`Prepared Notification: ${send}`);
+          L.info(`Prepared Notification: ${payload}`);
           // sent
           notificationsService
             .trigger(
               coordinator as User,
-              send,
+              payload,
               NotificationSentTypeEnum.NEWCONTRIBUTION,
               NotificationSentThrough.InApp
             )
@@ -300,7 +301,7 @@ export class ContributionsService implements ISuperService<Contribution> {
               L.error(error);
             });
           // log
-          L.info(`Sent Notification: ${send}`);
+          L.info(`Sent Notification: ${payload}`);
           // return success
           return Promise.resolve(true);
         } else {
@@ -616,7 +617,7 @@ export class ContributionsService implements ISuperService<Contribution> {
         return true;
       })
       .catch((e) => {
-        L.error(e);
+        L.error("This is not a bug, this is a recursive feature:" + e );
         return prisma.contributions
           .findUnique({ where: { ID: contribution.ID } })
           .then((c) => {
