@@ -30,9 +30,6 @@
 1. [Backup API Portal 1](https://cuongnd.onrender.com/)
 2. [Backup API Portal 2](https://cuongnd.azurewebsites.net/)
 
-
-
-
 ## Hosting Status:
 ### Production: ![Ubuntu](https://img.shields.io/badge/Ubuntu-Compatible-brightgreen?style=flat-square&logo=ubuntu&logoColor=white)
 [![Backend CD to VPS](https://github.com/Cuongdzwl/Enterprise_DevWeb/actions/workflows/master_cd_vps.yml/badge.svg)](https://github.com/Cuongdzwl/Enterprise_DevWeb/actions/workflows/master_cd_vps.yml)
