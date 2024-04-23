@@ -231,7 +231,14 @@ export class UsersService implements ISuperService<User> {
     update: boolean
   ): Promise<{ isValid: boolean; error?: string; message?: string }> {
     user;
-
+    if (!user.Name || !/^[A-Za-z\s]{1,50}$/.test(user.Name)) {
+      return {
+        isValid: false,
+        error: UserExceptionMessage.INVALID,
+        message:
+          'User name is invalid, cannot contain numbers or special characters, and must have a maximum of 50 characters.',
+      };
+    }
     //  Validate Password
     if (user.Password) {
       if (!/(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}/.test(user.Password)) {
