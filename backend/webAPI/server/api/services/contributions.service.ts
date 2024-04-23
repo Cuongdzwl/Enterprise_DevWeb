@@ -567,12 +567,12 @@ export class ContributionsService implements ISuperService<Contribution> {
       }
 
       // Validate Content
-      if (!contribution.Content || contribution.Content.length > 3000) {
+      if (!contribution.Content || contribution.Content.length > 1000) {
         return {
           isValid: false,
           error: ContributionExceptionMessage.INVALID,
           message:
-            'Content is invalid or too long, with a maximum of 3000 characters.',
+            'Content is invalid or too long, with a maximum of 1000 characters.',
         };
       }
 

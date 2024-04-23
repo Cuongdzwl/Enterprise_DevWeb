@@ -192,7 +192,7 @@ export class ContributionsController implements ISuperController {
         const files = filesObject[fieldName];
         for (const file of files) {
           const fileCheck = await contributionsService.validateFile(file)
-          if(fileCheck.checkFile = true)
+          if(!fileCheck.checkFile)
             {
               res.status(400).json({error:fileCheck.error, message: fileCheck.message}).end();
               return;
@@ -227,7 +227,7 @@ export class ContributionsController implements ISuperController {
     const contributionFound = await prisma.contributions.findUnique({
       where: { ID: id },
     });
-    const submitCheck = await contributionsService.submit(id, true)
+    const submitCheck = await contributionsService.submit(id, true,res.locals.user.user.ID)
     if ((submitCheck).submitCheck ===true){
       res
         .status(400)
