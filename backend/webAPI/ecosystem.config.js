@@ -9,10 +9,9 @@ module.exports = {
         ignore_watch: ['node_modules','uploads','*.csv','dist'],
         max_restarts: 10, // Maximum restarts within 60 seconds
         restart_delay: 1000, // Delay between restarts in milliseconds (1 second)
-        instances: '2',
+        instances: '1',
         exec_mode: 'cluster',
         autorestart: true,
-        max_memory_restart: '512M',
         env: {
           NODE_ENV: 'production',
           OPENAPI_SPEC: process.env.OPENAPI_SPEC,
