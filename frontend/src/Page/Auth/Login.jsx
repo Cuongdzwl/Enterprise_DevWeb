@@ -3,8 +3,16 @@ import { Link, useNavigate } from 'react-router-dom';
 import Logo1 from '../../../public/logo1.png';
 import useFetch from '../../CustomHooks/useFetch';
 import { ApiResponse } from '../../Api';
+import { jwtDecode } from 'jwt-decode';
 
 const Data = { email: '', password: '', FacultyID: '' };
+
+const rolePaths = {
+    1: '/admin/dashboard',
+    2: '/manager/dashboard',
+    3: '/coordinator/dashboard',
+    4: '/student/event',
+};
 
 const LoginSCG = () => {
     // State
@@ -12,6 +20,18 @@ const LoginSCG = () => {
     const [validationErrors, setValidationErrors] = useState(Data);
     const [error, setError] = useState(null);
     const navigate = useNavigate();
+
+    // Check login status and redirect to dashboard
+    const token = localStorage.getItem('token');
+    if (token) {
+        const decodedToken = jwtDecode(token);
+        const roleID = decodedToken.roleID;
+        const rolePath = rolePaths[roleID];
+        if (rolePath) {
+            navigate(rolePath);
+        }
+    }
+
 
     // Fetch faculty data
     const facultyData = useFetch(`${ApiResponse}faculties`);

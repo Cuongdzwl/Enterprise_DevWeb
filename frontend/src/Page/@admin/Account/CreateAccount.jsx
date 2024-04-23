@@ -25,6 +25,7 @@ const CreateAccount = () => {
     const [isFormValid, setIsFormValid] = useState(false);
     const [validationErrors, setValidationErrors] = useState(Data);
     const [isLoading, setIsLoading] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState(null);
 
     // Validate form
@@ -36,7 +37,7 @@ const CreateAccount = () => {
         let errorMessage = '';
         switch (name) {
             case 'Name':
-                errorMessage = value.trim() && /^[A-Za-z\s]{1,50}$/.test(value)  ? '' : 'Name is required and must be less than 15 characters.';
+                errorMessage = value.trim() && /^[A-Za-z\s]{1,50}$/.test(value) ? '' : 'Name is required and must be less than 50 characters.';
                 break;
             case 'Email':
                 errorMessage = /^\S+@\S+\.\S+$/.test(value) ? '' : 'Email is invalid.';
@@ -78,6 +79,13 @@ const CreateAccount = () => {
             RoleID: parseInt(formData.RoleID)
         }
 
+        if (isSubmitting) {
+            return;
+        }
+        setIsSubmitting(true);
+
+
+
         try {
             const response = await fetch(`${ApiResponse}users`, {
                 method: 'POST',
@@ -99,6 +107,7 @@ const CreateAccount = () => {
             setError('Failed to create account. Please try again later.');
         } finally {
             setIsLoading(false);
+            setIsSubmitting(false);
         }
     };
 
@@ -114,13 +123,17 @@ const CreateAccount = () => {
                 <div className="box">
                     <div className="box-content">
                         <form onSubmit={handleSubmit}>
-                            <FormGroup
-                                label={'Name'}
-                                inputType={'text'}
-                                inputName={'Name'}
-                                value={formData.Name}
-                                onChange={handleChange}
-                            />
+                            <div className="form-group">
+                                <label>Name</label>
+                                <input
+                                    type="text"
+                                    className='form-control'
+                                    name='Name'
+                                    value={formData.Name}
+                                    required
+                                    onChange={handleChange}
+                                />
+                            </div>
                             {validationErrors.Name && <div className="error">{validationErrors.Name}</div>}
 
                             <FormGroup
@@ -161,7 +174,7 @@ const CreateAccount = () => {
                                 </select>
                                 {validationErrors.RoleID && <div className="error">{validationErrors.RoleID}</div>}
                             </div>
-                            
+
                             <div className="form-group mb-input">
                                 <label>Faculty</label>
                                 <select value={formData.FacultyID} onChange={handleChange} className='form-control' name="FacultyID">
@@ -175,7 +188,7 @@ const CreateAccount = () => {
 
                             <div className="form-action">
                                 <button type="submit" onClick={handleBack} className="btn">Cancel</button>
-                                <button type="submit" className="btn" disabled={!isFormValid}>Create</button>
+                                <button type="submit" className="btn" disabled={!isFormValid || isSubmitting} >Create</button>
                             </div>
                             {error && <div className="error">{error}</div>}
                         </form>

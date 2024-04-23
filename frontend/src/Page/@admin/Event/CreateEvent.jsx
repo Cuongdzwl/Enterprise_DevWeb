@@ -25,6 +25,7 @@ const CreateEvent = () => {
     const [validationErrors, setValidationErrors] = useState(Data);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     // State Date
     const [startDate, setStartDate] = useState(
@@ -85,6 +86,10 @@ const CreateEvent = () => {
         }
         setIsLoading(true);
         setError(null);
+        if (isSubmitting) {
+            return;
+        }
+        setIsSubmitting(true);
 
         const newFormData = {
             ...formData,
@@ -104,7 +109,6 @@ const CreateEvent = () => {
             });
             if (!response.ok) {
                 const data = await response.json();
-                console.log(data.error.message)
                 setError(data.message);
                 return;
             }
@@ -114,6 +118,7 @@ const CreateEvent = () => {
             setError('Failed to create event. Please try again later.');
         } finally {
             setIsLoading(false);
+            setIsSubmitting(false);
         }
     };
 
@@ -218,7 +223,7 @@ const CreateEvent = () => {
 
                             <div className="form-action">
                                 <button type="submit" onClick={handleBack} className="btn">Cancel</button>
-                                <button type="submit" disabled={!isFormValid} className="btn">Create</button>
+                                <button type="submit" disabled={!isFormValid || isSubmitting} className="btn">Create</button>
                             </div>
                             {error && <div className="error">{error}</div>}
                         </form>
