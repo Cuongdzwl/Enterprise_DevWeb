@@ -90,9 +90,78 @@ export class CommentsService implements ISuperService<Comment> {
           const contribution: Contribution | undefined =
             await contributionsService
               .byId(r.ContributionID)
-              .then((contribution: Contribution) => {
+              .then(async (contribution: Contribution) => {
                 // Check if the user is commenting on their own contribution
-                if (r.UserID == contribution.UserID) return undefined;
+                if (r.UserID == contribution.UserID) {
+                  L.info("User commenting on their own contribution")
+                  // Send notification to the coordinator if the last one comment is him
+                  var replies = await prisma.comments
+                    .findMany({
+                      where: {
+                        ContributionID: Number(comment.ContributionID),
+                      },
+                      orderBy: { CreatedAt: 'desc' },
+                      skip: 1,
+                      take: 1,
+                    })
+                    .catch((err) => {
+                      L.error(err);
+                      return Promise.resolve(null);
+                    });
+                    L.info(replies)
+                    if(replies== null){
+                      return undefined;
+                    }
+                    const reply : any = replies[0]; 
+                  if (reply != null) {
+                    L.info(
+                      reply,
+                      `last comment by ${reply?.UserID} on contribution ${reply?.ContributionID}`
+                    );
+                    if (reply) {
+                      L.info(reply)
+                      //find commenter name
+                      var commenter = await prisma.users.findUnique({select: {Name: true}, where: {ID: r.UserID}}).catch((err) => {L.error(err); return {Name: "Student"};});
+                      // Check if the last comment is not from the same user
+                      L.info("Commenter " + commenter?.Name)
+                      if (reply.UserID != r.UserID) {
+                        prisma.users.findUnique({
+                          where: { ID: reply.UserID },
+                        }).then((user) => {
+                          if(user == null) return
+                          notificationsService.trigger(
+                            user as User,
+                            {
+                              Commenter: {
+                                Name: commenter?.Name || "Student",
+                              },
+                              Contribution: {
+                                ID: contribution.ID,
+                                Name: contribution?.Name,
+                              },
+                              Event: {
+                                ID: contribution.EventID,
+                              },
+                            },
+                            NotificationSentTypeEnum.COMMENTCOORDINATORREPLY,
+                            NotificationSentThrough.InApp
+                          ).catch((err) => {L.error(err); return;});
+                        }).catch((err) => {L.error(err); return;})
+                      }else{
+                        L.info("NO0000000000000000000000000000000000000000")
+                        L.info(reply.UserID + "")
+                        L.info(r.UserID + "")
+                        L.info("NO0000000000000000000000000000000000000000")
+                      }
+                    }else{
+                      L.info("NOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO" + reply)
+
+                    }
+                  }
+
+                  return undefined;
+                }
+                // Send notification to the coordinator if the last one
                 return contribution;
               })
               .catch((_) => {
@@ -101,17 +170,22 @@ export class CommentsService implements ISuperService<Comment> {
           if (!contribution) {
             return r;
           }
+          // Find commenter name
+          var commenter = await prisma.users.findUnique({select: {Name: true}, where: {ID: r.UserID}}).catch((err) => {L.error(err); return {Name: "Student"};});
           // Send comment to contribution owner
           userServices.byId(contribution.UserID).then((user: User) => {
             notificationsService.trigger(
               user,
               {
                 Commenter: {
-                  Name: user.Name,
+                  Name: commenter?.Name || "Coordinator",
                 },
                 Contribution: {
-                  ID : contribution.ID,
+                  ID: contribution.ID,
                   Name: contribution?.Name,
+                },
+                Event: {
+                  ID: contribution.EventID,
                 },
               },
               NotificationSentTypeEnum.COMMENTONCONTRIBUTION,
@@ -157,14 +231,18 @@ export class CommentsService implements ISuperService<Comment> {
     }
     try {
       L.info(`update ${model} with id ${comment.ID}`);
-      const updatedComment = prisma.comments.update({
-        where: { ID: id },
-        data: {
-          Content: comment.Content,
-          ContributionID: comment.ContributionID,
-          UserID: comment.UserID,
-        },
-      });
+      const updatedComment = prisma.comments
+        .update({
+          where: { ID: id },
+          data: {
+            Content: comment.Content,
+            ContributionID: comment.ContributionID,
+            UserID: comment.UserID,
+          },
+        })
+        .catch((err) => {
+          L.error(`update ${model} failed: ${err}`);
+        });
       return Promise.resolve(updatedComment);
     } catch (error) {
       return Promise.resolve({

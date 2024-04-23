@@ -18,6 +18,7 @@ export enum NotificationSentTypeEnum {
   NEWEVENT = "new-event",
   CONTRIBUTIONINAPPEVENT = "contributions-inapp-event",
   COMMENTONCONTRIBUTION =  "comment-on-contribution",
-  NEWCONTRIBUTION = "new-contribution"
+  NEWCONTRIBUTION = "new-contribution",
+  COMMENTCOORDINATORREPLY = "comment-coordinator-reply"
   
 }

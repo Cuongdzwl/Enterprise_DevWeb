@@ -243,6 +243,16 @@ export class UsersService implements ISuperService<User> {
         };
       }
     }
+    if (user.Name) {
+      if (!/^[A-Za-z\s]{1,50}$/.test(user.Name)) {
+        return {
+          isValid: false,
+          error: UserExceptionMessage.INVALID,
+          message:
+            'Name must be at less than 50 characters long and contain letters only.',
+        };
+      }
+    }
     console.log(user.ID);
     if (!update) {
       // Validate Email

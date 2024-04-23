@@ -13,6 +13,7 @@ import { NotificationSentThrough } from '../models/NotificationSentThrough';
 import { NotificationSentTypeEnum } from '../models/NotificationSentType';
 import path from 'path';
 import { Event } from '../models/Event';
+import { ContributionDTO } from '../models/DTO/ContributionDTO';
 
 const prisma = new PrismaClient();
 const model = 'contributions';
@@ -397,7 +398,7 @@ export class ContributionsService implements ISuperService<Contribution> {
               Content: contribution.Content,
               IsPublic: contribution.IsPublic == true ? true : false,
               IsApproved:
-                contribution.StatusID === Status.ACCEPTED ? true : false,
+                contribution.StatusID ==Number(Status.ACCEPTED) ? true : false,
               StatusID: Number(contribution.StatusID),
               LastEditByID: contribution.LastEditByID,
             },
@@ -491,16 +492,16 @@ export class ContributionsService implements ISuperService<Contribution> {
       });
     }
   }
-  async submit (idContribution: number, update: boolean, idUser?: number):Promise< {submitCheck:boolean, message?:string}>{
+  async submit (idContribution: number, update: boolean, idUser?: number,contributionn?: ContributionDTO):Promise<{submitCheck:boolean, message?:string, isPublic?: boolean}>{
     try {
     const contribution = await prisma.contributions.findUnique({
       where: { ID: idContribution },
-    })
+    }).catch(error => {L.error(error)});
     if(contribution)
       {
     const event = await prisma.events.findUnique({
       where: { ID: contribution?.EventID },
-    })
+    }).catch(error => {L.error(error)});
     L.info("event")
     if(!event){
       return {submitCheck: false, message:'Event related contribution not fonud'}
@@ -516,7 +517,7 @@ export class ContributionsService implements ISuperService<Contribution> {
       }
       const user = await prisma.users.findUnique({
         where: { ID: idUser },
-      })
+      }).catch(error => {L.error(error)});
       L.info("update "+user?.RoleID+" "+idUser)
       if(!user){
         return {submitCheck: true, message:'User update contribution is not found'}
@@ -544,7 +545,10 @@ export class ContributionsService implements ISuperService<Contribution> {
     if(contribution.StatusID === 1){
       return {submitCheck: false, message:'This contribution is pending'}
     }
-    return {submitCheck: true, message:'This contribution was graded bay Marketing Coordinator'}
+    if(contribution.StatusID === 3 || contributionn?.StatusID == 3){
+      return {submitCheck: false, message:'This contribution is Approved'}
+    }
+    return {submitCheck: true, message:'This contribution was graded by Marketing Coordinator'}
   }
   return {submitCheck: true, message:'This contribution is not exist'}
   } catch (error) {
@@ -690,65 +694,65 @@ export class ContributionsService implements ISuperService<Contribution> {
     }
     )
 
-  }
-  async validateFinalDate(contribution: Contribution): Promise<boolean> {
-    return await prisma.events
-      .findUnique({ where: { ID: contribution.EventID } })
-      .then((r) => {
-        if (!r) {
-          return false;
-        }
-        if (r.ClosureDate) {
-          if (new Date(r.FinalDate) < new Date()) {
-            return false;
-          }
-        }
-        return true;
-      })
-      .catch((e) => {
-        L.error("This is not a bug, this is a recursive feature:" + e );
-        return prisma.contributions
-          .findUnique({ where: { ID: contribution.ID } })
-          .then((c) => {
-            if (!c) {
-              return false;
-            }
-            return this.validateFinalDate(c as Contribution);
-          })
-          .catch(() => {
-            return false;
-          });
-      });
-  }
-  async validateClosureDate(contribution: Contribution): Promise<boolean> {
-    return await prisma.events
-      .findUnique({ where: { ID: contribution.EventID } })
-      .then((r) => {
-        if (!r) {
-          return false;
-        }
-        if (r.ClosureDate) {
-          if (new Date(r.ClosureDate) < new Date()) {
-            return false;
-          }
-        }
-        return true;
-      })
-      .catch((e) => {
-        L.error(e);
+  // }
+  // async validateFinalDate(contribution: Contribution): Promise<boolean> {
+  //   return await prisma.events
+  //     .findUnique({ where: { ID: contribution.EventID } })
+  //     .then((r) => {
+  //       if (!r) {
+  //         return false;
+  //       }
+  //       if (r.ClosureDate) {
+  //         if (new Date(r.FinalDate) < new Date()) {
+  //           return false;
+  //         }
+  //       }
+  //       return true;
+  //     })
+  //     .catch((e) => {
+  //       L.error("This is not a bug, this is a recursive feature:" + e );
+  //       return prisma.contributions
+  //         .findUnique({ where: { ID: contribution.ID } })
+  //         .then((c) => {
+  //           if (!c) {
+  //             return false;
+  //           }
+  //           return this.validateFinalDate(c as Contribution);
+  //         })
+  //         .catch(() => {
+  //           return false;
+  //         });
+  //     });
+  // }
+  // async validateClosureDate(contribution: Contribution): Promise<boolean> {
+  //   return await prisma.events
+  //     .findUnique({ where: { ID: contribution.EventID } })
+  //     .then((r) => {
+  //       if (!r) {
+  //         return false;
+  //       }
+  //       if (r.ClosureDate) {
+  //         if (new Date(r.ClosureDate) < new Date()) {
+  //           return false;
+  //         }
+  //       }
+  //       return true;
+  //     })
+  //     .catch((e) => {
+  //       L.error(e);
 
-        return prisma.contributions
-          .findUnique({ where: { ID: contribution.ID } })
-          .then((c) => {
-            if (!c) {
-              return false;
-            }
-            return this.validateClosureDate(c as Contribution);
-          })
-          .catch(() => {
-            return false;
-          });
-      });
+  //       return prisma.contributions
+  //         .findUnique({ where: { ID: contribution.ID } })
+  //         .then((c) => {
+  //           if (!c) {
+  //             return false;
+  //           }
+  //           return this.validateClosureDate(c as Contribution);
+  //         })
+  //         .catch(() => {
+  //           return false;
+  //         });
+  //     });
   }
 }
 
