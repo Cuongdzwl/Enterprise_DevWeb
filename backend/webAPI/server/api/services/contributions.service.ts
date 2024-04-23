@@ -1,4 +1,3 @@
-import { dalService } from './../../../../../../novu/packages/application-generic/src/custom-providers/index';
 import { Status } from '../models/Status';
 import { Contribution } from '../models/Contribution';
 import L from '../../common/logger';
