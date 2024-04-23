@@ -29,7 +29,6 @@ jobs:
           nvm install 18
           nvm use 18       
           node --version
-          sudo npm install -g pm2
           echo "Installing dependencies..."
           git pull origin master
           npm i
@@ -50,4 +49,6 @@ jobs:
           echo "Installing..."
           npm run compile --if-present
           echo "Restarting..."
+          pm2 -v
+          sudo npm install -g pm2
           pm2 restart ecosystem.config.js
