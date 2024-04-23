@@ -487,12 +487,12 @@ export class FacultiesService implements ISuperService<Faculty> {
     }
 
     // Validate Description
-    if (!faculty.Description || faculty.Description.length > 3000) {
+    if (!faculty.Description || faculty.Description.length > 1000) {
       return {
         isValid: false,
         error: FacultyExceptionMessage.INVALID,
         message:
-          'Faculty description is invalid or too long, with a maximum of 3000 characters.',
+          'Faculty description is invalid or too long, with a maximum of 1000 characters.',
       };
     }
 

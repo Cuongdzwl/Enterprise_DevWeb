@@ -420,7 +420,14 @@ export class EventsService implements ISuperService<Event> {
           'Event name is invalid, cannot contain numbers or special characters, and must have a maximum of 50 characters.',
       };
     }
-
+    if (!event.Description || event.Description.length > 1000) {
+      return {
+        isValid: false,
+        error: EventExceptionMessage.INVALID,
+        message:
+          'Event description is invalid or too long, with a maximum of 1000 characters.',
+      };
+    }
     // Validate ClosureDate and FinalDate
     if (!event.ClosureDate || !event.FinalDate) {
       return {
