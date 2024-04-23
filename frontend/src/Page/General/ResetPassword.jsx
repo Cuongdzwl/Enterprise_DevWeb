@@ -51,7 +51,7 @@ const ResetPassword = () => {
             if (response.ok) {
                 setTimeout(()=>{
                     setMessage('Password reset successfully. Please login to continue.');
-                })
+                },3000)
                 window.location.href = '/'
             } else {
                 setError(data.message);

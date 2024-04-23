@@ -85,7 +85,7 @@ const CreateContributionS = () => {
         }
     };
 
-    const handleBack = () => {navigate(`/student/event/contribution/${id}`)}
+    const handleBack = () => { navigate(`/student/event/contribution/${id}`) }
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -122,12 +122,12 @@ const CreateContributionS = () => {
                 const data = await response.json();
                 setError(data.message);
                 return;
-            }
-
+            } 
+            
             setTimeout(() => {
                 navigate(`/student/event/contribution/${id}`);
-            },1000)
-            
+            }, 3000)
+
         } catch (error) {
             console.error('Error creating contribution:', error);
             setError('Failed to create contribution. Please try again later.');
@@ -140,7 +140,8 @@ const CreateContributionS = () => {
         setIsActive(true);
     }
 
-    const handleClose = () => {
+    const handleClose = (e) => {
+        e.preventDefault();
         setIsActive(false);
     }
 
@@ -153,13 +154,13 @@ const CreateContributionS = () => {
             </div>
             <div className="row-2">
                 <div className="box"
-                     style={{
-                         height: '100vh'
-                     }}
+                    style={{
+                        height: '100vh'
+                    }}
                 >
                     <div className="box-content contribution">
-                        <form onSubmit={handleSubmit} encType='multipart/form-data'
-                              style={{width: '100%'}}
+                        <form encType='multipart/form-data'
+                            style={{ width: '100%' }}
                         >
                             <FormGroup
                                 label={'Name'}
@@ -173,7 +174,7 @@ const CreateContributionS = () => {
                             <div className="form-group">
                                 <label>Content</label>
                                 <textarea required name="Content" cols="30" rows="10" value={formData.Content}
-                                          onChange={handleChange}></textarea>
+                                    onChange={handleChange}></textarea>
                             </div>
                             {validationErrors.Content && <div className="error">{validationErrors.Content}</div>}
 
@@ -208,7 +209,7 @@ const CreateContributionS = () => {
 
                             <div className={`term-conditions ${isActive ? 'active' : ''}`}>
                                 <div className="title">
-                                Terms and Conditions
+                                    Terms and Conditions
                                 </div>
                                 {/* Content of terms and conditions */}
                                 <div className="content">

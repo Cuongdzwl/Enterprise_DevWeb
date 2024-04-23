@@ -31,7 +31,6 @@ const ListContribution = () => {
         }
     }, [contributionData, isBeforeClosureDate]);
 
-
     // Handle Event
     const handleDelete = async (id) => {
         try {
