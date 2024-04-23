@@ -270,8 +270,8 @@ async downloadBlobToFile(file: FileDTO) {
   }
     async validateConstraints(file: File): Promise<{isValid: boolean, error?: string, message?: string}> {
     // Validate URL
-    if (!file.Url || file.Url.length > 3000) {
-        return { isValid: false, error: FileExceptionMessage.INVALID, message: "File URL is invalid or too long, with a maximum of 3000 characters." };
+    if (!file.Url || file.Url.length > 1000) {
+        return { isValid: false, error: FileExceptionMessage.INVALID, message: "File URL is invalid or too long, with a maximum of 1000 characters." };
     }
 
     // Validate ContributionID

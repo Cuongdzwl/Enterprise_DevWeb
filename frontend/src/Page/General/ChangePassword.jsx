@@ -51,7 +51,7 @@ const ChangePassword = () => {
     };
 
     const handleBack = () => {
-        navigate(-1);
+        navigate('/profile');
     }
 
     const handleSubmit = async (e) => {
