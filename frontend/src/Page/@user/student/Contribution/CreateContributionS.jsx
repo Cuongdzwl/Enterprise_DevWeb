@@ -25,6 +25,7 @@ const CreateContributionS = () => {
     const [isFormValid, setIsFormValid] = useState(false);
     const [isActive, setIsActive] = useState(false);
     const [error, setError] = useState(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     // Navigate, ID
     const navigate = useNavigate();
@@ -36,7 +37,6 @@ const CreateContributionS = () => {
 
     // get userID from token
     const UserID = decodedToken.id;
-
 
     // Validate form
     useEffect(() => {
@@ -51,12 +51,6 @@ const CreateContributionS = () => {
                 errorMessage = value.trim() ? '' : 'Name is required.';
                 break;
             case 'Content':
-                errorMessage = value.trim() ? '' : 'Content is required.';
-                break;
-            case 'filesPath':
-                errorMessage = value.trim() ? '' : 'Content is required.';
-                break;
-            case 'file2':
                 errorMessage = value.trim() ? '' : 'Content is required.';
                 break;
             default:
@@ -90,6 +84,11 @@ const CreateContributionS = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
+        if (isSubmitting) {
+            return;
+        }
+        setIsSubmitting(true);
+
         const formDataToSend = new FormData();
         formDataToSend.append('Name', formData.Name);
         formDataToSend.append('Content', formData.Content);
@@ -122,17 +121,14 @@ const CreateContributionS = () => {
                 const data = await response.json();
                 setError(data.message);
                 return;
-            } 
-            
-            setTimeout(() => {
-                navigate(`/student/event/contribution/${id}`);
-            }, 3000)
-
+            }
+            navigate(`/student/event/contribution/${id}`);
         } catch (error) {
             console.error('Error creating contribution:', error);
             setError('Failed to create contribution. Please try again later.');
         } finally {
             setIsLoading(false);
+            setIsSubmitting(false);
         }
     };
 
@@ -238,7 +234,7 @@ const CreateContributionS = () => {
                                     </span>
                                 </div>
                                 <div className="form-action">
-                                    <button type="submit" className="btn" onClick={handleSubmit}>Accept</button>
+                                    <button type="submit" disabled={isSubmitting} className="btn" onClick={handleSubmit}>Accept</button>
                                     <button type="submit" className="btn" onClick={handleClose}>Decline</button>
                                 </div>
                             </div>

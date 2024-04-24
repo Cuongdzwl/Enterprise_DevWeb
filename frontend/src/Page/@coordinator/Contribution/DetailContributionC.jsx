@@ -19,6 +19,7 @@ const UpdateContributionC = () => {
     const [isActive, setIsActive] = useState(false);
     const [comment, setComment] = useState('');
     const [comments, setComments] = useState([]);
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const navigate = useNavigate();
     const {id} = useParams();
 
@@ -66,6 +67,11 @@ const UpdateContributionC = () => {
     const handleSubmitComments = async (e) => {
         e.preventDefault();
 
+        if (isSubmitting) {
+            return;
+        }
+        setIsSubmitting(true);
+
         const data = {
             Content: comment,
             ContributionID: parseInt(id)
@@ -91,11 +97,12 @@ const UpdateContributionC = () => {
         } catch (error) {
             console.log('Error creating comment:', error);
             setError('Failed to create comment. Please try again later.');
+        }finally {
+            setIsSubmitting(false);
         }
     };
 
     // Handle Event
-
     const handleBack = () => {
         navigate(`/coordinator/event/contribution/${EventID}`)
     }
@@ -231,7 +238,7 @@ const UpdateContributionC = () => {
                                                    onChange={(e) => setComment(e.target.value)}
                                                    className="form-control"
                                                    placeholder="Write a comment..."/>
-                                            <button type="submit" onClick={handleSubmitComments}>
+                                            <button type="submit" disabled={isSubmitting} onClick={handleSubmitComments}>
                                                 <i className="fa-solid fa-paper-plane"></i>
                                             </button>
                                         </div>

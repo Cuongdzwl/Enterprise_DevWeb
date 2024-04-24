@@ -50,4 +50,5 @@ jobs:
           npm run compile --if-present
           echo "Restarting..."
           pm2 -v
-          pm2 restart ecosystem.config.js
+          pm2 kill
+          pm2 start ecosystem.config.js

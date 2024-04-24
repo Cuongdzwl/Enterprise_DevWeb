@@ -16,6 +16,7 @@ const CreateFaculty = () => {
     const [validationErrors, setValidationErrors] = useState(Data);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const navigate = useNavigate();
 
     // Validate form
@@ -58,9 +59,13 @@ const CreateFaculty = () => {
             ...formData,
             IsEnabledGuest: formData.IsEnabledGuest === 'true' ? true : false,
         }
-
         setIsLoading(true);
         setError(null);
+
+        if (isSubmitting) {
+            return;
+        }
+        setIsSubmitting(true);
 
         try {
             const response = await fetch(`${ApiResponse}faculties`, {
@@ -82,6 +87,7 @@ const CreateFaculty = () => {
             setError('Failed to create faculty. Please try again later.');
         } finally {
             setIsLoading(false);
+            setIsSubmitting(false);
         }
     };
 
@@ -94,9 +100,9 @@ const CreateFaculty = () => {
             </div>
             <div className="row-2">
                 <div className="box"
-                style={{
-                    height: 'calc(100vh - 150px)'
-                }}
+                    style={{
+                        height: 'calc(100vh - 150px)'
+                    }}
                 >
                     <div className="box-content">
                         <form onSubmit={handleSubmit}>
@@ -118,7 +124,7 @@ const CreateFaculty = () => {
                             <div className="form-group mb-input">
                                 <label>Guest</label>
                                 <select value={formData.IsEnabledGuest} onChange={handleChange} className='form-control' name="IsEnabledGuest">
-                                <option value="" defaultValue hidden>Choose here</option>
+                                    <option value="" defaultValue hidden>Choose here</option>
                                     <option value='true'>True</option>
                                     <option value='false'>False</option>
                                 </select>
@@ -126,7 +132,7 @@ const CreateFaculty = () => {
 
                             <div className="form-action">
                                 <button type="submit" onClick={handleBack} className="btn">Cancel</button>
-                                <button type="submit" className="btn" disabled={!isFormValid}>Create</button>
+                                <button type="submit" className="btn" disabled={!isFormValid || isSubmitting} >Create</button>
                             </div>
                             {error && <div className="error">{error}</div>}
                         </form>

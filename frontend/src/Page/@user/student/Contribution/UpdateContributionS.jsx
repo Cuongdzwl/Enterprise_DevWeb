@@ -13,7 +13,7 @@ const Data = {
     IsApproved: false,
     EventID: 0,
     UserID: 0,
-    StatusID: 1,
+    StatusID: '',
     filesPath: [],
     file2: []
 }
@@ -26,10 +26,11 @@ const UpdateContributionS = () => {
     const { id } = useParams();
 
     const { data: contribution } = useFetch(`${ApiResponse}contributions/${id}?depth=1`);
-    const textFile = contribution?.TextFiles[0]?.Url;
-    const imageFile = contribution?.ImageFiles[0]?.Url;
-
+    
     const EventID = contribution?.EventID;
+    const StatusID = contribution?.StatusID;
+    console.log('before:', StatusID);
+
 
 
     useEffect(() => {
@@ -77,11 +78,12 @@ const UpdateContributionS = () => {
         const formDataToSend = new FormData();
         formDataToSend.append('Name', formData.Name);
         formDataToSend.append('Content', formData.Content);
-        formDataToSend.append('IsPublic', formData.IsPublic);
-        formDataToSend.append('IsApproved', formData.IsApproved);
+        // formDataToSend.append('IsPublic', formData.IsPublic);
+        // formDataToSend.append('IsApproved', formData.IsApproved);
         formDataToSend.append('EventID', EventID);
         formDataToSend.append('UserID', UserID);
-        formDataToSend.append('StatusID', 1);
+        // formDataToSend.append('StatusID', 2);
+        // console.log('after:', formData.StatusID);
 
         formData.filesPath?.forEach(file => {
             formDataToSend.append('filesPath', file);

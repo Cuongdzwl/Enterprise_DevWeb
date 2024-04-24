@@ -26,6 +26,7 @@ const DetailContributionS = () => {
     const [isActive, setIsActive] = useState(false);
     const [comment, setComment] = useState('');
     const [comments, setComments] = useState([]);
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const navigate = useNavigate();
     const { id } = useParams();
 
@@ -66,6 +67,11 @@ const DetailContributionS = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
+        if (isSubmitting) {
+            return;
+        }
+        setIsSubmitting(true);
+
         const data = {
             Content: comment,
             ContributionID: parseInt(id)
@@ -92,6 +98,9 @@ const DetailContributionS = () => {
         } catch (error) {
             console.log('Error creating comment:', error);
             setError('Failed to create comment. Please try again later.');
+        }finally {
+            setIsLoading(false);
+            setIsSubmitting(false);
         }
     }
 
@@ -245,7 +254,7 @@ const DetailContributionS = () => {
                                             value={comment}
                                             onChange={(e) => setComment(e.target.value)}
                                         />
-                                        <button type="submit">
+                                        <button type="submit" disabled={isSubmitting}>
                                             <i className="fa-solid fa-paper-plane"></i>
                                         </button>
                                     </div>

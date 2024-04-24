@@ -14,6 +14,13 @@ const Data = {
     FacultyID: ''
 };
 
+const rolePaths = {
+    1: '/admin/dashboard',
+    2: '/manager/dashboard',
+    3: '/coordinator/dashboard',
+    4: '/student/event',
+};
+
 const Profile = () => {
     const navigate = useNavigate();
     // Data
@@ -67,8 +74,16 @@ const Profile = () => {
         validateField(name, value);
     };
 
+    // Get current user role
+    const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+    const roleID = currentUser.RoleID;
+    const rolePath = rolePaths[roleID];
+
+
     const handleBack = () => {
-        navigate(-1);
+        if (rolePath) {
+            navigate(rolePath);
+        }
     };
 
     const handlePassword = () => {
@@ -106,7 +121,7 @@ const Profile = () => {
                 setError(data.message);
                 return;
             }
-            navigate(-1);
+            navigate(rolePath);
         } catch (error) {
             console.error('Error update profile account:', error);
             setError('Failed to update profile account. Please try again later.');

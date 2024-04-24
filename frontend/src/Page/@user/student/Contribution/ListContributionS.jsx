@@ -12,6 +12,7 @@ const ListContribution = () => {
     // Fetch data
     const { id } = useParams();
     const { data: contributionData } = useFetch(`${ApiResponse}events/${id}?depth=1&contribution=true`);
+
     // State
     const navigate = useNavigate();
     const [contribution, setContribution] = useState([]);
