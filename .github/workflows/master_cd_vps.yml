@@ -46,6 +46,7 @@ jobs:
           echo 'GOOGLE_CLIENT_ID="${{ secrets.GOOGLE_CLIENT_ID}}"' >> .env  
           echo 'NOVU_API_KEY="${{ secrets.NOVU_API_KEY}}"' >> .env
           echo 'NOVU_IDENTIFIER="${{ secrets.NOVU_IDENTIFIER}}"' >> .env
+          echo 'SITE_DOMAIN="${{ secrets.SITE_DOMAIN}}"' >> .env
           echo "Installing..."
           npm run compile --if-present
           echo "Restarting..."
