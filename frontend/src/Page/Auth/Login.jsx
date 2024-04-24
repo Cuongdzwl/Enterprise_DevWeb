@@ -32,6 +32,12 @@ const LoginSCG = () => {
         }
     }
 
+    // Check guest status and redirect
+    const guest = localStorage.getItem('guest');
+    if (guest) {
+        localStorage.removeItem('guest');
+    }
+
 
     // Fetch faculty data
     const facultyData = useFetch(`${ApiResponse}faculties`);

@@ -49,7 +49,7 @@ const CreateEvent = () => {
         let errorMessage = '';
         switch (name) {
             case 'Name':
-                errorMessage = value.trim() || /^[A-Za-z\s]{1,50}$/.test(value) ? '' : 'Invalid event name: no numbers or special characters, max 15 chars.';
+                errorMessage = value.trim() || /^[A-Za-z\s]{1,50}$/.test(value) ? '' : 'Invalid event name: no numbers or special characters, max 50 chars.';
                 break;
             case 'Description':
                 errorMessage = value.trim() ? '' : 'Description is required.';

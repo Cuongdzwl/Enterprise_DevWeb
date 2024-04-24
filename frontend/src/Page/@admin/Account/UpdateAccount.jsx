@@ -48,7 +48,7 @@ const UpdateAccount = () => {
         let errorMessage = '';
         switch (name) {
             case 'Name':
-                errorMessage = value.trim() && /^[A-Za-z\s]{1,50}$/.test(value)  ? '' : 'Name is required and must be less than 15 characters.';
+                errorMessage = value.trim() && /^[A-Za-z\s]{1,50}$/.test(value)  ? '' : 'Name is required and must be less than 50 characters.';
                 break;
             case 'Email':
                 errorMessage = /^\S+@\S+\.\S+$/.test(value) ? '' : 'Email is invalid.';
