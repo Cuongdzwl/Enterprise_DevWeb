@@ -122,7 +122,8 @@ export class ContributionsController implements ISuperController {
         const files = filesObject[fieldName];
         for (const file of files) {
           const fileCheck = await contributionsService.validateFile(file);
-          if (!fileCheck.checkFile) {
+          L.error(fileCheck);
+          if (fileCheck.checkFile == false) {
             res.status(400).json(fileCheck).end();
             return;
           }
@@ -156,6 +157,7 @@ export class ContributionsController implements ISuperController {
             .json({ message: 'Contribution and files created successfully' });
         })
         .catch((err) => {
+          L.error(err);
           res.status(400).json(err);
         });
     } catch (error) {
@@ -209,10 +211,11 @@ export class ContributionsController implements ISuperController {
           const files = filesObject[fieldName];
           for (const file of files) {
             const fileCheck = await contributionsService.validateFile(file);
-            if ((fileCheck.checkFile = true)) {
+            if (!fileCheck.checkFile) {
+              L.error(fileCheck);
               res
                 .status(400)
-                .json({ error: fileCheck.error, message: fileCheck.message })
+                .json(fileCheck)
                 .end();
               return;
             }

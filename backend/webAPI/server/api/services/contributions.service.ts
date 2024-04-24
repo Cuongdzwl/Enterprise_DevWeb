@@ -648,14 +648,13 @@ export class ContributionsService implements ISuperService<Contribution> {
   async validateFile(file:Express.Multer.File):Promise<{checkFile: boolean, error?: string, message?:string}>{
     L.info(file.size + 'bytes');
     if (file.size > 5 * 1024 * 1024) {
-      return{
+      return  Promise.resolve({
         checkFile: false,
         error: 'Invalid File',
         message: 'File too large. (5mb)',
-      };
-    }
-    return {
-      checkFile: true,
+      });
+    }else{
+      return Promise.resolve({checkFile: true});
     }
   }
   async validateSubmissionAlreadyApproved(id : number):Promise<boolean>{
