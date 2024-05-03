@@ -27,7 +27,7 @@ export class FacultiesService implements ISuperService<Faculty> {
     }
     if (isPublic) {
       var where: any = { IsEnabledGuest: true };
-      // depth 2 is for public events
+      // depth 2 is for public events 
     } else {
       var where = undefined;
     }

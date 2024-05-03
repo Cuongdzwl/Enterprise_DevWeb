@@ -1,7 +1,21 @@
 import { NextFunction, Request, Response } from 'express';
 import authStrategy from '../services/authStrategy.service';
-import { User } from '../models/User';
 import L from '../../common/logger';
+
+export const authenticateToken = (req: Request, res: Response, next: NextFunction) => {
+  authStrategy.authenticate('jwt', { session: false }, (err: any, user: any, _: any) => {
+      if (err) {
+          return next(err);
+      }
+      if (!user) {
+          return res.status(401).json({ message: 'Unauthorized' });
+      }
+      res.locals.user = user;
+      L.info(res.locals.user)
+      next();
+  })(req, res, next);
+};
+
 export const authorizeRole =
   (require: string) =>
   (_: Request, res: Response, next: NextFunction) => {
@@ -31,18 +45,6 @@ export const authorizeRole =
     });
   };
 
-export const authenticateToken = (req: Request, res: Response, next: NextFunction) => {
-    authStrategy.authenticate('jwt', { session: false }, (err: any, user: any, _: any) => {
-        if (err) {
-            return next(err);
-        }
-        if (!user) {
-            return res.status(401).json({ message: 'Unauthorized' });
-        }
-        res.locals.user = user;
-        L.info(res.locals.user)
-        next();
-    })(req, res, next);
-};
+
 
 // JWT Expiration Middleware
