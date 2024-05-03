@@ -28,13 +28,11 @@ const AdminDashboard = () => {
     // Data for Bar Chart
     const numsContributionOfFaculity = uniqueYears.map(year => ({
         label: year.toString(),
-        backgroundColor: year === 2023 ? "rgba(43, 63, 229, 0.8)" : "rgba(250, 192, 19, 0.8)",
         data: dataSource.filter(data => data.year === year).map(data => data.contributionsOfFaculty)
     }));
 
     const numsContributionsException = uniqueYears.map(year => ({
         label: year.toString(),
-        backgroundColor: year === 2023 ? "rgba(43, 63, 229, 0.8)" : "rgba(250, 192, 19, 0.8)",
         data: dataSource.filter(data => data.year === year).map(data => data.contributionsException)
     }));
 
@@ -107,16 +105,6 @@ const AdminDashboard = () => {
                                     {
                                         label: "Count",
                                         data: aggregatedArray.map((data) => data.contributionsPercentage),
-                                        backgroundColor: [
-                                            "rgba(43, 63, 229, 0.8)",
-                                            "rgba(250, 192, 19, 0.8)",
-                                            "rgba(253, 135, 135, 0.8)",
-                                        ],
-                                        borderColor: [
-                                            "rgba(43, 63, 229, 0.8)",
-                                            "rgba(250, 192, 19, 0.8)",
-                                            "rgba(253, 135, 135, 0.8)",
-                                        ],
                                     },
                                 ],
                             }}

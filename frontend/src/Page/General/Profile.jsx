@@ -180,7 +180,7 @@ const Profile = () => {
 
                             <div className="form-group">
                                 <label>Role</label>
-                                <select value={formData.RoleID} onChange={handleChange} className='form-control' name="RoleID">
+                                <select value={formData.RoleID} disabled onChange={handleChange} className='form-control' name="RoleID">
                                     <option value="" hidden>Select Role</option>
                                     {roleData && Array.isArray(roleData.data) && roleData.data.map((role) => (
                                         <option key={role.ID} value={role.ID}>{role.Name}</option>
@@ -191,7 +191,7 @@ const Profile = () => {
 
                             <div className="form-group mb-input">
                                 <label>Faculty</label>
-                                <select value={formData.FacultyID} onChange={handleChange} className='form-control' name="FacultyID">
+                                <select value={formData.FacultyID} disabled onChange={handleChange} className='form-control' name="FacultyID">
                                     <option value="" hidden>Select Faculty</option>
                                     {facultyData && Array.isArray(facultyData.data) && facultyData.data.map((faculty) => (
                                         <option key={faculty.ID} value={faculty.ID}>{faculty.Name}</option>

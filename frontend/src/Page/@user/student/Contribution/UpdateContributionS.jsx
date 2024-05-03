@@ -78,12 +78,8 @@ const UpdateContributionS = () => {
         const formDataToSend = new FormData();
         formDataToSend.append('Name', formData.Name);
         formDataToSend.append('Content', formData.Content);
-        // formDataToSend.append('IsPublic', formData.IsPublic);
-        // formDataToSend.append('IsApproved', formData.IsApproved);
         formDataToSend.append('EventID', EventID);
         formDataToSend.append('UserID', UserID);
-        // formDataToSend.append('StatusID', 2);
-        // console.log('after:', formData.StatusID);
 
         formData.filesPath?.forEach(file => {
             formDataToSend.append('filesPath', file);

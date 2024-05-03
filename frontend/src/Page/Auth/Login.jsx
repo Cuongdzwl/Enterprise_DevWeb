@@ -23,6 +23,8 @@ const LoginSCG = () => {
 
     // Check login status and redirect to dashboard
     const token = localStorage.getItem('token');
+    const guest = localStorage.getItem('guest');
+
     if (token) {
         const decodedToken = jwtDecode(token);
         const roleID = decodedToken.roleID;
@@ -31,6 +33,11 @@ const LoginSCG = () => {
             navigate(rolePath);
         }
     }
+
+    if (guest) {
+        localStorage.removeItem('guest');
+    }
+
 
 
     // Fetch faculty data

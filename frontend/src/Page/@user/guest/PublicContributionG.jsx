@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import useFetch from '../../../CustomHooks/useFetch';
 import TableHead from '../../../components/TableHead';
 import Search from '../../../components/Search';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { ApiResponse } from '../../../Api';
 import Loading from '../../../components/Loading';
 
@@ -15,7 +15,7 @@ const ListContributionG = () => {
     const faculityID = guest?.FacultyID;
 
 
-    const { data: contributionData, error } = useFetch(`${ApiResponse}faculties/public/${faculityID}`);
+    const { data: contributionData } = useFetch(`${ApiResponse}faculties/public/${faculityID}`);
 
     // State
     const navigate = useNavigate();
@@ -42,13 +42,25 @@ const ListContributionG = () => {
 
     const handleDetailClick = (ID) => {
         return () => {
-            navigate(`/guest/public/detail/${ID}`, {state: contribution});
+            navigate(`/guest/public/detail/${ID}`, { state: contribution });
         };
     };
 
+
+    // Classify doc files and images
+    const filteredData = contribution.map(item => ({
+        ...item,
+        ImageFiles: item.Files.filter(file =>
+            file.Url.endsWith('.png') ||
+            file.Url.endsWith('.jpeg') ||
+            file.Url.endsWith('.JPG') ||
+            file.Url.endsWith('jpg')),
+        TextFiles: item.Files.filter(file => file.Url.endsWith('.docx'))
+    }));
+
     // Filter data
-    const filteredContribution = contribution ?
-        contribution.filter(item =>
+    const filteredContribution = filteredData ?
+        filteredData.filter(item =>
             item.Name.toLowerCase().includes(searchTerm.toLowerCase())
         ) : [];
 
@@ -57,8 +69,6 @@ const ListContributionG = () => {
         const files = str?.split('/');
         return files?.[files?.length - 1]
     }
-
-
 
     return (
         <div className="box">
@@ -75,29 +85,29 @@ const ListContributionG = () => {
                 <div className="box">
                     <table>
                         <thead>
-                        <TableHead headings={headings} />
+                            <TableHead headings={headings} />
                         </thead>
                         <tbody>
-                        {filteredContribution?.length > 0 ? (
-                            filteredContribution?.map((row, index) => (
-                                <tr onClick={handleDetailClick(row?.ID)} key={index}>
-                                    <td>{row?.Name}</td>
-                                    <td>{row?.Content}</td>
-                                    <td>
-                                        <img
-                                            width={50 + 'px'}
-                                            height={50 + 'px'}
-                                            src={row?.Files[0]?.Url}/>
-                                    </td>
-                                    <td>{(splitFiles(row?.Files[1]?.Url))}</td>
+                            {filteredContribution?.length > 0 ? (
+                                filteredContribution?.map((row, index) => (
+                                    <tr onClick={handleDetailClick(row?.ID)} key={index}>
+                                        <td>{row?.Name}</td>
+                                        <td>{row?.Content}</td>
+                                        <td>
+                                            <img
+                                                width={50 + 'px'}
+                                                height={50 + 'px'}
+                                                src={row?.ImageFiles[0]?.Url} />
+                                        </td>
+                                        <td>{(splitFiles(row?.TextFiles[0]?.Url))}</td>
 
+                                    </tr>
+                                ))
+                            ) : (
+                                <tr>
+                                    <td colSpan={headings?.length}>Not Found</td>
                                 </tr>
-                            ))
-                        ) : (
-                            <tr>
-                                <td colSpan={headings?.length}>Not Found</td>
-                            </tr>
-                        )}
+                            )}
                         </tbody>
 
                     </table>

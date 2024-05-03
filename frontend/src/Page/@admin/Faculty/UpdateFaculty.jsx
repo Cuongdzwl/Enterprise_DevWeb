@@ -42,7 +42,7 @@ const UpdateFaculty = () => {
         let errorMessage = '';
         switch (name) {
             case 'Name':
-                errorMessage = value.trim() && /^[A-Za-z\s]{1,50}$/.test(value) ? '' : 'Invalid faculty name: no numbers or special characters, max 15 chars';
+                errorMessage = value.trim() && /^[A-Za-z\s]{1,50}$/.test(value) ? '' : 'Invalid faculty name: no numbers or special characters, max 50 chars';
                 break;
             case 'Description':
                 errorMessage = value.length < 3000 ? '' : 'Description is invalid, must have a maximum of 3000 characters.'
@@ -67,10 +67,10 @@ const UpdateFaculty = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        if (!isFormValid) {
-            setError("Please fill in all fields correctly.");
-            return;
-        }
+        // if (!isFormValid) {
+        //     setError("Please fill in all fields correctly.");
+        //     return;
+        // }
 
         const newFormData = {
             ...formData,
