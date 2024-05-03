@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import useFetch from '../../../CustomHooks/useFetch';
 import TableHead from '../../../components/TableHead';
 import Search from '../../../components/Search';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { ApiResponse } from '../../../Api';
 import Loading from '../../../components/Loading';
 
@@ -15,7 +15,7 @@ const ListContributionG = () => {
     const faculityID = guest?.FacultyID;
 
 
-    const { data: contributionData, error } = useFetch(`${ApiResponse}faculties/public/${faculityID}`);
+    const { data: contributionData } = useFetch(`${ApiResponse}faculties/public/${faculityID}`);
 
     // State
     const navigate = useNavigate();

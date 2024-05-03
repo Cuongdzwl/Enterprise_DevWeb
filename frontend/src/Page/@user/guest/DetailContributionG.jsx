@@ -1,23 +1,21 @@
 import { useState } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import Loading from '../../../components/Loading';
-import DocViewer, {DocViewerRenderers} from "@cyntler/react-doc-viewer";
+import DocViewer, { DocViewerRenderers } from "@cyntler/react-doc-viewer";
 
 const DetailContributionG = () => {
     // State
     const [isActive, setIsActive] = useState(false);
     const navigate = useNavigate();
-    const {id} = useParams();
+    const { id } = useParams();
 
     // Fetch data
     const location = useLocation();
     const contribution = location.state;
 
-    console.log(contribution)
-
     if (!contribution) {
         return (
-            <Loading/>
+            <Loading />
         )
     }
 
@@ -36,20 +34,31 @@ const DetailContributionG = () => {
     }
 
     // Get detail contribution
-    const oneContribution = contribution.filter((item)=>{
-        if(item?.ID == id){
+    const oneContribution = contribution.filter((item) => {
+        if (item?.ID == id) {
             return item
         }
 
     })
 
-    const {Name, Content, Files} = oneContribution[0];
+    const item = oneContribution[0];
 
-    const imageFile = Files[0]?.Url
-    const textFile = Files[1]?.Url
+    // Classify doc files and images
+    const filteredData = {
+        ...item,
+        ImageFiles: item.Files.filter(file =>
+            file.Url.endsWith('.png') ||
+            file.Url.endsWith('.jpeg') ||
+            file.Url.endsWith('.JPG') ||
+            file.Url.endsWith('jpg')),
+        TextFiles: item.Files.filter(file => file.Url.endsWith('.docx'))
+    };
+
+    const image = filteredData.ImageFiles[0]?.Url;
+    const text = filteredData.TextFiles[0]?.Url;
 
     const docs = [
-        { uri: `${textFile}` },
+        { uri: `${text}` },
     ];
 
     const splitFiles = (str) => {
@@ -60,7 +69,7 @@ const DetailContributionG = () => {
     return (
         <div className="box">
             <div className={`view-file ${isActive ? 'active' : ''}`}>
-                <DocViewer documents={docs} pluginRenderers={DocViewerRenderers}/>
+                <DocViewer documents={docs} pluginRenderers={DocViewerRenderers} />
                 <div className="close-file-btn">
                     <button className='close-file' onClick={handleClose}>Close</button>
                 </div>
@@ -76,39 +85,39 @@ const DetailContributionG = () => {
                         <form action="">
                             <div className="form-group">
                                 <label>Name</label>
-                                <input readOnly={true} value={Name} className="form-control"/>
+                                <input readOnly={true} value={filteredData.Name} className="form-control" />
                             </div>
 
                             <div className="form-group">
                                 <label>Content</label>
-                                <textarea readOnly={true} value={Content} cols="30" rows="10"></textarea>
+                                <textarea readOnly={true} value={filteredData.Content} cols="30" rows="10"></textarea>
                             </div>
 
                             <div className="form-group mb-input">
                                 <label>File</label>
                                 <div
-                                    style={{display: 'flex'}}
+                                    style={{ display: 'flex' }}
                                 >
-                                    <input type="text" style={{width: '85%'}} name="name" id="name" readOnly={true}
-                                           value={splitFiles(textFile) ?? null}
-                                           className="form-control"/>
+                                    <input type="text" style={{ width: '85%' }} name="name" id="name" readOnly={true}
+                                        value={splitFiles(text) ?? null}
+                                        className="form-control" />
                                     <div className="download"
-                                         style={{
-                                             display: 'grid',
-                                             placeItems: 'center',
-                                             marginTop: '12px',
-                                             borderRadius: '8px',
-                                             background: '#F1F2F5',
-                                             marginLeft: 'auto',
-                                             width: '10%',
-                                         }}
+                                        style={{
+                                            display: 'grid',
+                                            placeItems: 'center',
+                                            marginTop: '12px',
+                                            borderRadius: '8px',
+                                            background: '#F1F2F5',
+                                            marginLeft: 'auto',
+                                            width: '10%',
+                                        }}
                                     >
                                         <a href='#'
-                                           style={{
-                                               padding: '10px',
-                                               fontSize: '1.4rem',
-                                           }}
-                                           onClick={handleOpen}
+                                            style={{
+                                                padding: '10px',
+                                                fontSize: '1.4rem',
+                                            }}
+                                            onClick={handleOpen}
                                         >
                                             <i className="fa-regular fa-eye">
                                             </i>
@@ -126,11 +135,11 @@ const DetailContributionG = () => {
                         <div className="form-group update">
                             <label>Image</label>
                             <div className="image-preview"
-                                 style={{
-                                     backgroundImage: `url(${imageFile ?? null})`,
-                                     backgroundRepeat: 'no-repeat',
-                                     backgroundSize: 'cover',
-                                 }}
+                                style={{
+                                    backgroundImage: `url(${image ?? null})`,
+                                    backgroundRepeat: 'no-repeat',
+                                    backgroundSize: 'cover',
+                                }}
                             >
                             </div>
                         </div>

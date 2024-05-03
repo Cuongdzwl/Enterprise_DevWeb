@@ -1,85 +1,93 @@
 import { BrowserRouter as Router, Route, Routes, Navigate, Outlet } from 'react-router-dom';
 import { useState, useEffect } from 'react';
+import React, { Suspense, lazy } from 'react';
+import { jwtDecode } from 'jwt-decode';
 import NavBar from "./components/NavBar";
 import SideBar from './components/SideBar';
-import { jwtDecode } from 'jwt-decode';
-
-// Admin - Account
-import ListAccount from "./Page/@admin/Account/ListAccount";
-import CreateAccount from "./Page/@admin/Account/CreateAccount";
-import UpdateAccount from './Page/@admin/Account/UpdateAccount';
-import DetailAccount from './Page/@admin/Account/DetailAccount';
-
-// Admin - Faculty
-import ListFaculty from './Page/@admin/Faculty/ListFaculty';
-import CreateFaculty from './Page/@admin/Faculty/CreateFaculty';
-import UpdateFaculty from './Page/@admin/Faculty/UpdateFaculty';
-import DetailFaculty from './Page/@admin/Faculty/DetailFaculty';
-
-// Admin - Event
-import ListEvent from './Page/@admin/Event/ListEvent';
-import CreateEvent from './Page/@admin/Event/CreateEvent';
-import UpdateEvent from './Page/@admin/Event/UpdateEvent';
-import DetailEvent from './Page/@admin/Event/DetailEvent';
-
-
-// Admin - Role
-import ListRole from './Page/@admin/Role/ListRole';
-import DetailRole from './Page/@admin/Role/DetailRole';
-
-// Student - Event
-import ListEventS from './Page/@user/student/Event/ListEventS';
-import DetailEventS from './Page/@user/student/Event/ADetailEventS'
-
-// Student - Contribution
-import ListContributionS from './Page/@user/student/Contribution/ListContributionS';
-import CreateContributionS from './Page/@user/student/Contribution/CreateContributionS';
-import UpdateContributionS from './Page/@user/student/Contribution/UpdateContributionS';
-import DetailContributionS from './Page/@user/student/Contribution/DetailContributionS';
-
-// Coordinators - Event
-import ListEventC from './Page/@coordinator/Event/ListEventC';
-import DetailEventC from './Page/@coordinator/Event/DetailEventC';
-
-// Coordinators - Contribution
-import ListContributionC from './Page/@coordinator/Contribution/ListContributionC';
-import UpdateContributionC from './Page/@coordinator/Contribution/UpdateContributionC';
-import DetailContributionC from './Page/@coordinator/Contribution/DetailContributionC';
-
-// Coordinators - Public
-import PublicContributionPC from './Page/@coordinator/Public/PublicContributionPC';
-import DetailContributionPC from './Page/@coordinator/Public/DetailContributionPC';
-
-// Manager - Event
-import ListEventM from './Page/@manager/Event/ListEventM';
-import DetailEventM from './Page/@manager/Event/DetailEventM';
-
-// Manager - Public
-import PublicContributionPM from './Page/@manager/Public/PublicContributionPM';
-import DetailContributionPM from './Page/@manager/Public/DetailContributionPM';
-
-// Guest - Public
-import PublicContributionG from './Page/@user/guest/PublicContributionG';
-import DetailContributionG from './Page/@user/guest/DetailContributionG';
-
-// Auth
-import LoginAM from './Page/Auth/LoginAM';
-import Login from './Page/Auth/Login';
-import ChangePassword from './Page/General/ChangePassword';
-import Profile from './Page/General/Profile';
 import Loading from './components/Loading';
-import ForgotPassword from './Page/General/ForgotPassword';
-import ResetPassword from './Page/General/ResetPassword';
-
-// Dashboard
-import AdminDashboard from "./Page/@admin/admin_dashboard.jsx";
-import CoordinatorDashBoard from './Page/@coordinator/coordinator_dashboard';
-import ManagerDashboard from './Page/@manager/manager_dashboard';
-
-import NoAccess from './Page/General/NoAccess';
-import Page404 from './Page/General/404';
 
 function App() {
+    // Lazy load components and pages
+
+    // Auth
+    const LoginAM = lazy(() => import('./Page/Auth/LoginAM'));
+    const Login = lazy(() => import('./Page/Auth/Login'));
+    const ForgotPassword = lazy(() => import('./Page/General/ChangePassword'));
+    const ResetPassword = lazy(() => import('./Page/General/ResetPassword'));
+    const ChangePassword = lazy(() => import('./Page/General/ChangePassword'));
+
+    // Profile
+    const Profile = lazy(() => import('./Page/General/Profile'));
+
+    // Dashboard
+    const AdminDashboard = lazy(() => import('./Page/@admin/admin_dashboard'));
+    const CoordinatorDashBoard = lazy(() => import('./Page/@coordinator/coordinator_dashboard'));
+    const ManagerDashboard = lazy(() => import('./Page/@manager/manager_dashboard'));
+
+    // Admin - Account
+    const ListAccount = lazy(() => import('./Page/@admin/Account/ListAccount'));
+    const CreateAccount = lazy(() => import('./Page/@admin/Account/CreateAccount'));
+    const UpdateAccount = lazy(() => import('./Page/@admin/Account/UpdateAccount'));
+    const DetailAccount = lazy(() => import('./Page/@admin/Account/DetailAccount'));
+
+    // Admin - Faculty
+    const ListFaculty = lazy(() => import('./Page/@admin/Faculty/ListFaculty'));
+    const CreateFaculty = lazy(() => import('./Page/@admin/Faculty/CreateFaculty'));
+    const UpdateFaculty = lazy(() => import('./Page/@admin/Faculty/UpdateFaculty'));
+    const DetailFaculty = lazy(() => import('./Page/@admin/Faculty/DetailFaculty'));
+
+    // Admin - Event
+    const ListEvent = lazy(() => import('./Page/@admin/Event/ListEvent'));
+    const CreateEvent = lazy(() => import('./Page/@admin/Event/CreateEvent'));
+    const UpdateEvent = lazy(() => import('./Page/@admin/Event/UpdateEvent'));
+    const DetailEvent = lazy(() => import('./Page/@admin/Event/DetailEvent'));
+
+    // Admin - Role
+    const ListRole = lazy(() => import('./Page/@admin/Role/ListRole'));
+    const DetailRole = lazy(() => import('./Page/@admin/Role/DetailRole'));
+
+    // Student - Event
+    const ListEventS = lazy(() => import('./Page/@user/student/Event/ListEventS'));
+    const DetailEventS = lazy(() => import('./Page/@user/student/Event/ADetailEventS'));
+
+    // Student - Contribution
+    const ListContributionS = lazy(() => import('./Page/@user/student/Contribution/ListContributionS'));
+    const CreateContributionS = lazy(() => import('./Page/@user/student/Contribution/CreateContributionS'));
+    const UpdateContributionS = lazy(() => import('./Page/@user/student/Contribution/UpdateContributionS'));
+    const DetailContributionS = lazy(() => import('./Page/@user/student/Contribution/DetailContributionS'));
+
+    // Coordinator - Event
+    const ListEventC = lazy(() => import('./Page/@coordinator/Event/ListEventC'));
+    const DetailEventC = lazy(() => import('./Page/@coordinator/Event/DetailEventC'));
+    
+    // Coordinator - Contribution
+    const ListContributionC = lazy(() => import('./Page/@coordinator/Contribution/ListContributionC'));
+    const UpdateContributionC = lazy(() => import('./Page/@coordinator/Contribution/UpdateContributionC'));
+    const DetailContributionC = lazy(() => import('./Page/@coordinator/Contribution/DetailContributionC'));
+
+    // Coordinator - Public
+    const PublicContributionPC = lazy(() => import('./Page/@coordinator/Public/PublicContributionPC'));
+    const DetailContributionPC = lazy(() => import('./Page/@coordinator/Public/DetailContributionPC'));
+
+    // Manager - Event
+    const ListEventM = lazy(() => import('./Page/@manager/Event/ListEventM'));
+    const DetailEventM = lazy(() => import('./Page/@manager/Event/DetailEventM'));
+
+    // Manager - Public
+    const PublicContributionPM = lazy(() => import('./Page/@manager/Public/PublicContributionPM'));
+    const DetailContributionPM = lazy(() => import('./Page/@manager/Public/DetailContributionPM'));
+
+    // Guest - Public
+    const PublicContributionG = lazy(() => import('./Page/@user/guest/PublicContributionG'));
+    const DetailContributionG = lazy(() => import('./Page/@user/guest/DetailContributionG'));
+
+    // General
+    const NoAccess = lazy(() => import('./Page/General/NoAccess'));
+    const Page404 = lazy(() => import('./Page/General/404'));
+
+
+
+    // Check if user is logged in
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const token = localStorage.getItem('token');
     const guest = localStorage.getItem('guest');
@@ -130,10 +138,10 @@ function App() {
             <div className="App">
                 <Routes>
                     {/* Auth */}
-                    <Route path='/' element={<Login />} />
-                    <Route path='/staff' element={<LoginAM />} />
-                    <Route path='/forgotpassword' element={<ForgotPassword />} />
-                    <Route path='/resetpassword' element={<ResetPassword />} />
+                    <Route path='/' element={<Suspense fallback={<Loading />}><Login /></Suspense>} />
+                    <Route path='/staff' element={<Suspense fallback={<Loading />}><LoginAM /></Suspense>} />
+                    <Route path='/forgotpassword' element={<Suspense fallback={<Loading />}><ForgotPassword /></Suspense>} />
+                    <Route path='/resetpassword' element={<Suspense fallback={<Loading />}><ResetPassword /></Suspense>} />
 
 
                     {/* Private Routes */}
@@ -155,124 +163,124 @@ function App() {
                         {/* Admin */}
                         {/* Account */}
                         <Route path='/admin/account'
-                            element={<PrivateRoute element={<ListAccount />}
+                            element={<PrivateRoute element={<Suspense fallback={<Loading />}><ListAccount /></Suspense>}
                                 allowedRoles={[UserRole.ADMIN]} />} />
                         <Route path='/admin/account/create'
-                            element={<PrivateRoute element={<CreateAccount />}
+                            element={<PrivateRoute element={<Suspense fallback={<Loading />}><CreateAccount /></Suspense>}
                                 allowedRoles={[UserRole.ADMIN]} />} />
                         <Route path='/admin/account/update/:id'
-                            element={<PrivateRoute element={<UpdateAccount />}
+                            element={<PrivateRoute element={<Suspense fallback={<Loading />}><UpdateAccount /></Suspense>}
                                 allowedRoles={[UserRole.ADMIN]} />} />
                         <Route path='/admin/account/detail/:id'
-                            element={<PrivateRoute element={<DetailAccount />}
+                            element={<PrivateRoute element={<Suspense fallback={<Loading />}><DetailAccount /></Suspense>}
                                 allowedRoles={[UserRole.ADMIN]} />} />
 
                         {/* Faculty */}
                         <Route path='/admin/faculty'
-                            element={<PrivateRoute element={<ListFaculty />}
+                            element={<PrivateRoute element={<Suspense fallback={<Loading />}><ListFaculty /></Suspense>}
                                 allowedRoles={[UserRole.ADMIN]} />} />
                         <Route path='/admin/faculty/create'
-                            element={<PrivateRoute element={<CreateFaculty />}
+                            element={<PrivateRoute element={<Suspense fallback={<Loading />}><CreateFaculty /></Suspense>}
                                 allowedRoles={[UserRole.ADMIN]} />} />
                         <Route path='/admin/faculty/update/:id'
-                            element={<PrivateRoute element={<UpdateFaculty />}
+                            element={<PrivateRoute element={<Suspense fallback={<Loading />}><UpdateFaculty /></Suspense>}
                                 allowedRoles={[UserRole.ADMIN]} />} />
                         <Route path='/admin/faculty/detail/:id'
-                            element={<PrivateRoute element={<DetailFaculty />}
+                            element={<PrivateRoute element={<Suspense fallback={<Loading />}><DetailFaculty /></Suspense>}
                                 allowedRoles={[UserRole.ADMIN]} />} />
 
                         {/* Event */}
                         <Route path='/admin/event'
-                            element={<PrivateRoute element={<ListEvent />}
+                            element={<PrivateRoute element={<Suspense fallback={<Loading />}><ListEvent /></Suspense>}
                                 allowedRoles={[UserRole.ADMIN]} />} />
                         <Route path='/admin/event/create'
-                            element={<PrivateRoute element={<CreateEvent />}
+                            element={<PrivateRoute element={<Suspense fallback={<Loading />}><CreateEvent /></Suspense>}
                                 allowedRoles={[UserRole.ADMIN]} />} />
                         <Route path='/admin/event/update/:id'
-                            element={<PrivateRoute element={<UpdateEvent />}
+                            element={<PrivateRoute element={<Suspense fallback={<Loading />}><UpdateEvent /></Suspense>}
                                 allowedRoles={[UserRole.ADMIN]} />} />
                         <Route path='/admin/event/detail/:id'
-                            element={<PrivateRoute element={<DetailEvent />}
+                            element={<PrivateRoute element={<Suspense fallback={<Loading />}><DetailEvent /></Suspense>}
                                 allowedRoles={[UserRole.ADMIN]} />} />
 
                         {/* Role */}
                         <Route path='/admin/role'
-                            element={<PrivateRoute element={<ListRole />}
+                            element={<PrivateRoute element={<Suspense fallback={<Loading />}><ListRole /></Suspense>}
                                 allowedRoles={[UserRole.ADMIN]} />} />
                         <Route path='/admin/role/detail/:id'
-                            element={<PrivateRoute element={<DetailRole />}
+                            element={<PrivateRoute element={<Suspense fallback={<Loading />}><DetailRole /></Suspense>}
                                 allowedRoles={[UserRole.ADMIN]} />} />
 
                         {/* Student */}
                         <Route path='/student/event'
-                            element={<PrivateRoute element={<ListEventS />}
+                            element={<PrivateRoute element={<Suspense fallback={<Loading />}><ListEventS /></Suspense>}
                                 allowedRoles={[UserRole.STUDENT]} />} />
                         <Route path='/student/event/detail/:id'
-                            element={<PrivateRoute element={<DetailEventS />}
+                            element={<PrivateRoute element={<Suspense fallback={<Loading />}><DetailEventS /></Suspense>}
                                 allowedRoles={[UserRole.STUDENT]} />} />
                         <Route path='/student/event/contribution/:id'
-                            element={<PrivateRoute element={<ListContributionS />} allowedRoles={[UserRole.STUDENT]} />} />
+                            element={<PrivateRoute element={<Suspense fallback={<Loading />}><ListContributionS /></Suspense>} allowedRoles={[UserRole.STUDENT]} />} />
                         <Route path='/student/event/contribution/:id/create'
-                            element={<PrivateRoute element={<CreateContributionS />} allowedRoles={[UserRole.STUDENT]} />} />
+                            element={<PrivateRoute element={<Suspense fallback={<Loading />}><CreateContributionS /></Suspense>} allowedRoles={[UserRole.STUDENT]} />} />
                         <Route path='/student/event/contribution/:id/update/:id'
-                            element={<PrivateRoute element={<UpdateContributionS />} allowedRoles={[UserRole.STUDENT]} />} />
+                            element={<PrivateRoute element={<Suspense fallback={<Loading />}><UpdateContributionS /></Suspense>} allowedRoles={[UserRole.STUDENT]} />} />
                         <Route path='/student/event/contribution/:id/detail/:id'
-                            element={<PrivateRoute element={<DetailContributionS />} allowedRoles={[UserRole.STUDENT]} />} />
+                            element={<PrivateRoute element={<Suspense fallback={<Loading />}><DetailContributionS /></Suspense>} allowedRoles={[UserRole.STUDENT]} />} />
 
                         {/* Coordinator */}
                         <Route path='/coordinator/event'
-                            element={<PrivateRoute element={<ListEventC />}
+                            element={<PrivateRoute element={<Suspense fallback={<Loading />}><ListEventC /></Suspense>}
                                 allowedRoles={[UserRole.COORDINATOR]} />} />
                         <Route path='/coordinator/event/detail/:id'
-                            element={<PrivateRoute element={<DetailEventC />}
+                            element={<PrivateRoute element={<Suspense fallback={<Loading />}><DetailEventC /></Suspense>}
                                 allowedRoles={[UserRole.COORDINATOR]} />} />
                         <Route path='/coordinator/event/contribution/:id'
-                            element={<PrivateRoute element={<ListContributionC />} allowedRoles={[UserRole.COORDINATOR]} />} />
+                            element={<PrivateRoute element={<Suspense fallback={<Loading />}><ListContributionC /></Suspense>} allowedRoles={[UserRole.COORDINATOR]} />} />
                         <Route path='/coordinator/event/contribution/:id/update/:id'
-                            element={<PrivateRoute element={<UpdateContributionC />} allowedRoles={[UserRole.COORDINATOR]} />} />
+                            element={<PrivateRoute element={<Suspense fallback={<Loading />}><UpdateContributionC /></Suspense>} allowedRoles={[UserRole.COORDINATOR]} />} />
                         <Route path='/coordinator/event/contribution/:id/detail/:id'
-                            element={<PrivateRoute element={<DetailContributionC />} allowedRoles={[UserRole.COORDINATOR]} />} />
+                            element={<PrivateRoute element={<Suspense fallback={<Loading />}><DetailContributionC /></Suspense>} allowedRoles={[UserRole.COORDINATOR]} />} />
                         <Route path='/coordinator/public/:id'
-                            element={<PrivateRoute element={<PublicContributionPC />} allowedRoles={[UserRole.COORDINATOR]} />} />
+                            element={<PrivateRoute element={<Suspense fallback={<Loading />}><PublicContributionPC /></Suspense>} allowedRoles={[UserRole.COORDINATOR]} />} />
                         <Route path='/coordinator/public/:id/detail/:id'
-                            element={<PrivateRoute element={<DetailContributionPC />} allowedRoles={[UserRole.COORDINATOR]} />} />
+                            element={<PrivateRoute element={<Suspense fallback={<Loading />}><DetailContributionPC /></Suspense>} allowedRoles={[UserRole.COORDINATOR]} />} />
 
                         {/* Manager */}
                         <Route path='/manager/event'
-                            element={<PrivateRoute element={<ListEventM />}
+                            element={<PrivateRoute element={<Suspense fallback={<Loading />}><ListEventM /></Suspense>}
                                 allowedRoles={[UserRole.MANAGER]} />} />
                         <Route path='/manager/event/detail/:id'
-                            element={<PrivateRoute element={<DetailEventM />}
+                            element={<PrivateRoute element={<Suspense fallback={<Loading />}><DetailEventM /></Suspense>}
                                 allowedRoles={[UserRole.MANAGER]} />} />
                         <Route path='/manager/public/:id'
-                            element={<PrivateRoute element={<PublicContributionPM />} allowedRoles={[UserRole.MANAGER]} />} />
+                            element={<PrivateRoute element={<Suspense fallback={<Loading />}><PublicContributionPM /></Suspense>} allowedRoles={[UserRole.MANAGER]} />} />
                         <Route path='/manager/public/:id/detail/:id'
-                            element={<PrivateRoute element={<DetailContributionPM />} allowedRoles={[UserRole.MANAGER]} />} />
+                            element={<PrivateRoute element={<Suspense fallback={<Loading />}><DetailContributionPM /></Suspense>} allowedRoles={[UserRole.MANAGER]} />} />
 
                         {/* Guest */}
                         <Route path='/guest/public/'
-                            element={<PrivateRoute element={<PublicContributionG />} allowedRoles={[UserRole.GUEST]} />} />
+                            element={<PrivateRoute element={<Suspense fallback={<Loading />}><PublicContributionG /></Suspense>} allowedRoles={[UserRole.GUEST]} />} />
                         <Route path='/guest/public/detail/:id'
-                            element={<PrivateRoute element={<DetailContributionG />} allowedRoles={[UserRole.GUEST]} />} />
+                            element={<PrivateRoute element={<Suspense fallback={<Loading />}><DetailContributionG /></Suspense>} allowedRoles={[UserRole.GUEST]} />} />
 
                         {/* General */}
-                        <Route path='/changepassword' element={<ChangePassword />} />
-                        <Route path='/profile' element={<Profile />} />
+                        <Route path='/changepassword' element={<Suspense fallback={<Loading />}><ChangePassword /></Suspense>} />
+                        <Route path='/profile' element={<Suspense fallback={<Loading />}><Profile /></Suspense>} />
 
                         {/*Dashboard */}
                         <Route path='/admin/dashboard'
-                            element={<PrivateRoute element={<AdminDashboard />}
+                            element={<PrivateRoute element={<Suspense fallback={<Loading />}><AdminDashboard /></Suspense>}
                                 allowedRoles={[UserRole.ADMIN]} />} />
                         <Route path='/coordinator/dashboard'
-                            element={<PrivateRoute element={<CoordinatorDashBoard />} allowedRoles={[UserRole.COORDINATOR]} />} />
+                            element={<PrivateRoute element={<Suspense fallback={<Loading />}><CoordinatorDashBoard /></Suspense>} allowedRoles={[UserRole.COORDINATOR]} />} />
                         <Route path='/manager/dashboard'
-                            element={<PrivateRoute element={<ManagerDashboard />} allowedRoles={[UserRole.MANAGER]} />} />
+                            element={<PrivateRoute element={<Suspense fallback={<Loading />}><ManagerDashboard /></Suspense>} allowedRoles={[UserRole.MANAGER]} />} />
                     </Route>
 
                     {/* 404 Route */}
-                    <Route path="*" element={<Page404 />} />
+                    <Route path="*" element={<Suspense fallback={<Loading />}><Page404 /></Suspense>} />
                     {/* No access */}
-                    <Route path="/no-access" element={<NoAccess />} />
+                    <Route path="/no-access" element={<Suspense fallback={<Loading />}><NoAccess /></Suspense>} />
                 </Routes>
             </div>
         </Router>
