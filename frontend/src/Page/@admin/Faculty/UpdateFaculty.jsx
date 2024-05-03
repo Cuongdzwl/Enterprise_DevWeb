@@ -67,10 +67,10 @@ const UpdateFaculty = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        if (!isFormValid) {
-            setError("Please fill in all fields correctly.");
-            return;
-        }
+        // if (!isFormValid) {
+        //     setError("Please fill in all fields correctly.");
+        //     return;
+        // }
 
         const newFormData = {
             ...formData,
