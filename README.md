@@ -6,19 +6,20 @@
 
 **Account table**
 
-| Username | Password | Faculty | Role |
-| -------- | -------- | ------- | ---- |
-|          |          |         |      |
-|          |          |         |      |
-|          |          |         |      |
-|          |          |         |      |
-|          |          |         |      |
-|          |          |         |      |
-|          |          |         |      |
-|          |          |         |      |
-|          |          |         |      |
-|          |          |         |      |
-|          |          |         |      |
+| Username                      | Password  | Faculty               | Role               |
+|-------------------------------|-----------|-----------------------|--------------------|
+| admin@example.com             | Pass12345 |                       | Admin              |
+| manager@example.com           | Pass12345 |                       | Marketing Manager |
+| coordinatorBusiness@example.com | Pass12345 | Business              | Marketing Coordinator |
+| studentBusiness@example.com   | Pass12345 | Business              | Student            |
+| studentComputing@example.com | Pass12345 | Computing             | Student            |
+| coordinatorComputing@example.com | Pass12345 | Computing             | Marketing Coordinator |
+| coordinatorDesign@example.com | Pass12345 | Design                | Marketing Coordinator |
+| studentDesign@example.com     | Pass12345 | Design                | Student            |
+| coordinatorAI@example.com     | Pass12345 | Artificial Intelligence | Marketing Coordinator |
+| studentAI@example.com         | Pass12345 | Artificial Intelligence | Student            |
+| coordinatorMarketing@example.com | Pass12345 | Marketing             | Marketing Coordinator |
+| studentMarketing@example.com | Pass12345 | Marketing             | Student            |
 
 
 
