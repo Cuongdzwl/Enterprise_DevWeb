@@ -46,7 +46,10 @@ const CoordinatorDashBoard = () => {
 
     return (
         <>
-            <div className='box'>
+            <div className='box'
+            style={{
+                height: '100vh',
+            }}>
                 <div className="row-1">
                     <div className="header">
                         <div className="title">Coordinator Dashboard</div>

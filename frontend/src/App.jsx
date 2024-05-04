@@ -12,7 +12,7 @@ function App() {
     // Auth
     const LoginAM = lazy(() => import('./Page/Auth/LoginAM'));
     const Login = lazy(() => import('./Page/Auth/Login'));
-    const ForgotPassword = lazy(() => import('./Page/General/ForgotPassword'));
+    const ForgotPassword = lazy(() => import('./Page/General/ForgotPassword')); //ok
     const ResetPassword = lazy(() => import('./Page/General/ResetPassword'));
     const ChangePassword = lazy(() => import('./Page/General/ChangePassword'));
 
