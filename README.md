@@ -1,8 +1,12 @@
 # Enterprise Web Development
 ## Website:
 **Production**
-1. **[Production Website](https://enterprise-dev-web.vercel.app/)**
+1. **[Production Website](https://cmsgreenwichvn.vercel.app)**
 2. **[Production API Portal](https://portal.cuongnd.work/)**
+
+Note: If not work, please copy these domains to the URL bar:
+1. **Production Website : https://cmsgreenwichvn.vercel.app)**
+2. **Production API Portal: https://portal.cuongnd.work/**
 
 **Account table**
 
