@@ -32,6 +32,7 @@ jobs:
           echo "Installing dependencies..."
           git pull origin master
           npm i
+          npm i -g pm2
           echo "Create .env file"
           rm -rf .env
           touch .env
