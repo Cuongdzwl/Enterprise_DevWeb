@@ -37,7 +37,7 @@ jobs:
           touch .env
           echo 'OPENAPI_SPEC="${{ secrets.OPENAPI_SPEC}}"' >> .env
           echo 'PORT= ${{ secrets.PORT}}' >> .env
-          echo "DATABASE_URL='${{ secrets.DATABASE_URL}}'" >> .env
+          echo 'DATABASE_URL= ${{ secrets.DATABASE_URL}}' >> .env
           echo 'AZURE_STORAGE_CONNECTION_STRING="${{ secrets.AZURE_STORAGE_CONNECTION_STRING}}"' >> .env
           echo 'AZURE_STORAGE_CONTAINER_NAME="${{ secrets.AZURE_STORAGE_CONTAINER_NAME}}"' >> .env
           echo 'JWT_SECRET="${{ secrets.JWT_SECRET}}"' >> .env
